@@ -1,3 +1,6 @@
+# No necesitamos esta carpeta en el repo
+*/Debug
+
 # Prerequisites
 *.d
 

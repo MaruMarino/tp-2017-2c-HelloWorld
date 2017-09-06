@@ -1,0 +1,33 @@
+RM=rm -rf
+CC=gcc
+
+C_SRCS=$(shell find . -iname "*.c" | tr '\n' ' ')
+H_SRCS=$(shell find . -iname "*.h" | tr '\n' ' ')
+OBJS=$(C_SRCS:./%.c=build/%.o)
+
+# <filename_compartida> puede ser el nombre que querramos para la lib, se va a usar para linkearla 
+all: build/lib<filename_compartida>.so
+
+create-dirs:
+	mkdir -p build/<dir_codigo_fuente>
+
+build/lib<filename_compartida>.so: create-dirs $(OBJS)
+	$(CC)  -shared -Wall -o "build/lib<filename_compartida>.so" $(OBJS)
+
+build/<dir_codigo_fuente>/%.o: <dir_codigo_fuente>/%.c
+	$(CC)  -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+
+# Clean build files
+clean:
+	$(RM) build
+
+install: all
+	cp -u build/lib<filename_compartida>.so /usr/lib
+	cp --parents -u $(H_SRCS) /usr/include
+	clean
+
+uninstall:
+	rm -f /usr/lib/lib<filename_compartida>.so
+	rm -rf /usr/include/<dir_codigo_fuente>
+
+.PHONY: all create-dirs clean install uninstall
