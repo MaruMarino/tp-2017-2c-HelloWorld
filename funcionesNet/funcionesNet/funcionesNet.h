@@ -19,5 +19,13 @@ int makeListenSock(char *port_listen);
  */
 int makeCommSock(int socket_in);
 
+/* Envia un mensaje dado, usando un socket dado
+ * En caso de error retorna -1
+ */
+int enviar(int socket, char *mensaje);
+
+/* Recibe un mensaje, usando el socket dado - Respeta lo hablado ;)
+ */
+char *recibir(int socket);
 
 #endif /* FUNCSOCKS_FUNCSOCKS_H_ */

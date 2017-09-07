@@ -24,7 +24,7 @@ clean:
 install: all
 	cp -u build/libnetfuncs.so /usr/lib
 	cp --parents -u $(H_SRCS) /usr/include
-	clean
+	rm -r build/
 
 uninstall:
 	rm -f /usr/lib/libnetfuncs.so

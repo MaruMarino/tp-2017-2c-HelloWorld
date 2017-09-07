@@ -1,8 +1,10 @@
 #include "funcionesNet.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <netdb.h>
 #include <string.h>
+#include <commons/string.h>
 
 /* Auxiliar para configurar la conexion en red, sea para cliente o servidor */
 void setupHints(struct addrinfo *hints, int flags){
@@ -75,4 +77,50 @@ int makeCommSock(int socket_in){
 	}
 
 	return sock_comm;
+}
+
+int enviar(int socket_emisor, char *mensaje_a_enviar)
+{
+	int ret;
+	size_t sbuffer = sizeof(char) * string_length(mensaje_a_enviar);
+
+	char *buffer = string_substring(mensaje_a_enviar, 0, sbuffer);
+
+	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0) {
+		perror("No se pudo enviar el mensaje");
+		return -1;
+	}
+
+	free(buffer);
+	return ret;
+}
+
+char *recibir(int socket_receptor)
+{
+	int ret;
+	char *buffer = malloc(13);
+
+	if((ret = recv(socket_receptor, buffer, 13, MSG_WAITALL)) <= 0)
+	{
+		perror("No se pudo recibir el mensaje");
+	}
+
+	char *str_size = string_substring(buffer, 3, 10);
+
+	int size = atoi(str_size);
+	free(str_size);
+	char *resto_mensaje = malloc(size);
+
+	if(size>0)
+		recv(socket_receptor, resto_mensaje, size, 0);
+
+	char *buffer_aux = string_substring(buffer,0,13);
+	char *resto_sub = string_substring(resto_mensaje,0,size);
+	string_append(&buffer_aux, resto_sub);
+
+	free(resto_sub);
+	free(resto_mensaje);
+	free(buffer);
+
+	return buffer_aux;
 }
