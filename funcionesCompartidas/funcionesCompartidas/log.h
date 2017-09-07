@@ -5,8 +5,8 @@
  *      Author: utnso
  */
 
-#ifndef SRC_LOG_H_
-#define SRC_LOG_H_
+#ifndef FUNCIONES_LOG_H_
+#define FUNCIONES_LOG_H_
 
 #include <commons/log.h>
 
@@ -35,4 +35,4 @@ void escribir_log_error_compuesto(t_log *log, char *mensaje, char *otro_mensaje)
 //Elimina el archivo de log
 void liberar_log(t_log *log);
 
-#endif /* SRC_LOG_H_ */
+#endif /* FUNCIONES_LOG_H_ */

@@ -6,17 +6,15 @@
 char *armar_mensaje(char *identificador, char *mensaje)
 {
 	char *resultado = strdup(identificador);
-	int length = string_length(mensaje);
-	char *payload_char = string_itoa(length);
-	int size_payload = string_length(payload_char);
-	char *completar = string_repeat('0', 10 - size_payload);
 
-	string_append(&resultado, completar);
-	string_append(&resultado, payload_char);
+	char *payload_size   = string_itoa(string_length(mensaje));
+	int   payload_digits = string_length(payload_size);
+
+	string_append(&resultado, string_repeat('0', 10 - payload_digits));
+	string_append(&resultado, payload_size);
 	string_append(&resultado, mensaje);
 
-	free(payload_char);
-	free(completar);
+	free(payload_size);
 	return resultado;
 }
 

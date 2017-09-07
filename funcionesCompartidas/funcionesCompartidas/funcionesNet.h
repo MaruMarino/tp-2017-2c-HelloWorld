@@ -1,5 +1,5 @@
-#ifndef FUNCSOCKS_FUNCSOCKS_H_
-#define FUNCSOCKS_FUNCSOCKS_H_
+#ifndef FUNCIONES_NET_H_
+#define FUNCIONES_NET_H_
 
 /* Dados IP y puerto de destino, se trata de conectar a un servidor...
  * Crea y retorna el socket que permite la comunicacion con el servidor.
@@ -28,4 +28,4 @@ int enviar(int socket, char *mensaje);
  */
 char *recibir(int socket);
 
-#endif /* FUNCSOCKS_FUNCSOCKS_H_ */
+#endif /* FUNCIONES_NET_H_ */
