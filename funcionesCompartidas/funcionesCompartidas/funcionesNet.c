@@ -55,7 +55,9 @@ int makeListenSock(char *port_listen){
 		perror("No se pudo crear socket. error.");
 		return -1;
 	}
-
+	int yes = 1;
+	setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+	printf("HOLA\n");
 	if (bind(sock_listen, serverInfo->ai_addr, serverInfo->ai_addrlen) == -1){
 		perror("Fallo binding con socket. error");
 		return -1;
