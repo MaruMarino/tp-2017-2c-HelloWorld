@@ -28,9 +28,13 @@ int comparar_header(char *identificador, char *header)
 	return !strcmp(header, identificador);
 }
 
-char *get_codigo(char *mensaje)
+int get_codigo(char *mensaje)
 {
-	return string_substring(mensaje, 1, 2);
+	int codigo;
+	char *cod = string_substring(mensaje, 1, 2);
+	codigo = atoi(cod);
+	free(cod);
+	return codigo;
 }
 
 char *get_mensaje(char *mensaje)

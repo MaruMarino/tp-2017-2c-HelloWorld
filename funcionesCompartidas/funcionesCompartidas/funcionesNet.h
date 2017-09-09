@@ -17,7 +17,7 @@ int makeListenSock(char *port_listen);
  * Retorna el nuevo socket hecho para con el cliente.
  * En caso de error retorna -1
  */
-int makeCommSock(int socket_in);
+int aceptar_conexion(int socket_in);
 
 /* Envia un mensaje dado, usando un socket dado
  * En caso de error retorna -1

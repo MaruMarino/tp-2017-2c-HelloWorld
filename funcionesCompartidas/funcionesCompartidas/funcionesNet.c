@@ -45,6 +45,7 @@ int makeListenSock(char *port_listen){
 	int stat, sock_listen;
 	struct addrinfo hints, *serverInfo;
 	setupHints(&hints, AI_PASSIVE);
+	int BACKLOG = 20; //Cantidad de conexiones maximas
 
 	if ((stat = getaddrinfo(NULL, port_listen, &hints, &serverInfo)) != 0){
 		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(stat));
@@ -63,11 +64,17 @@ int makeListenSock(char *port_listen){
 		return -1;
 	}
 
+	//Listening socket
+	if (listen(sock_listen, BACKLOG) != 0) {
+	//	*controlador = 5;
+	//	error_sockets(controlador, "");
+	}
+
 	freeaddrinfo(serverInfo);
 	return sock_listen;
 }
 
-int makeCommSock(int socket_in){
+int aceptar_conexion(int socket_in){
 
 	int sock_comm;
 	struct sockaddr_in clientAddr;
@@ -84,9 +91,9 @@ int makeCommSock(int socket_in){
 int enviar(int socket_emisor, char *mensaje_a_enviar)
 {
 	int ret;
-	size_t sbuffer = sizeof(char) * string_length(mensaje_a_enviar);
+	size_t sbuffer = (size_t)string_length(mensaje_a_enviar);
 
-	char *buffer = string_substring(mensaje_a_enviar, 0, sbuffer);
+	char *buffer = string_substring(mensaje_a_enviar, 0, (int)sbuffer);
 
 	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0) {
 		perror("No se pudo enviar el mensaje");
@@ -111,10 +118,13 @@ char *recibir(int socket_receptor)
 
 	int size = atoi(str_size);
 	free(str_size);
-	char *resto_mensaje = malloc(size);
+	char *resto_mensaje;
 
 	if(size>0)
-		recv(socket_receptor, resto_mensaje, size, 0);
+	{
+		resto_mensaje = malloc((size_t)size);
+		recv(socket_receptor, resto_mensaje, (size_t)size, 0);
+	}
 
 	char *buffer_aux = string_substring(buffer,0,13);
 	char *resto_sub = string_substring(resto_mensaje,0,size);

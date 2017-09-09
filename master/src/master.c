@@ -2,13 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <funcionesNet/funcionesNet.h>
+#include <funcionesNet/mensaje.h>
 #include <funcionesNet/log.h>
+#include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/log.h>
+#include "master_manager.h"
 #include "estructuras.h"
 
 t_configuracion *config;
+t_list *transformar;
+t_list *reducir;
 t_log *log_Mas;
 
 void inicializar_variables();
@@ -29,7 +34,6 @@ int main(int argc, char **argv)
 
 	leer_configuracion();
 	conectar_yama();
-	//escuchar_peticiones();
 
 	liberar_memoria();
 	return EXIT_SUCCESS;
@@ -39,6 +43,9 @@ void inicializar_variables()
 {
 	config = malloc(sizeof(*config));
 	config->ip = strdup("");
+	config->puerto = strdup("");
+	transformar = list_create();
+	reducir = list_create();
 }
 
 void leer_configuracion()
@@ -54,26 +61,25 @@ void leer_configuracion()
 
 void conectar_yama()
 {
-	int control = 0;
-
 	config->socket_yama = establecerConexion(config->ip, config->puerto);
 
-	if(control<0)
+	if(config->socket_yama<=0)
 	{
 		escribir_error_log(log_Mas, "Error conectandose a YAMA");
 	}
 	else
 	{
-		enviar(config->socket_yama, "M000000000003abc");
-		char *rta = recibir(config->socket_yama);
-		puts(rta);
-		free(rta);
+		char *handshake = armar_mensaje("M00",config->path_file_target);
+		enviar(config->socket_yama, handshake);
+		free(handshake);
+		escuchar_peticiones();
 	}
 }
 
 void liberar_memoria()
 {
 	free(config->ip);
+	free(config->puerto);
 	free(config->path_conf);
 	free(config->path_trans);
 	free(config->path_reduc);

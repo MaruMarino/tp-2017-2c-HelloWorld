@@ -18,7 +18,7 @@ char *get_header(char *mensaje);
 
 //Devuelve el codigo del mensaje
 //	Y110000000015/bin/prueba.csv	->	11
-char *get_codigo(char *mensaje);
+int get_codigo(char *mensaje);
 
 //Obtiene el mensaje
 //	Y110000000015/bin/prueba.csv	->	/bin/prueba.csv
