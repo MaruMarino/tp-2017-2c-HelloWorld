@@ -3,11 +3,14 @@
 
 #include <commons/config.h>
 #include <commons/string.h>
+#include <commons/log.h>
 
 #include "configuracionWorker.h"
 
+extern t_log *logger;
+
 struct conf_worker *cargarConfig(char *path){
-	printf("Se cargara la configuracion del path: %s\n", path);
+	log_trace(logger, "Se cargara la configuracion del path: %s\n", path);
 
 	t_config *conf = config_create(path);
 	struct conf_worker *conf_w = malloc(sizeof *conf_w);
@@ -23,11 +26,11 @@ struct conf_worker *cargarConfig(char *path){
 
 void mostrarConfig(struct conf_worker *conf){
 
-	printf("IP_FILESYSTEM: %s\n",     conf->ip_filesystem);
-	printf("PUERTO_FILESYSTEM: %s\n", conf->puerto_filesystem);
-	printf("NOMBRE_NODO: %s\n",       conf->nombre_nodo);
-	printf("PUERTO_WORKER: %s\n",     conf->puerto_worker);
-	printf("RUTA_DATABIN: %s\n",      conf->ruta_databin);
+	log_info(logger, "IP_FILESYSTEM: %s",     conf->ip_filesystem);
+	log_info(logger, "PUERTO_FILESYSTEM: %s", conf->puerto_filesystem);
+	log_info(logger, "NOMBRE_NODO: %s",       conf->nombre_nodo);
+	log_info(logger, "PUERTO_WORKER: %s",     conf->puerto_worker);
+	log_info(logger, "RUTA_DATABIN: %s",      conf->ruta_databin);
 
 }
 

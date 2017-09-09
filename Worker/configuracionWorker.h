@@ -1,5 +1,5 @@
-#ifndef WORKER_CONFIGURADORWORKER_H_
-#define WORKER_CONFIGURADORWORKER_H_
+#ifndef CONFIGURACION_WORKER_H_
+#define CONFIGURACION_WORKER_H_
 
 struct conf_worker {
 	char *ip_filesystem,
@@ -13,4 +13,4 @@ struct conf_worker *cargarConfig(char *path);
 void mostrarConfig(struct conf_worker *conf);
 void liberarConfig(struct conf_worker *conf);
 
-#endif /* WORKER_CONFIGURADORWORKER_H_ */
+#endif /* CONFIGURACION_WORKER_H_ */
