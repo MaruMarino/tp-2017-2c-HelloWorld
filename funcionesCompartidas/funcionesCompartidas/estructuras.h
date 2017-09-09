@@ -49,6 +49,7 @@ typedef struct
 	char *nodo;
 	int bloque;
 	int estado; //1: En proceso 2:Finalizado OK 3:Error
+
 };
 
 

@@ -17,8 +17,15 @@ typedef struct
 	char *yama_ip;
 	char *yama_puerto;
 	int socket_fs;
+	int server_;
 
 }t_configuracion;
+
+typedef struct
+{
+	int master;
+	int socket_;
+}t_master;
 
 typedef struct
 {

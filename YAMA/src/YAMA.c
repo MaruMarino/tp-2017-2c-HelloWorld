@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/log.h>
 #include <commons/config.h>
@@ -13,12 +15,15 @@
 t_log *yama_log;
 t_configuracion *config;
 t_list *tabla_estado;
+t_list *masters;
+int master_id = 0;
 
 void leer_configuracion();
 void liberar_memoria();
 void inicializar_variables();
 void conectar_fs();
 void crear_socket_servidor();
+
 
 int main(int argc, char **argv)
 {
@@ -46,6 +51,7 @@ void inicializar_variables()
 	config->yama_puerto = strdup("");
 
 	tabla_estado = list_create();
+	masters = list_create();
 }
 
 void liberar_memoria()
@@ -57,6 +63,7 @@ void liberar_memoria()
 	free(config->fs_puerto);
 	free(config);
 	list_destroy(tabla_estado);
+	list_destroy(masters);
 }
 
 void leer_configuracion(char *path)
@@ -95,5 +102,6 @@ void conectar_fs()
 
 void crear_socket_servidor()
 {
-
+	int controlador = 0;
+	config->server_ = makeListenSock(config->yama_puerto);
 }
