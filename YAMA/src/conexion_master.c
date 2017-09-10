@@ -12,6 +12,8 @@
 #include <commons/collections/list.h>
 #include "estructuras.h"
 #include "conexion_master.h"
+#include "conexion_fs.h"
+#include "manejo_tabla_estados.h"
 
 extern t_configuracion *config;
 extern t_log *yama_log;
@@ -97,10 +99,17 @@ void manejar_respuesta(int socket_)
 	if (comparar_header(header, "M"))
 	{
 		int codigo = get_codigo(mensaje);
+		char *info = get_mensaje(mensaje);
 		switch (codigo)
-			case 0:
-//				char *datos = get_mensaje(mensaje);
+		{
+			case 0:; //procesar archivo
+				solicitar_informacion_archivo(info);
 				break;
+			default:
+				printf("default");
+				break;
+		}
+		free(info);
 	} else log_error(yama_log, "Mensaje de emisor desconocido");
 	free(mensaje);
 	free(header);
@@ -110,7 +119,7 @@ void realizar_handshake_master(int socket_)
 {
 	enviar(socket_, "Y000000000000000");
 	manejar_respuesta(socket_);
-	t_master *master = malloc (sizeof (t_master *));
+	t_master *master = malloc (sizeof (t_master));
 	master->master = master_id ++;
 	master->socket_ = socket_;
 	list_add(masters, master);

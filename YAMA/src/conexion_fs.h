@@ -8,6 +8,7 @@
 #ifndef CONEXION_FS_H_
 #define CONEXION_FS_H_
 
+void solicitar_informacion_archivo(char *info);
 
 
 #endif /* CONEXION_FS_H_ */

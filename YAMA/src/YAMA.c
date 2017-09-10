@@ -11,12 +11,15 @@
 #include <commons/log.h>
 #include <commons/collections/list.h>
 #include "estructuras.h"
+#include "conexion_master.h"
+#include "conexion_fs.h"
 
 t_log *yama_log;
 t_configuracion *config;
-t_list *tabla_estado;
-t_list *masters;
+t_list *tabla_estado; //formado por t_estado
+t_list *masters; //formado por t_master, o usar diccionario?
 int master_id = 0;
+int job_id = 0;
 
 void leer_configuracion();
 void liberar_memoria();
@@ -29,13 +32,14 @@ int main(int argc, char **argv)
 {
 	yama_log = crear_archivo_log("YAMA",true,"/home/utnso/conf/master_log");
 
-	char *path = strdup(argv[1]);
+	char *path = argv[1];
 	inicializar_variables();
 	leer_configuracion(path);
-	free(path);
+	//free(path);
 
 	conectar_fs();
 	crear_socket_servidor();
+	manejo_conexiones();
 
 
 	return EXIT_SUCCESS;
@@ -43,11 +47,10 @@ int main(int argc, char **argv)
 
 void inicializar_variables()
 {
-	config = malloc (sizeof (t_configuracion*));
+	config = malloc (sizeof (t_configuracion));
 	config->algortimo_bal = strdup("");
 	config->fs_ip = strdup("");
 	config->fs_puerto = strdup("");
-	config->yama_ip = strdup("");
 	config->yama_puerto = strdup("");
 
 	tabla_estado = list_create();
@@ -58,7 +61,6 @@ void liberar_memoria()
 {
 	free(config->algortimo_bal);
 	free(config->yama_puerto);
-	free(config->yama_ip);
 	free(config->fs_ip);
 	free(config->fs_puerto);
 	free(config);
@@ -72,7 +74,6 @@ void leer_configuracion(char *path)
 
 	t_config *configuracion = config_create(path);
 
-	string_append(&config->yama_ip, config_get_string_value(configuracion, "YAMA_IP"));
 	string_append(&config->yama_puerto, config_get_string_value(configuracion, "YAMA_PUERTO"));
 	string_append(&config->algortimo_bal, config_get_string_value(configuracion, "ALGORITMO_BALANCEO"));
 	config->retardo_plan = config_get_int_value(configuracion, "RETARDO_PLANIFICACION");
@@ -102,6 +103,5 @@ void conectar_fs()
 
 void crear_socket_servidor()
 {
-	int controlador = 0;
 	config->server_ = makeListenSock(config->yama_puerto);
 }

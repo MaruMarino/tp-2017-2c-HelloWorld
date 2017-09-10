@@ -12,10 +12,9 @@ typedef struct
 {
 	char *fs_ip;
 	char *fs_puerto;
-	int retardo_plan;
 	char *algortimo_bal;
-	char *yama_ip;
 	char *yama_puerto;
+	int retardo_plan;
 	int socket_fs;
 	int server_;
 
@@ -27,9 +26,30 @@ typedef struct
 	int socket_;
 }t_master;
 
+typedef enum
+{
+	TRANSFORMACION,
+	REDUCCION_LOCAL,
+	REDUCCION_GLOBAL,
+	ALMACENAMIENTO_FINAL,
+}e_etapa;
+
+typedef enum
+{
+	EN_PROCESO,
+	ERROR,
+	FINALIZADO_OK,
+}e_estado;
+
 typedef struct
 {
-
+	int job;
+	int master;
+	int nodo;
+	int bloque;
+	e_etapa etapa;
+	char *archivo_temporal;
+	e_estado estado;
 }t_estado;
 
 #endif /* ESTRUCTURAS_H_ */
