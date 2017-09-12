@@ -4,114 +4,137 @@
 #include <stdlib.h>
 #include <netdb.h>
 #include <string.h>
+#include "mensaje.h"
+#include "log.h"
 #include <commons/string.h>
+#include <commons/log.h>
+
+void error_sockets(t_log *log, int *controlador, char *proceso);
 
 /* Auxiliar para configurar la conexion en red, sea para cliente o servidor */
-void setupHints(struct addrinfo *hints, int flags){
+void setupHints(struct addrinfo *hints, int flags)
+{
     memset(hints, 0, sizeof *hints);
 	hints->ai_family = AF_INET;
 	hints->ai_socktype = SOCK_STREAM;
 	hints->ai_flags = flags;
 }
 
-int establecerConexion(char *ip_dest, char *port_dest){
-
+int establecerConexion(char *ip_dest, char *port_dest, t_log *log, int *control)
+{
 	int stat, sock_dest;
 	struct addrinfo hints, *destInfo;
 	setupHints(&hints, 0);
+	*control = 0;
 
 	if ((stat = getaddrinfo(ip_dest, port_dest, &hints, &destInfo)) < 0){
-		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(stat));
+		//fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(stat));
 		return -1;
 	}
 
 	if ((sock_dest = socket(destInfo->ai_family, destInfo->ai_socktype, destInfo->ai_protocol)) == -1){
-		perror("No se pudo crear socket. error.");
-		return -1;
+		*control = 1;
+		error_sockets(log, control, "");
 	}
 
 	if (connect(sock_dest, destInfo->ai_addr, destInfo->ai_addrlen) == -1){
-		perror("No se pudo establecer conexion, fallo connect(). error");
-		return -1;
+		*control = 2;
+		error_sockets(log, control, "");
 	}
 
 	freeaddrinfo(destInfo);
-
 	return sock_dest;
 }
 
-int makeListenSock(char *port_listen){
-
+int makeListenSock(char *port_listen, t_log *log, int *control)
+{
 	int stat, sock_listen;
 	struct addrinfo hints, *serverInfo;
 	setupHints(&hints, AI_PASSIVE);
 	int BACKLOG = 20; //Cantidad de conexiones maximas
+	*control = 0;
 
 	if ((stat = getaddrinfo(NULL, port_listen, &hints, &serverInfo)) != 0){
-		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(stat));
+		//fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(stat));
 		return -1;
 	}
 
 	if ((sock_listen = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol)) == -1){
-		perror("No se pudo crear socket. error.");
-		return -1;
+		*control = 1;
+		error_sockets(log, control, "");
 	}
 	int yes = 1;
 	setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
-	printf("HOLA\n");
+
 	if (bind(sock_listen, serverInfo->ai_addr, serverInfo->ai_addrlen) == -1){
-		perror("Fallo binding con socket. error");
-		return -1;
+		*control = 4;
+		error_sockets(log, control, "");
 	}
 
 	//Listening socket
 	if (listen(sock_listen, BACKLOG) != 0) {
-	//	*controlador = 5;
-	//	error_sockets(controlador, "");
+		*control = 5;
+		error_sockets(log, control, "");
 	}
 
 	freeaddrinfo(serverInfo);
 	return sock_listen;
 }
 
-int aceptar_conexion(int socket_in){
-
+int aceptar_conexion(int socket_in, t_log *log, int *control)
+{
 	int sock_comm;
 	struct sockaddr_in clientAddr;
 	socklen_t clientSize = sizeof(clientAddr);
+	*control = 0;
 
 	if ((sock_comm = accept(socket_in, (struct sockaddr*) &clientAddr, &clientSize)) == -1){
-		perror("Fallo accept del socket entrada. error");
-		return -1;
+		*control = 6;
+		error_sockets(log, control, "");
 	}
 
 	return sock_comm;
 }
 
-int enviar(int socket_emisor, char *mensaje_a_enviar)
+int enviar(int socket_emisor, char *mensaje_a_enviar, t_log *log, int *control)
 {
 	int ret;
+	*control = 0;
 	size_t sbuffer = (size_t)string_length(mensaje_a_enviar);
 
 	char *buffer = string_substring(mensaje_a_enviar, 0, (int)sbuffer);
 
 	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0) {
-		perror("No se pudo enviar el mensaje");
-		return -1;
+		*control = 7;
+		char *emisor = string_itoa(socket_emisor);
+		error_sockets(log, control, emisor);
+		free(emisor);
 	}
 
 	free(buffer);
 	return ret;
 }
 
-char *recibir(int socket_receptor)
+char *recibir(int socket_receptor, t_log *log, int *control)
 {
 	int ret;
+	*control = 0;
 	char *buffer = malloc(13);
 
 	if((ret = recv(socket_receptor, buffer, 13, MSG_WAITALL)) <= 0)
 	{
-		perror("No se pudo recibir el mensaje");
+		if(ret == 0)
+		{
+			*control = 8;
+			char *receptor = string_itoa(socket_receptor);
+			error_sockets(log, control, receptor);
+			free(receptor);
+		}
+		else
+		{
+			*control = 1;
+			error_sockets(log, control, "");
+		}
 	}
 
 	char *str_size = string_substring(buffer, 3, 10);
@@ -123,7 +146,22 @@ char *recibir(int socket_receptor)
 	if(size>0)
 	{
 		resto_mensaje = malloc((size_t)size);
-		recv(socket_receptor, resto_mensaje, (size_t)size, 0);
+
+		if((ret = recv(socket_receptor, resto_mensaje, (size_t)size, 0)) <= 0)
+		{
+			if(ret == 0)
+			{
+				*control = 8;
+				char *receptor = string_itoa(socket_receptor);
+				error_sockets(log, control, receptor);
+				free(receptor);
+			}
+			else
+			{
+				*control = 1;
+				error_sockets(log, control, "");
+			}
+		}
 	}
 
 	char *buffer_aux = string_substring(buffer,0,13);
@@ -135,4 +173,38 @@ char *recibir(int socket_receptor)
 	free(buffer);
 
 	return buffer_aux;
+}
+
+void error_sockets(t_log *log, int *controlador, char *proceso)
+{
+	switch (*controlador)
+	{
+		case 1:
+			escribir_error_log(log, "Kernel - Error creando socket");
+			break;
+		case 2:
+			escribir_error_log(log, "Kernel - Error conectando socket");
+			break;
+		case 3:
+			escribir_error_log(log, "Kernel - Error creando socket server");
+			break;
+		case 4:
+			escribir_error_log(log, "Kernel - Error bindeando socket server");
+			break;
+		case 5:
+			escribir_error_log(log, "Kernel - Socket server, error escuchando");
+			break;
+		case 6:
+			escribir_error_log(log, "Kernel - Error aceptando conexion");
+			break;
+		case 7:
+			escribir_log_error_compuesto(log, "Kernel - Error al enviar mensaje a: ", proceso);
+			break;
+		case 8:
+			escribir_log_error_compuesto(log, "Kernel - Error, socket desconectado: ", proceso);
+			break;
+		case 9:
+			escribir_log_error_compuesto(log, "Kernel - Error recibiendo mensaje de: ", proceso);
+			break;
+	}
 }
