@@ -8,7 +8,14 @@
 #ifndef FS_CONSOLA_H_
 #define FS_CONSOLA_H_
 
-void iniciar_consola_FS();
+#include "estructurasfs.h"
+
+void iniciar_consola_FS(void);
+void inicializar_completado(void);
+int ejecutar_linea(char *linea);
+char *command_generator ();
+char **command_name_completion(const char *text,int start,int end);
+comando *find_command (char *clinea);
 
 
 #endif /* FS_CONSOLA_H_ */

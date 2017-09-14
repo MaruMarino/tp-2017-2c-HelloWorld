@@ -9,6 +9,7 @@
  */
 
 #include <commons/config.h>
+#include <commons/collections/list.h>
 #include <commons/log.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -16,31 +17,39 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "estructuras.h"
+#include "estructurasfs.h"
 #include "FS_conexiones.h"
 #include "FS_consola.h"
 
 
 yamafs_config *configuracion;
 t_log *logi;
+t_list *nodos;
 
 void leer_configuracion(char *);
-void liberar_memoria();
+void liberar_memoria(void);
+void inicializaciones(void);
+
 
 int main(int argc, char **argv) {
 
-
 	logi = log_create("/home/utnso/yamafslog","YamaFS",false,LOG_LEVEL_INFO);
 	leer_configuracion(argv[1]);
-	pthread_t hiloConexiones;
-	pthread_t hiloConsola;
-	//pthread_t hiloPantalla; ->podria no ser un hilo?
-	pthread_create(&hiloConexiones,NULL, (void*)manejo_conexiones, NULL);
+	inicializaciones();
+
+	//pthread_t hiloConexiones;
+	pthread_t hiloConsola;//->podria no ser un hilo?
+
+	//pthread_create(&hiloConexiones,NULL, (void*)manejo_conexiones, NULL);
 	pthread_create(&hiloConsola,NULL,(void *)iniciar_consola_FS,NULL);
+
 	//if argv[2] --clean ->ignorar estado anterior
 	//else restaurar yamaFS desde un estado anterior
-	pthread_join(hiloConexiones,NULL);
+
 	pthread_join(hiloConsola,NULL);
+	//pthread_join(hiloConexiones,NULL);
+
+
 	//k onda wey
 
 	liberar_memoria();
@@ -68,7 +77,11 @@ void leer_configuracion(char *path){
 
 	config_destroy(aux_config);
 }
-void liberar_memoria(){
+void inicializaciones(void){
+
+	nodos = list_create();
+}
+void liberar_memoria(void ){
 
 	free(configuracion->dir_estructuras);
 	free(configuracion->ip);
