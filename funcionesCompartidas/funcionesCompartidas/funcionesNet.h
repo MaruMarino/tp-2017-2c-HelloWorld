@@ -2,6 +2,16 @@
 #define FUNCIONES_NET_H_
 
 #include <commons/log.h>
+typedef struct {
+    void * buffer;
+    size_t sizeBuffer;
+}message;
+
+typedef struct {
+    char letra;
+    int codigo;
+    size_t sizeData;
+}header;
 
 /* Dados IP y puerto de destino, se trata de conectar a un servidor...
  * Crea y retorna el socket que permite la comunicacion con el servidor.
@@ -29,5 +39,60 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, t_log *log, int *control);
 /* Recibe un mensaje, usando el socket dado - Respeta lo hablado ;)
  */
 char *recibir(int socket_receptor, t_log *log, int *control);
+
+/*
+ * @return struct message
+ * @param puntero de struct header
+ * @param puntero de data a enviar
+ * ejemeplo:
+ *
+ *  char * mjs = "El mensajito test"
+ *
+ *  header data;
+    data.letra  = 'D';
+    data.codigo = 1020;
+    data.sizeData = strlen(mjs);
+
+    message *buffer = createMessage(&data,mjs);
+
+    send(socketCliente,buffer->buffer,buffer->sizeBuffer,0)
+
+    *********************************************************
+    ejemplo 2: structtura
+ *
+ *  x algunaStruct;
+ *
+ *  header data;
+    data.letra  = 'D';
+    data.codigo = 1020;
+    data.sizeData = sizeof(algunaStruct);
+
+    message *buffer = createMessage(&data,&algunaStruct);
+
+    send(socketCliente,buffer->buffer,buffer->sizeBuffer,0)
+ *
+ * */
+message * createMessage(header *head, void *data);
+
+
+/*
+ * @return puntero de buffer, NULL en caso de que fallo,
+ * @param socket
+ * @param puntero a una struct header al terminar este proceso la struct header va estar cargado con lo recibido
+ *
+ * example:
+ *
+ *  Head header;
+ *
+    void * buffer = getMessage(socket,&header);
+    if(buffer == NULL){
+        printf("Error al recicbir el msj");
+        return -1;
+    }
+
+    write(STDOUT_FILENO,buffer,header.sizeData);
+ *
+ * */
+void *getMessage(int socket,header *head);
 
 #endif /* FUNCIONES_NET_H_ */

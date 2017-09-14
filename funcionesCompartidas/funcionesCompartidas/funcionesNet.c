@@ -208,3 +208,24 @@ void error_sockets(t_log *log, int *controlador, char *proceso)
 			break;
 	}
 }
+
+message * createMessage(header *head, void *data){
+	message *ElMensaje = malloc(sizeof(message));
+	ElMensaje->sizeBuffer = (sizeof(header) + head->sizeData);
+	ElMensaje->buffer = malloc(ElMensaje->sizeBuffer);
+	memcpy(ElMensaje->buffer,head,sizeof(header));
+	memcpy((ElMensaje->buffer + sizeof(header)),data,head->sizeData);
+	return ElMensaje;
+}
+
+void *getMessage(int socket,header *head){
+	if(recv(socket,head, sizeof(header), 0) == -1){
+		return NULL;
+	}
+	void *buffer = malloc(head->sizeData);
+	if(recv(socket,buffer, head->sizeData, 0) == -1){
+		free(buffer);
+		return NULL;
+	}
+	return buffer;
+}
