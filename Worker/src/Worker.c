@@ -10,14 +10,23 @@
 #include <commons/log.h>
 
 #include <funcionesCompartidas/funcionesNet.h>
+#include <funcionesCompartidas/mensaje.h>
 #include <funcionesCompartidas/log.h>
+#include <funcionesCompartidas/estructuras.h>
+#include <funcionesCompartidas/serializacion.h>
+
 #include "configuracionWorker.h"
 #include "auxiliaresWorker.h"
+#include "estructurasLocales.h"
 
 /* MAX(A, B) es un macro que retorna el mayor entre dos argumentos */
 #define MAX(A, B) ((A) > (B) ? (A) : (B))
 
+void subrutinaHijo(int sock_m);
+
 t_log *logger;
+int const headsize = 13;
+char* const sort_cmd = "sort -dib";
 
 int main(int argc, char *argv[]){
 
@@ -39,7 +48,7 @@ int main(int argc, char *argv[]){
 	FD_ZERO(&masters_set);
 	FD_ZERO(&read_set);
 
-	if ((max_fd = lis_master = makeListenSock(conf->puerto_worker)) < 0){
+	if ((max_fd = lis_master = makeListenSock(conf->puerto_worker, logger, &status)) < 0){
 		log_error(logger, "No se logro bindear sobre puerto %s\n", conf->puerto_worker);
 		return -1;
 
@@ -64,14 +73,16 @@ int main(int argc, char *argv[]){
 			if (fd == lis_master){
 
 				log_info(logger, "Un Master quiere conectarse!");
-				if ((sock_master = makeCommSock(lis_master)) == -1){
+				if ((sock_master = aceptar_conexion(lis_master, logger, &status)) == -1){
 					log_error(logger, "No se pudo establecer la conexion con un Master!");
 					continue;
 				}
-				max_fd = MAX(max_fd, sock_master);
+
+				// verificarConexionMaster() --> lo dejo o lo desecho
 
 				if ((mpid = fork()) == 0){
-					// funcion_hijo
+					subrutinaHijo(sock_master);
+
 				} else if (mpid > 0){
 					// funcion_padre
 
@@ -105,4 +116,52 @@ int main(int argc, char *argv[]){
 	liberarConfig(conf);
 	close(lis_master);
 	return 0;
+}
+
+void subrutinaHijo(int sock_m){
+
+	int status;
+	char *cmd;
+	char *msj = recibir(sock_m, logger, &status);
+	char *exe_fname = string_itoa(getpid()); // filename temporario para prog
+	const char *pipeSortAndOut = "| sort -dib >";
+
+	switch(get_codigo(msj)){
+	case TRANSF:
+		log_trace(logger, "Un Master pide transformacion");
+
+		t_info_trans *info = deserializar_info_trans(msj + 13);
+
+		if (!crearArchivoBin(info, exe_fname)){
+			log_error(logger, "No se pudo crear el transformador. Se aborta!");
+			exit(-1);
+		}
+
+		//obtenerBloque(info->bloque, info->bytes_ocup) -> getBloque()?
+
+		cmd = crearComando(3, exe_fname, pipeSortAndOut, info->file_out);
+		if (!cmd){
+			log_error(logger, "Fallo creacion del comando. Detenemos proceso");
+			exit(-1);
+		}
+
+		if (!system(cmd)){
+			log_error(logger, "Llamada a system() con comando %s fallo!", cmd);
+			exit(-1);
+		}
+
+		break;
+
+	case RED_L:
+		log_trace(logger, "Un Master pide reduccion local");
+		break;
+
+	case RED_G:
+		log_trace(logger, "Un Master pide reduccion global");
+		break;
+	}
+
+	free(msj);
+	free(exe_fname);
+	exit(0);
 }

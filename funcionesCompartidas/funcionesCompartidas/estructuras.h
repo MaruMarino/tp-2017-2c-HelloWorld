@@ -53,5 +53,19 @@ typedef struct
 };
 
 
+/* Estructuras que precisa Worker */
+
+typedef struct
+{
+	size_t size_prog; // tamanio en bytes del programa
+	char *prog; // programa de transferencia
+	size_t bloque; // bloque sobre el cual aplicar
+	int bytes_ocup; // bytes ocupados por bloque
+	int len_out;
+	char *file_out; // nombre del archivo a generar
+} t_info_trans;
+
+
+
 
 #endif /* FUNCIONESCOMPARTIDAS_ESTRUCTURAS_H_ */

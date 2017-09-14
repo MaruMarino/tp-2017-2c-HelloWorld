@@ -20,6 +20,10 @@ char *get_header(char *mensaje);
 //	Y110000000015/bin/prueba.csv	->	11
 int get_codigo(char *mensaje);
 
+//Devuelve la longitud del mensaje
+//	Y110000000015/bin/prueba.csv	->	15
+int get_len_mensaje(char *mensaje);
+
 //Obtiene el mensaje
 //	Y110000000015/bin/prueba.csv	->	/bin/prueba.csv
 char *get_mensaje(char *mensaje);

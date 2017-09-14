@@ -64,7 +64,10 @@ int makeListenSock(char *port_listen, t_log *log, int *control)
 		error_sockets(log, control, "");
 	}
 	int yes = 1;
-	setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+	if(setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1){
+		*control = 10;
+		error_sockets(log, control, "");
+	}
 
 	if (bind(sock_listen, serverInfo->ai_addr, serverInfo->ai_addrlen) == -1){
 		*control = 4;
@@ -206,6 +209,8 @@ void error_sockets(t_log *log, int *controlador, char *proceso)
 		case 9:
 			escribir_log_error_compuesto(log, "Kernel - Error recibiendo mensaje de: ", proceso);
 			break;
+		case 10:
+			escribir_error_log(log, "No se pudieron setear opciones a socket");
 	}
 }
 

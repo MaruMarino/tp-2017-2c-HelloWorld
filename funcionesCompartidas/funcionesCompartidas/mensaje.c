@@ -37,6 +37,14 @@ int get_codigo(char *mensaje)
 	return codigo;
 }
 
+int get_len_mensaje(char *mensaje){
+	int size;
+	char *ssize = string_substring(mensaje, 3, 10);
+	size = atoi(ssize);
+	free(ssize);
+	return size;
+}
+
 char *get_mensaje(char *mensaje)
 {
 	char *payload = string_substring(mensaje, 3, 10);
