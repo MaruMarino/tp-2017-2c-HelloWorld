@@ -8,7 +8,6 @@
 
 
 struct config* load_config(char* path){
-    printf("cargan el path [%s]\n",path);
     t_config *config = config_create(path);
     struct config *load_conf = malloc(sizeof *load_conf);
 

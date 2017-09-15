@@ -7,21 +7,21 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include "OpenArchiveBin.h"
+#include "dataBin.h"
 #include <sys/mman.h>
 #include <string.h>
 #define megaByte 1048576
 
-char * openDateBin(char *path,size_t *leng,size_t tamanio){
+char * openDateBin(char **path,size_t *leng,size_t tamanio){
     int file;
     struct stat *infoFile = malloc(sizeof(struct stat));
 
-    if(stat(path,infoFile) == -1){
-        file = open(path,O_RDWR | O_CREAT | O_TRUNC,0666);
+    if(stat(*path,infoFile) == -1){
+        file = open(*path,O_RDWR | O_CREAT | O_TRUNC,0666);
         ftruncate(file,tamanio);
-        stat(path,infoFile);
+        stat(*path,infoFile);
     }else{
-        file = open(path,O_RDWR ,0666);
+        file = open(*path,O_RDWR ,0666);
     }
 
     if(file == -1){
