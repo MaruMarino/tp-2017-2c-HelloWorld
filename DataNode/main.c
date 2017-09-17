@@ -1,14 +1,12 @@
 #include <stdio.h>
 #include <commons/string.h>
-#include <stdlib.h>
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/log.h>
-#include "listenRequest.h"
 #include <sys/mman.h>
 #include <unistd.h>
 #include "config.h"
 #include "dataBin.h"
-#define megaByte 1048576
+#include "listenRequest.h"
 
 
 int main(int argc, char *argv[]){

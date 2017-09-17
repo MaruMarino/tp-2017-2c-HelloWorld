@@ -9,13 +9,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <unistd.h>
 
 t_log *_log_file;
 int _socketCliente;
 void *_dataBin;
 
 int enviarBloque(header *req, void **buffer);
+
+int insertarBloqueData(header *req, void **buffer);
 
 void listenRequest(const int *socketCliente, t_log **file_log, void **dataBin) {
     _log_file = *file_log;
@@ -28,7 +29,7 @@ void listenRequest(const int *socketCliente, t_log **file_log, void **dataBin) {
     while (1) {
         bufferReq = getMessage(_socketCliente, &headerReq);
         if (bufferReq == NULL) {
-            escribir_error_log(*file_log,"Se desconecto el server");
+            escribir_error_log(*file_log, "Se desconecto el server");
             return;
         }
         switch (headerReq.codigo) {
@@ -37,6 +38,11 @@ void listenRequest(const int *socketCliente, t_log **file_log, void **dataBin) {
                     return;
                 }
                 break;
+            }
+            case 2: {
+                if (insertarBloqueData(&headerReq, &bufferReq) == -1) {
+                    return;
+                }
             }
             default: {
             }
@@ -48,23 +54,33 @@ void listenRequest(const int *socketCliente, t_log **file_log, void **dataBin) {
 
 
 int enviarBloque(header *req, void **buffer) {
-    write(STDIN_FILENO, *buffer, req->sizeData);
+    unsigned int numBloque;
+    memcpy(&numBloque, *buffer, req->sizeData);
+    void *bloqueData = getBloque(&_dataBin, numBloque);
     header headSend;
-    char *mensaje = "Hola (*(*(*(*.*)*)*)*)";
-
     headSend.letra = 'D';
     headSend.codigo = 1;
-    headSend.sizeData = strlen(mensaje);
-
-    message *bufferRes = createMessage(&headSend, mensaje);
-
+    headSend.sizeData = megaByte;
+    message *bufferRes = createMessage(&headSend, bloqueData);
     if (send(_socketCliente, bufferRes->buffer, bufferRes->sizeBuffer, 0) < 0) {
         escribir_log(_log_file, "Error al enviar el bloque");
         return -1;
     }
-
     return 0;
+}
 
+int insertarBloqueData(header *req, void **buffer) {
+    size_t bloqueData = req->sizeData - sizeof(int);
+    if (bloqueData > megaByte) {
+        escribir_log(_log_file, "El bloque de dato que se intenta escribir es mayor a un mega");
+        return -1;
+    }
+    unsigned int numBloque;
+    void *newbloqueData = malloc(bloqueData);
+    memcpy(&numBloque, *buffer, sizeof(int));
+    memcpy(newbloqueData, (*buffer + sizeof(int)), req->sizeData);
+    insertBloque(&_dataBin, &newbloqueData, numBloque, bloqueData);
+    return 1;
 }
 
 
