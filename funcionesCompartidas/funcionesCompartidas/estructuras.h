@@ -1,10 +1,3 @@
-/*
- * estructuras.h
- *
- *  Created on: 9/9/2017
- *      Author: utnso
- */
-
 #ifndef FUNCIONESCOMPARTIDAS_ESTRUCTURAS_H_
 #define FUNCIONESCOMPARTIDAS_ESTRUCTURAS_H_
 
