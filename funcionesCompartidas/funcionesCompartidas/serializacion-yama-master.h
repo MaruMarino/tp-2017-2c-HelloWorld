@@ -1,0 +1,13 @@
+/*
+ * serializacion-yama-master.h
+ *
+ *  Created on: 17/9/2017
+ *      Author: utnso
+ */
+
+#ifndef FUNCIONESCOMPARTIDAS_SERIALIZACION_YAMA_MASTER_H_
+#define FUNCIONESCOMPARTIDAS_SERIALIZACION_YAMA_MASTER_H_
+
+
+
+#endif /* FUNCIONESCOMPARTIDAS_SERIALIZACION_YAMA_MASTER_H_ */

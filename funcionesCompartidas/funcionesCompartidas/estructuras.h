@@ -12,7 +12,7 @@ typedef struct
 {
 	char *nodo;
 	char *ip;
-	char *puerto;
+	int puerto;
 }t_nodo;
 
 typedef struct
@@ -50,7 +50,7 @@ typedef struct
 	int bloque;
 	int estado; //1: En proceso 2:Finalizado OK 3:Error
 
-};
+}t_estado_master;
 
 
 /* Estructuras que precisa Worker */
