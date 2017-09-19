@@ -25,7 +25,7 @@ typedef struct
 
 typedef struct
 {
-	t_nodo nodo;
+	t_nodo *nodo;
 	char *temp_red_local;
 	char *red_global;
 	int encargado;
@@ -33,7 +33,7 @@ typedef struct
 
 typedef struct
 {
-	t_nodo nodo;
+	t_nodo *nodo;
 	char *red_global;
 }t_almacenado;
 
