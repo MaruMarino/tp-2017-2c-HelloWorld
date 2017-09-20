@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <funcionesCompartidas/serializacion_yama_master.h>
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/mensaje.h>
 #include <funcionesCompartidas/log.h>
@@ -12,23 +13,21 @@
 extern t_configuracion *config;
 extern t_log *log_Mas;
 
-void ejecutar_transformador(char *nodos);
+void ejecutar_transformador(void *nodo);
 
 void escuchar_peticiones()
 {
-	char *peticion;
-	int controlador, codigo;
+	header *head = malloc(sizeof(head));
 
 	while(1)
 	{
-		peticion = recibir(config->socket_yama, log_Mas, &controlador);
-		codigo = get_codigo(peticion);
+		void *buffer = getMessage(config->socket_yama, head);
 
-		switch(codigo)
+		switch(head->codigo)
 		{
 			case 1: ;
 				escribir_log(log_Mas, "Se recibio una peticion de transformacion");
-				ejecutar_transformador(peticion);
+				ejecutar_transformador(buffer);
 				break;
 			case 2: ;
 				escribir_log(log_Mas, "Se recibio una peticion de reduccion local");
@@ -38,12 +37,11 @@ void escuchar_peticiones()
 				puts("default");
 				break;
 		}
-		free(peticion);
+		free(buffer);
 	}
 }
 
-void ejecutar_transformador(char *nodos)
+void ejecutar_transformador(void *nodo)
 {
-	//deberia procesar los nodos recibidos
 
 }

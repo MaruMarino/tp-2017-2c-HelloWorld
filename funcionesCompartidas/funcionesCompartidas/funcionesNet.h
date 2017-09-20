@@ -2,6 +2,7 @@
 #define FUNCIONES_NET_H_
 
 #include <commons/log.h>
+
 typedef struct {
     void * buffer;
     size_t sizeBuffer;
@@ -35,6 +36,10 @@ int aceptar_conexion(int socket_in, t_log *log, int *control);
  * En caso de error retorna -1
  */
 int enviar(int socket_emisor, char *mensaje_a_enviar, t_log *log, int *control);
+
+/* Envia una estructura de tipo menssage, usando el socket dado
+ */
+int enviar_message(int socket_emisor, message *message, t_log *log, int *control);
 
 /* Recibe un mensaje, usando el socket dado - Respeta lo hablado ;)
  */
