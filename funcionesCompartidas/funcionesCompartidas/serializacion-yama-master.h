@@ -8,6 +8,8 @@
 #ifndef FUNCIONESCOMPARTIDAS_SERIALIZACION_YAMA_MASTER_H_
 #define FUNCIONESCOMPARTIDAS_SERIALIZACION_YAMA_MASTER_H_
 
+#include "estructuras.h"
+
 char *serializar_nodo(t_nodo *nodo, size_t *len);
 t_nodo *deserializar_nodo (char *nodo_ser, size_t *len);
 char *serializar_transformacion(t_transformacion *tran, size_t *len);

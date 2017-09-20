@@ -45,7 +45,6 @@ typedef struct
 
 }t_estado_master;
 
-
 /* Estructuras que precisa Worker */
 
 typedef struct

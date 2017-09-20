@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <funcionesNet/funcionesNet.h>
-#include <funcionesNet/mensaje.h>
-#include <funcionesNet/log.h>
+#include <funcionesCompartidas/funcionesNet.h>
+#include <funcionesCompartidas/mensaje.h>
+#include <funcionesCompartidas/log.h>
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/string.h>
@@ -20,6 +20,7 @@ void inicializar_variables();
 void leer_configuracion();
 void conectar_yama();
 void liberar_memoria();
+void cargar_scripts();
 
 int main(int argc, char **argv)
 {
@@ -33,6 +34,7 @@ int main(int argc, char **argv)
 	config->path_file_destino = strdup(argv[5]);
 
 	leer_configuracion();
+	cargar_scripts();
 	conectar_yama();
 
 	liberar_memoria();
@@ -59,18 +61,25 @@ void leer_configuracion()
 	config_destroy(configuracion);
 }
 
+void cargar_scripts()
+{
+
+}
+
 void conectar_yama()
 {
-	config->socket_yama = establecerConexion(config->ip, config->puerto);
+	int controlador = 0;
 
-	if(config->socket_yama<=0)
+	config->socket_yama = establecerConexion(config->ip, config->puerto, log_Mas, &controlador);
+
+	if(controlador!=0)
 	{
 		escribir_error_log(log_Mas, "Error conectandose a YAMA");
 	}
 	else
 	{
 		char *handshake = armar_mensaje("M00",config->path_file_target);
-		enviar(config->socket_yama, handshake);
+		enviar(config->socket_yama, handshake, log_Mas, &controlador);
 		free(handshake);
 		escuchar_peticiones();
 	}

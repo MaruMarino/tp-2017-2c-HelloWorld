@@ -67,7 +67,7 @@ char *serializar_transformacion(t_transformacion *tran, size_t *len)
 	*len += 4;
 	memcpy(tran_ser + *len, &len_temporal, 4);
 	*len += 4;
-	memcpy(tran_ser + *len, nodo, len_temporal);
+	memcpy(tran_ser + *len, tran->temporal, len_temporal);
 	*len += len_temporal;
 
 	return tran_ser;
@@ -94,6 +94,7 @@ t_transformacion *deserializar_transformacion(char *tran)
 	len += 4;
 	memcpy(&len_temp, tran + len, 4);
 	len += 4;
+	tran_des->temporal = malloc(len_temp);
 	memcpy(tran_des->temporal, tran + len, len_temp);
 	len += len_temp;
 
