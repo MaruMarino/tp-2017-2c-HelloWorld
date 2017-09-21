@@ -38,7 +38,6 @@ char *crearComando(int nargs, char *fst, ...){
 	return cmd;
 }
 
-
 int crearArchivoBin(t_info_trans *info, char *fname){
 
 	if (truncate(fname, 0) == -1){ // elimina fname en caso de que ya existiese
@@ -63,35 +62,48 @@ int crearArchivoBin(t_info_trans *info, char *fname){
 	return 0;
 }
 
-int aparearFiles(int nfiles, char *fst, ...){
+int crearArchivoData(size_t blk, size_t count, char *fname){
 
-	int i;
-	char *fname;
-	FILE *fs[nfiles]; // almacenara un puntero a cada file;
-	va_list filep;
-	va_start(filep, fst);
-
-	if((fs[0] = fopen(fst, "r")) == NULL){
-		perror("No se pudo abrir el archivo");
-		log_error(logger, "No se pudo abrir el archivo %s", fst);
+	if (truncate(fname, 0) == -1){ // elimina fname en caso de que ya existiese
+		perror("Error en trucate del archivo");
+		log_error(logger, "Fallo truncate() de %s", fname);
 		return -1;
 	}
 
-	// abrimos todos los archivos en modo lectura salvo el ultimo
-	for (i = 1; i < nfiles -1; ++i){
-		fname = va_arg(filep, char*);
-		if((fs[i] = fopen(fname, "r")) == NULL){
+	FILE *f;
+	if((f = fopen(fname, "w")) == NULL){
+		perror("No se pudo abrir el archivo");
+		log_error(logger, "No se pudo abrir el archivo %s", fname);
+		return -1;
+	}
+
+	// todo: wrapper para getBloque o algo asi
+	void *data = "datos\nbloque\n"; // obtenerDataBloque
+
+	if ((fwrite(data, 14, 1, f)) != 1){
+		log_error(logger, "No se pudo escribir el programa en %s", fname);
+		return -1;
+	}
+
+	fclose(f);
+	return 0;
+}
+
+int aparearFiles(int nfiles, char **fname){
+
+	int i;
+	FILE *fs[nfiles]; // almacenara un puntero a cada file;
+
+	for (i = 0; i < nfiles - 2; ++i){
+		if((fs[i] = fopen(fname[i], "r")) == NULL){
 			perror("No se pudo abrir el archivo");
-			log_error(logger, "No se pudo abrir el archivo %s", fname);
+			log_error(logger, "No se pudo abrir el archivo %s", fname[i]);
 			return -1;
 		}
 	}
-
-	// el ultimo file lo abrimos en modo escritura
-	fname = va_arg(filep, char*);
-	if((fs[nfiles - 1] = fopen(fname, "w")) == NULL){
+	if((fs[nfiles -1] = fopen(fname[nfiles -1], "w")) == NULL){
 		perror("No se pudo abrir el archivo");
-		log_error(logger, "No se pudo abrir el archivo %s", fname);
+		log_error(logger, "No se pudo abrir el archivo %s", fname[nfiles -1]);
 		return -1;
 	}
 
@@ -141,6 +153,41 @@ int realizarApareo(int nfiles, FILE *fs[nfiles]){
 
 	fclose(fs[nfiles - 1]);
 	return apareadas;
+}
+
+int aparearFiles_(int nfiles, char *fst, ...){
+
+	int i;
+	char *fname;
+	FILE *fs[nfiles]; // almacenara un puntero a cada file;
+	va_list filep;
+	va_start(filep, fst);
+
+	if((fs[0] = fopen(fst, "r")) == NULL){
+		perror("No se pudo abrir el archivo");
+		log_error(logger, "No se pudo abrir el archivo %s", fst);
+		return -1;
+	}
+
+	// abrimos todos los archivos en modo lectura salvo el ultimo
+	for (i = 1; i < nfiles -1; ++i){
+		fname = va_arg(filep, char*);
+		if((fs[i] = fopen(fname, "r")) == NULL){
+			perror("No se pudo abrir el archivo");
+			log_error(logger, "No se pudo abrir el archivo %s", fname);
+			return -1;
+		}
+	}
+
+	// el ultimo file lo abrimos en modo escritura
+	fname = va_arg(filep, char*);
+	if((fs[nfiles - 1] = fopen(fname, "w")) == NULL){
+		perror("No se pudo abrir el archivo");
+		log_error(logger, "No se pudo abrir el archivo %s", fname);
+		return -1;
+	}
+
+	return realizarApareo(nfiles, fs);
 }
 
 

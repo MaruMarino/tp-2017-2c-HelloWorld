@@ -2,7 +2,6 @@
 #define FUNCIONES_NET_H_
 
 #include <commons/log.h>
-
 typedef struct {
     void * buffer;
     size_t sizeBuffer;
@@ -20,9 +19,8 @@ typedef struct {
  */
 int establecerConexion(char *ip_dest, char *port_dest, t_log *log, int *control);
 
-/* Crea un socket y lo bindea a un puerto para escuchar clientes entrantes,
- * Retorna el socket pero sin haberle hecho listen()!
- * En caso de error retorna -1
+/* Crea un socket, lo bindea a un puerto, y lo pone en listen() sobre el mismo.
+ * En caso de error retorna -1. Sino retorna el socket creado
  */
 int makeListenSock(char *port_listen, t_log *log, int *control);
 
