@@ -206,12 +206,13 @@ message *createMessage(header *head, void *data) {
     return ElMensaje;
 }
 
-void *getMessage(int socket, header *head) {
-    if (recv(socket, head, sizeof(header), 0) <= 0) {
+void *getMessage(int socket, header *head,int *status) {
+
+    if ((*status = recv(socket, head, sizeof(header), 0)) <= 0) {
         return NULL;
     }
     void *buffer = malloc(head->sizeData);
-    if (recv(socket, buffer, head->sizeData, 0) <= 0) {
+    if ((*status =recv(socket, buffer, head->sizeData, 0)) <= 0) {
         free(buffer);
         return NULL;
     }

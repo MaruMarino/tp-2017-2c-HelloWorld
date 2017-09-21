@@ -79,12 +79,13 @@ message * createMessage(header *head, void *data);
  * @return puntero de buffer, NULL en caso de que fallo,
  * @param socket
  * @param puntero a una struct header al terminar este proceso la struct header va estar cargado con lo recibido
- *
+ * @param status : -1 error recibiendo/ 0 se desconecto/ else bytes recibidos
  * example:
  *
  *  Head header;
+ *  int estado;
  *
-    void * buffer = getMessage(socket,&header);
+    void * buffer = getMessage(socket,&header,&estado);
     if(buffer == NULL){
         printf("Error al recicbir el msj");
         return -1;
@@ -93,6 +94,6 @@ message * createMessage(header *head, void *data);
     write(STDOUT_FILENO,buffer,header.sizeData);
  *
  * */
-void *getMessage(int socket,header *head);
+void *getMessage(int socket,header *head,int *status);
 
 #endif /* FUNCIONES_NET_H_ */
