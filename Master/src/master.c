@@ -78,9 +78,17 @@ void conectar_yama()
 	}
 	else
 	{
-		char *handshake = armar_mensaje("M00",config->path_file_target);
-		enviar(config->socket_yama, handshake, log_Mas, &controlador);
+		header *handshake = malloc(sizeof(header));
+		handshake->codigo = 0;
+		handshake->letra = 'M';
+		handshake->sizeData = (size_t) string_length(config->path_file_target) + 1;
+
+		message *mensaje = createMessage(handshake, config->path_file_target);
+
+		enviar_message(config->socket_yama, mensaje, log_Mas, &controlador);
+
 		free(handshake);
+
 		escuchar_peticiones();
 	}
 }

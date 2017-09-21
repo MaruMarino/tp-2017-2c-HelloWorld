@@ -113,6 +113,21 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, t_log *log, int *control) 
     return ret;
 }
 
+int enviar_message(int socket_emisor, message *message, t_log *log, int *control)
+{
+    int ret;
+    *control = 0;
+
+    if ((ret = send(socket_emisor, message->buffer, message->sizeBuffer, MSG_NOSIGNAL)) < 0) {
+        *control = 7;
+        char *emisor = string_itoa(socket_emisor);
+        error_sockets(log, control, emisor);
+        free(emisor);
+    }
+
+    return ret;
+}
+
 char *recibir(int socket_receptor, t_log *log, int *control) {
     int ret;
     *control = 0;
