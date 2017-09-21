@@ -14,6 +14,7 @@
 #include <funcionesCompartidas/log.h>
 #include <funcionesCompartidas/estructuras.h>
 #include <funcionesCompartidas/serializacion.h>
+#include <funcionesCompartidas/generales.h>
 
 #include "configuracionWorker.h"
 #include "auxiliaresWorker.h"
@@ -23,10 +24,10 @@
 #define MAX(A, B) ((A) > (B) ? (A) : (B))
 
 void subrutinaHijo(int sock_m);
+int responderConexionMaster(int fd_proc);
+int verificarConexionMaster(int fd_proc);
 
 t_log *logger;
-int const headsize = 13;
-char* const sort_cmd = "sort -dib";
 
 int main(int argc, char *argv[]){
 
@@ -41,24 +42,19 @@ int main(int argc, char *argv[]){
 
 	pid_t mpid;
 	char buf_recv[13];
-	int sock_master, lis_master, ready_fd, fd, status;
+	int fd_proc, lis_fd, ready_fd, fd, status;
 	int max_fd = -1;
 	
 	fd_set masters_set, read_set;
 	FD_ZERO(&masters_set);
 	FD_ZERO(&read_set);
 
-	if ((max_fd = lis_master = makeListenSock(conf->puerto_worker, logger, &status)) < 0){
+	if ((max_fd = lis_fd = makeListenSock(conf->puerto_worker, logger, &status)) < 0){
 		log_error(logger, "No se logro bindear sobre puerto %s\n", conf->puerto_worker);
-		return -1;
-
-	} else if (listen(lis_master, 20) == -1){
-		perror("Fallo listen. error");
-		log_error(logger, "Fallo listen() sobre socket %d", lis_master);
 		return -1;
 	}
 
-	FD_SET(lis_master, &masters_set);
+	FD_SET(lis_fd, &masters_set);
 	while(1){
 		read_set = masters_set;
 
@@ -68,22 +64,33 @@ int main(int argc, char *argv[]){
 			break;
 		}
 
-		for (fd = 0; fd < max_fd + 1 && FD_ISSET(fd, &read_set); ++fd){
+		for (fd = 0; fd < max_fd + 1; ++fd){
+		if (FD_ISSET(fd, &read_set)){
 
-			if (fd == lis_master){
+			if (fd == lis_fd){
 
-				log_info(logger, "Un Master quiere conectarse!");
-				if ((sock_master = aceptar_conexion(lis_master, logger, &status)) == -1){
+				log_info(logger, "Un Proceso quiere conectarse!");
+				if ((fd_proc = aceptar_conexion(lis_fd, logger, &status)) == -1){
 					log_error(logger, "No se pudo establecer la conexion con un Master!");
 					continue;
 				}
 
-				// verificarConexionMaster() --> lo dejo o lo desecho
+				if ((status = verificarConexionMaster(fd_proc)) < 0){
+					log_info(logger, "Se rechaza la conexion en %d", fd_proc);
+					close(fd_proc);
+					continue;
+
+				} else if (responderConexionMaster(fd_proc) < 0){
+					log_info(logger, "No se logra responder al Master");
+					close(fd_proc);
+					continue;
+				}
 
 				if ((mpid = fork()) == 0){
-					subrutinaHijo(sock_master);
+					subrutinaHijo(fd_proc);
 
 				} else if (mpid > 0){
+					close(fd_proc);
 					// funcion_padre
 
 				} else {
@@ -92,7 +99,7 @@ int main(int argc, char *argv[]){
 					return EXIT_FAILURE;
 				}
 
-				log_info(logger, "Se conecto un Master, su socket: %d\n", sock_master);
+				log_info(logger, "Se conecto un Master, su socket: %d\n", fd_proc);
 
 			} else {
 
@@ -110,58 +117,108 @@ int main(int argc, char *argv[]){
 
 				log_info(logger, "El mensaje recibido es: %s\n", buf_recv);
 			}
-		}
+
+		}} // cierro for() y FD_ISSET
 	}
 
 	liberarConfig(conf);
-	close(lis_master);
+	close(lis_fd);
 	return 0;
 }
 
 void subrutinaHijo(int sock_m){
 
-	int status;
-	char *cmd;
-	char *msj = recibir(sock_m, logger, &status);
-	char *exe_fname = string_itoa(getpid()); // filename temporario para prog
-	const char *pipeSortAndOut = "| sort -dib >";
+	header head;
+	char *cmd, *msj, *exe_fname, *data_fname;
 
-	switch(get_codigo(msj)){
+	msj = getMessage(sock_m, &head);
+	switch(head.codigo){
 	case TRANSF:
 		log_trace(logger, "Un Master pide transformacion");
 
-		t_info_trans *info = deserializar_info_trans(msj + 13);
+		t_info_trans *info = deserializar_info_trans(msj);
 
-		if (!crearArchivoBin(info, exe_fname)){
-			log_error(logger, "No se pudo crear el transformador. Se aborta!");
+		// filenames temporarios para programa y bloque de datos
+		exe_fname  = string_itoa(getpid()); string_append(&exe_fname, ".exec");
+		data_fname = string_itoa(getpid()); string_append(&data_fname, ".dat");
+
+		if (!crearArchivoBin(info, exe_fname) ||
+			!crearArchivoData(0, 0, data_fname)){
+
+			log_error(logger, "No se pudieron crear los archivos de trabajo.");
+			liberador(4, msj, info, exe_fname, data_fname);
 			exit(-1);
 		}
 
-		//obtenerBloque(info->bloque, info->bytes_ocup) -> getBloque()?
-
-		cmd = crearComando(3, exe_fname, pipeSortAndOut, info->file_out);
+		cmd = crearComando(6, "cat ", data_fname, "|", exe_fname,
+				" | sort -dib > ", info->file_out);
 		if (!cmd){
-			log_error(logger, "Fallo creacion del comando. Detenemos proceso");
+			log_error(logger, "Fallo la creacion del comando a ejecutar.");
+			liberador(5, msj, info, exe_fname, data_fname, cmd);
 			exit(-1);
 		}
 
 		if (!system(cmd)){
-			log_error(logger, "Llamada a system() con comando %s fallo!", cmd);
+			log_error(logger, "Llamada a system() con comando %s fallo.", cmd);
+			liberador(5, msj, info, exe_fname, data_fname, cmd);
 			exit(-1);
 		}
 
+		// todo: que responda al Master
 		break;
 
 	case RED_L:
 		log_trace(logger, "Un Master pide reduccion local");
+
+		char **lista_de_temporales = NULL; // se recibe del Master
+		aparearFiles(3, lista_de_temporales);
+
 		break;
 
 	case RED_G:
 		log_trace(logger, "Un Master pide reduccion global");
+
 		break;
 	}
 
-	free(msj);
-	free(exe_fname);
 	exit(0);
+}
+
+int responderConexionMaster(int fd_proc){
+
+	int ctl;
+	message *msj;
+	char *data = "Recibido - forkeo un Worker nuevo";
+	header head = {.letra = 'W', .codigo = 0, .sizeData = strlen(data)};
+
+	msj = createMessage(&head, data);
+	if (enviar_message(fd_proc, msj, logger, &ctl) < 0){
+		free(msj);
+		return -1;
+	}
+
+	free(msj);
+	return 0;
+}
+
+int verificarConexionMaster(int fd_proc){
+
+	header head;
+	char *data;
+
+	if ((data = getMessage(fd_proc, &head)) == NULL){
+		log_error(logger, "Fallo recepcion de handshake");
+		return -1;
+	}
+
+	if (head.letra != 'M'){
+		log_info(logger, "La conexion recibida no es de Master: %c", head.letra);
+		return -2;
+
+	} else if (head.codigo != 0){
+		log_info(logger, "La conexion recibida no es handshake: %d", head.codigo);
+		return -3;
+	}
+
+	return 0;
 }
