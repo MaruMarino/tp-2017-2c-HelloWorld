@@ -12,5 +12,6 @@
 void manejar_respuesta(int codigo);
 void realizar_handshake_master(int socket_);
 void manejo_conexiones();
+void enviar_peticion_transformacion(int socket_);
 
 #endif /* CONEXION_MASTER_H_ */

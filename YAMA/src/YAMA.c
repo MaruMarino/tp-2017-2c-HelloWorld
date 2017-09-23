@@ -86,7 +86,7 @@ void leer_configuracion(char *path)
 void conectar_fs()
 {
 	int control = 0;
-	config->socket_fs = establecerConexion(config->fs_ip, config->fs_puerto);
+	config->socket_fs = establecerConexion(config->fs_ip, config->fs_puerto, yama_log, &control);
 	if(control<0)
 	{
 		escribir_error_log(yama_log, "Error conectandose a FS");
@@ -94,8 +94,8 @@ void conectar_fs()
 	else
 	{
 		escribir_log(yama_log, "Conectado a FS");
-		enviar(config->socket_fs, "Y000000000000");
-		char *rta = recibir(config->socket_fs);
+		enviar(config->socket_fs, "Y000000000000", yama_log, &control);
+		char *rta = recibir(config->socket_fs, yama_log, &control);
 		puts(rta);
 		free(rta);
 	}
@@ -103,5 +103,6 @@ void conectar_fs()
 
 void crear_socket_servidor()
 {
-	config->server_ = makeListenSock(config->yama_puerto);
+	int control = 0;
+	config->server_ = makeListenSock(config->yama_puerto, yama_log, &control);
 }
