@@ -4,15 +4,16 @@
 
 #ifndef TP_2017_2C_HELLOWORLD_CONFIG_H
 #define TP_2017_2C_HELLOWORLD_CONFIG_H
-struct config {
+typedef struct {
     char *ip_filesystem,
             *puerto_filesystem,
             *nombre_nodo,
             *puerto_dateNode,
-            *ruta_databin;
-};
+            *ruta_databin,
+            *puerto_worker;
+} config;
 
-struct config* load_config(char* path);
+config *load_config(char *path);
 
 
 #endif //TP_2017_2C_HELLOWORLD_CONFIG_H

@@ -52,7 +52,6 @@ void listenRequest(const int *socketCliente, t_log **file_log, void **dataBin) {
     }
 }
 
-
 int enviarBloque(header *req, void **buffer) {
     unsigned int numBloque;
     memcpy(&numBloque, *buffer, req->sizeData);
@@ -80,7 +79,6 @@ int insertarBloqueData(header *req, void **buffer) {
     memcpy(&numBloque, *buffer, sizeof(int));
     memcpy(newbloqueData, (*buffer + sizeof(int)), req->sizeData);
     insertBloque(&_dataBin, &newbloqueData, numBloque, bloqueData);
+
     return 1;
 }
-
-

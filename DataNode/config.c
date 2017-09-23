@@ -7,16 +7,17 @@
 #include <commons/config.h>
 
 
-struct config* load_config(char* path){
-    t_config *config = config_create(path);
-    struct config *load_conf = malloc(sizeof *load_conf);
+config* load_config(char* path){
+    t_config * bufferConfig = config_create(path);
+    config * configuracion = malloc(sizeof(config));
 
-    load_conf->ip_filesystem =  config_get_string_value(config,"IP_FILESYSTEM");
-    load_conf->nombre_nodo =  config_get_string_value(config,"NOMBRE_NODO");
-    load_conf->puerto_dateNode =  config_get_string_value(config,"PUERTO_DATANODE");
-    load_conf->puerto_filesystem =  config_get_string_value(config,"PUERTO_FILESYSTEM");
-    load_conf->ruta_databin =  config_get_string_value(config,"RUTA_DATABIN");
+    configuracion->ip_filesystem =  config_get_string_value(bufferConfig,"IP_FILESYSTEM");
+    configuracion->nombre_nodo =  config_get_string_value(bufferConfig,"NOMBRE_NODO");
+    configuracion->puerto_dateNode =  config_get_string_value(bufferConfig,"PUERTO_DATANODE");
+    configuracion->puerto_filesystem =  config_get_string_value(bufferConfig,"PUERTO_FILESYSTEM");
+    configuracion->ruta_databin =  config_get_string_value(bufferConfig,"RUTA_DATABIN");
+    configuracion->ruta_databin =  config_get_string_value(bufferConfig,"RUTA_DATABIN")
 
-    return load_conf;
+    return configuracion;
 
 }
