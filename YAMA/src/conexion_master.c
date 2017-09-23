@@ -6,6 +6,7 @@
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/log.h>
 #include <funcionesCompartidas/mensaje.h>
+#include <funcionesCompartidas/estructuras.h>
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/log.h>
@@ -64,7 +65,7 @@ void manejo_conexiones()
 					{
 						//Gestiono la conexion entrante
 						escribir_log(yama_log, "Se detecto actividad en el server Master");
-						int nuevo_socket = aceptar_conexion(config->server_);
+						int nuevo_socket = aceptar_conexion(config->server_, yama_log, &controlador);
 
 						//Controlo que no haya pasado nada raro y acepto al nuevo
 						if (controlador == 0)
@@ -94,33 +95,66 @@ void manejo_conexiones()
 void manejar_respuesta(int socket_)
 {
 
-	char *mensaje = recibir(socket_);
-	char *header = get_header(mensaje);
-	if (comparar_header(header, "M"))
+	header *head;
+	int status;
+	char *mensaje = (char *)getMessage(socket_, head, &status);
+	//char *header = get_header(mensaje);
+	if (comparar_header(head->letra, "M"))
 	{
-		int codigo = get_codigo(mensaje);
-		char *info = get_mensaje(mensaje);
-		switch (codigo)
+		//int codigo = get_codigo(mensaje);
+		//char *info = get_mensaje(mensaje);
+		switch (head->codigo)
 		{
 			case 0:; //procesar archivo
-				solicitar_informacion_archivo(info);
+				solicitar_informacion_archivo(mensaje); //aca file me debería devolver algo
+				enviar_peticion_transformacion(socket_);
 				break;
 			default:
 				printf("default");
 				break;
 		}
-		free(info);
 	} else log_error(yama_log, "Mensaje de emisor desconocido");
 	free(mensaje);
-	free(header);
+	free(head);
 }
 
 void realizar_handshake_master(int socket_)
 {
-	enviar(socket_, "Y000000000000000");
+	int control;
+	enviar(socket_, "Y000000000000000", yama_log, &control);
 	manejar_respuesta(socket_);
 	t_master *master = malloc (sizeof (t_master));
 	master->master = master_id ++;
 	master->socket_ = socket_;
 	list_add(masters, master);
+}
+
+void enviar_peticion_transformacion(int socket_)
+{
+	t_nodo *nodo;
+	t_transformacion *transformacion;
+	header *head;
+	message *mensaje;
+	int control = 0;
+
+	nodo = malloc(sizeof(t_nodo));
+	nodo->ip = strdup("127.0.0.1");
+	nodo->nodo = strdup("Nodo 1");
+	nodo->puerto = 5002;
+
+	transformacion = malloc(sizeof(t_transformacion));
+	transformacion->bloque = 18;
+	transformacion->bytes = 1024;
+	transformacion->nodo = nodo;
+	transformacion->temporal = strdup("/archivo/temporal_prueba");
+
+	head = malloc(sizeof(header));
+	head->codigo = 1;
+	head->letra = 'Y';
+
+	mensaje = createMessage(head, transformacion);
+	enviar_message(socket_, mensaje, yama_log, &control);
+
+	//agregar frees
+	free(head);
 }
