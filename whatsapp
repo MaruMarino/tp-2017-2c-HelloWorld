@@ -1,0 +1,40 @@
+
+YAMA
+
+->Identificador : 'Y'
+->código menajes y explicación:
+-0 : HANDSHAKE 
+-1: Petición transformación
+-2: Petición de reducción local
+-3: Petición de reducción global
+-4: Petición de almacenamiento final
+-5: Petición de info de los nodos de un path en particular
+
+MASTER:
+
+->Identificador:'M'
+->código menajes y explicación:
+-0: HANDSHAKE
+-1: Enviar transformación a Worker
+-2: Enviar reduccion local a worker
+-3: Enviar reduccion global a worker
+-4: Enviar almacenamiento final a worker
+
+DATANODE:
+
+->Identificador: 'N'
+->código menajes y explicación:
+-1: getBloque
+-2: respuesta de setBloque
+
+YAMA:
+
+->Identificador: 'Y'
+->código menajes y explicación:
+-
+
+WORKER:
+
+->Identificador: 'W'
+->código menajes y explicación:
+-
