@@ -223,13 +223,17 @@ message *createMessage(header *head, void *data) {
 
 void *getMessage(int socket, header *head,int *status) {
 
-    if ((*status = recv(socket, head, sizeof(header), 0)) <= 0) {
+	if ((*status = recv(socket, head, sizeof(header), 0)) <= 0) {
         return NULL;
     }
+
     void *buffer = malloc(head->sizeData);
-    if ((*status =recv(socket, buffer, head->sizeData, 0)) <= 0) {
-        free(buffer);
-        return NULL;
-    }
+    if(head->sizeData > 0){
+    	if ((*status = recv(socket, buffer, head->sizeData, 0)) <= 0) {
+    		free(buffer);
+			return NULL;
+    	}
+	}
+
     return buffer;
 }

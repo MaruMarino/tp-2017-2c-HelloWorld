@@ -7,16 +7,19 @@
 
 #include "FS_conexiones.h"
 
-#include <pthread.h>
-#include <stdlib.h>
-#include <string.h>
-#include <commons/log.h>
-#include <sys/socket.h>
-#include <commons/string.h>
 #include <commons/collections/list.h>
-#include <funcionesCompartidas/funcionesNet.h>
+#include <commons/log.h>
+#include <commons/string.h>
 #include <funcionesCompartidas/estructuras.h>
+#include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/serializacion-yama-master.h>
+#include <pthread.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/time.h>
 
 #include "estructurasfs.h"
 

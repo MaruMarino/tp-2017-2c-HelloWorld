@@ -57,22 +57,22 @@ int main(int argc, char **argv) {
 		}
 		log_info(logi, "Listo");
 	}
-/*
-	//pthread_t hiloConexiones;
-	pthread_t hiloConsola;
 
-	//pthread_create(&hiloConexiones,NULL, (void*)manejo_conexiones, NULL);
-	pthread_create(&hiloConsola,NULL,(void *)iniciar_consola_FS,NULL);
+	pthread_t hiloConexiones;
+	//pthread_t hiloConsola;
+
+	pthread_create(&hiloConexiones,NULL, (void*)manejo_conexiones, NULL);
+	//pthread_create(&hiloConsola,NULL,(void *)iniciar_consola_FS,NULL);
 
 	//if argv[2] --clean ->ignorar estado anterior
 	//else restaurar yamaFS desde un estado anterior
 
-	pthread_join(hiloConsola,NULL);
-	//pthread_join(hiloConexiones,NULL);
+	//pthread_join(hiloConsola,NULL);
+	pthread_join(hiloConexiones,NULL);
 
 
 	//k onda wey
-*/
+
 	liberar_memoria();
 	return EXIT_SUCCESS;
 }
