@@ -13,7 +13,6 @@
 
 typedef struct {
     char *name;
-    size_t name;
     unsigned int portDateNodo;
     unsigned int portWorker;
     char *ipWorker;
@@ -62,7 +61,7 @@ int main(int argc, char *argv[]){
 
 
 int waitAccept(const int *socket,t_log **file_log,config **config){
-
+	int controler;
     void *Buffer = malloc(0);
 
     header response;
@@ -76,7 +75,7 @@ int waitAccept(const int *socket,t_log **file_log,config **config){
         return -1;
     }
     int aceeptM;
-    Buffer = getMessage(*socket,&response);
+    Buffer = getMessage(*socket,&response,&controler);
 
     memcpy(&aceeptM,Buffer,sizeof(int));
     if(aceeptM == 1){

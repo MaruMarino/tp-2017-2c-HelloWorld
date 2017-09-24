@@ -22,12 +22,13 @@ void listenRequest(const int *socketCliente, t_log **file_log, void **dataBin) {
     _log_file = *file_log;
     _socketCliente = *socketCliente;
     _dataBin = *dataBin;
+    int controle;
 
     escribir_log(*file_log, "Escuchando a maru a q me hable");
     void *bufferReq;
     header headerReq;
     while (1) {
-        bufferReq = getMessage(_socketCliente, &headerReq);
+        bufferReq = getMessage(_socketCliente, &headerReq,&controle);
         if (bufferReq == NULL) {
             escribir_error_log(*file_log, "Se desconecto el server");
             return;
@@ -43,6 +44,7 @@ void listenRequest(const int *socketCliente, t_log **file_log, void **dataBin) {
                 if (insertarBloqueData(&headerReq, &bufferReq) == -1) {
                     return;
                 }
+                break;
             }
             default: {
             }

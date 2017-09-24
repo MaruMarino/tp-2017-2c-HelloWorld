@@ -16,7 +16,7 @@ config* load_config(char* path){
     configuracion->puerto_dateNode =  config_get_string_value(bufferConfig,"PUERTO_DATANODE");
     configuracion->puerto_filesystem =  config_get_string_value(bufferConfig,"PUERTO_FILESYSTEM");
     configuracion->ruta_databin =  config_get_string_value(bufferConfig,"RUTA_DATABIN");
-    configuracion->ruta_databin =  config_get_string_value(bufferConfig,"RUTA_DATABIN")
+    configuracion->ruta_databin =  config_get_string_value(bufferConfig,"RUTA_DATABIN");
 
     return configuracion;
 
