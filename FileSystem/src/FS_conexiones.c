@@ -90,6 +90,8 @@ void manejo_conexiones()
 							if (nuevo_socket > fdmax){
 								fdmax = nuevo_socket;
 							}
+						}else{
+							close(nuevo_socket);
 						}
 					}
 					else
@@ -99,6 +101,7 @@ void manejo_conexiones()
 							break;
 						}else{
 							FD_CLR(i, &master);
+							close(i);
 							continue;
 						}
 					}
@@ -173,6 +176,38 @@ int realizar_handshake(int nuevo_socket){
 			free(mensajeEnviar->buffer);
 			free(mensajeEnviar);
 		}
+
+	}else if(identificacion->letra == 'W'){
+
+		if(configuracion->estado_estable){
+
+			log_info(logi,"Se conecto un WORKER");
+
+			respuesta->codigo = 0;
+			respuesta->letra = 'F';
+			respuesta->sizeData = 0;
+			mensajeEnviar = createMessage(respuesta,"");
+
+			send(nuevo_socket,mensajeEnviar->buffer,mensajeEnviar->sizeBuffer,0);
+			retornar = 1;
+			free(mensajeEnviar->buffer);
+			free(mensajeEnviar);
+
+		}else{
+
+			log_info(logi,"Estado No estable - rechazar WORKER");
+			respuesta->codigo = 1;
+			respuesta->letra = 'F';
+			respuesta->sizeData = 0;
+			mensajeEnviar = createMessage(respuesta,"");
+
+			send(nuevo_socket,mensajeEnviar->buffer,mensajeEnviar->sizeBuffer,0);
+			retornar = 0;
+
+			free(mensajeEnviar->buffer);
+			free(mensajeEnviar);
+		}
+
 	}else if(identificacion->letra == 'N'){
 
 		log_info(logi,"Se conectó DATA_NODE");
@@ -194,6 +229,11 @@ int realizar_handshake(int nuevo_socket){
 			nuevo_nodo->puerto = nodo_conectado->puerto;
 			nuevo_nodo->ip = nodo_conectado->ip;
 			nuevo_nodo->nombre = nodo_conectado->nodo;
+			nuevo_nodo->espacio_total = nodo_conectado->sizeDatabin;
+			nuevo_nodo->espacio_libre = nodo_conectado->sizeDatabin;
+
+			configuracion->espacio_total += nuevo_nodo->espacio_total;
+			configuracion->espacio_libre += nuevo_nodo->espacio_total;
 
 			list_add(nodos,nuevo_nodo);
 			retornar = 1;

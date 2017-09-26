@@ -27,9 +27,11 @@
 
 yamafs_config *configuracion;
 t_log *logi;
+// Estructuras Administrativas
 t_list *nodos;
 t_directory directorios[100];
-int const maxline = 0x10000;
+t_list *archivos;
+
 
 void leer_configuracion(char *);
 void liberar_memoria(void);
@@ -40,8 +42,8 @@ int main(int argc, char **argv) {
 
 	logi = log_create("/home/utnso/yamafslog","YamaFS",true,LOG_LEVEL_INFO);
 	inicializaciones();
-	leer_configuracion(argv[1]);
-	if(argc == 3 && (!strncmp(argv[2],"--clean",7))){
+	leer_configuracion("/home/utnso/tp-2017-2c-HelloWorld/FileSystem/FSconfig");
+	if(argc == 2 && (!strncmp(argv[1],"--clean",7))){
 
 		log_info(logi, "Iniciando YAMA-FS de cero");
 		configuracion->inicio_limpio = 1;
@@ -98,6 +100,7 @@ void inicializaciones(void){
 	configuracion = malloc(sizeof (yamafs_config));
 	configuracion->estado_estable = 0;
 	nodos = list_create();
+	archivos = list_create();
 }
 
 void liberar_memoria(void ){
@@ -119,6 +122,17 @@ void liberar_memoria(void ){
 	}
 	list_destroy_and_destroy_elements(nodos,(void *)_nodo_destroyer);
 
+	void _archivo_destroyer(t_archivo *self){
 
+		void _bloqueArchiv_destroyer(bloqueArchivo *self2){
+			free(self2->nodo0);
+			free(self2->nodo1);
+			free(self2);
+		}
+
+		list_destroy_and_destroy_elements(self->bloques,(void *)_bloqueArchiv_destroyer);
+		free(self);
+	}
+	list_destroy_and_destroy_elements(archivos,(void *)_archivo_destroyer);
 
 }
