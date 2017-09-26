@@ -6,6 +6,7 @@ typedef struct
 	char *nodo;
 	char *ip;
 	int puerto;
+	int sizeDatabin;
 }t_nodo;
 
 typedef struct

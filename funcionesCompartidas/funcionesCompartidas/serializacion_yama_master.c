@@ -22,6 +22,8 @@ char *serializar_nodo(t_nodo *nodo, size_t *len)
 	*len += len_ip;
 	memcpy(nodo_ser + *len, &nodo->puerto, 4);
 	*len += 4;
+	memcpy(nodo_ser + *len, &nodo->sizeDatabin, sizeof(int));
+	*len += sizeof(int);
 
 	return nodo_ser;
 }
@@ -45,6 +47,8 @@ t_nodo *deserializar_nodo (char *nodo_ser, size_t *len)
 	*len += len_ip;
 	memcpy(&nodo->puerto, nodo_ser + *len, 4);
 	*len += 4;
+	memcpy(&nodo->sizeDatabin,nodo_ser + *len, sizeof(int));
+	*len += sizeof(int);
 
 	return nodo;
 }
