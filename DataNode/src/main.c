@@ -10,77 +10,90 @@
 #include "config.h"
 #include "dataBin.h"
 #include "listenRequest.h"
+#include <funcionesCompartidas/estructuras.h>
+#include <funcionesCompartidas/serializacion_yama_master.h>
 
-typedef struct {
-    char *name;
-    unsigned int portDateNodo;
-    unsigned int portWorker;
-    char *ipWorker;
-    size_t *sizeIpWorker;
-    size_t sizeDataBin;
-}Nodo;
+int waitAccept(const int *socket, t_log **file_log, config *config, const size_t *sizeDataBin);
 
-int waitAccept(const int *socket ,t_log **file_log,config **config);
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 
-    char *l = string_duplicate(" miguel ");
-
-    t_log * file_log = crear_archivo_log("DateNode",true,"/home/elmigue/Documents/log/log");
+    t_log *file_log = crear_archivo_log("DateNode", true,
+                                        "/home/elmigue/Desktop/workFolderUTN/tp-2017-2c-HelloWorld/DataNode/src/log/log");
     int control;
 
+    escribir_log(file_log, "cargando el archivo de configuracion");
+    config *condifguracion = load_config(argv[1]);
 
-    escribir_log(file_log,"cargando el archivo de configuracion");
-    config  *condifguracion = load_config(argv[1]);
-
-    escribir_log(file_log,"Abriendo DataBin");
+    escribir_log(file_log, "Abriendo DataBin");
     size_t sizeDataBin;
-    void *dataBin = openDateBin(&condifguracion->ruta_databin,&sizeDataBin,((size_t)megaByte)*20);
-    if(dataBin == NULL){
-        escribir_error_log(file_log,"Error al abrir el data.bin");
+    size_t sizeFirstDefault = megaByte * 20;
+    if (argv[2] != NULL) {
+        sizeDataBin = megaByte * (size_t) argv[2];
+    }
+    void *dataBin = openDateBin(&condifguracion->ruta_databin, &sizeDataBin, sizeFirstDefault);
+    if (dataBin == NULL) {
+        escribir_error_log(file_log, "Error al abrir el data.bin");
         return 1;
     }
 
-    escribir_log(file_log,"Estableciendo Conneccion al File System");
-    int socketCliente = establecerConexion(condifguracion->ip_filesystem,condifguracion->puerto_filesystem,file_log,&control);
-    if(control != 0){
-        escribir_error_log(file_log,"Error al intentar establecer conneccion");
+    escribir_log(file_log, "Estableciendo Conneccion al File System");
+    int socketCliente = establecerConexion(condifguracion->ip_filesystem, condifguracion->puerto_filesystem, file_log,
+                                           &control);
+    if (control != 0) {
+        escribir_error_log(file_log, "Error al intentar establecer conneccion");
         return -1;
     }
 
-    if(waitAccept(&socketCliente,&file_log,&condifguracion) == -1){
-        escribir_error_log(file_log,"Error de aceptacion");
+    if (waitAccept(&socketCliente, &file_log, condifguracion, &sizeDataBin) == -1) {
+        return -1;
     }
 
-    listenRequest(&socketCliente,&file_log,&dataBin);
+    listenRequest(&socketCliente, &file_log, &dataBin);
 
-    munmap(dataBin,sizeDataBin);
+    munmap(dataBin, sizeDataBin);
     close(socketCliente);
 
     return 0;
 }
 
 
-int waitAccept(const int *socket,t_log **file_log,config **config){
-	int controler;
-    void *Buffer = malloc(0);
+int waitAccept(const int *socket, t_log **file_log, config *config, const size_t *sizeDataBin) {
+    int controler;
 
     header response;
     response.letra = 'D';
     response.codigo = 1;
     response.sizeData = 0;
 
-    message *res = createMessage(&response,Buffer);
+    t_nodo *InfoNodo = malloc(sizeof(t_nodo));
+
+    InfoNodo->ip = config->ip_worker;
+    InfoNodo->nodo = config->nombre_nodo;
+    InfoNodo->puerto = (int)strtol(config->puerto_worker,&config->puerto_worker,10);
+    InfoNodo->sizeDatabin = (int) *sizeDataBin;
+
+    void *Buffer = serializar_nodo(InfoNodo, &response.sizeData);
+
+    message *res = createMessage(&response, Buffer);
     if (send(*socket, res->buffer, res->sizeBuffer, 0) < 0) {
-        escribir_error_log(*file_log,"No pudo enviar el mjs de aceptacion");
+        escribir_error_log(*file_log, "No pudo enviar el mjs de aceptacion");
         return -1;
     }
-    int aceeptM;
-    Buffer = getMessage(*socket,&response,&controler);
 
-    memcpy(&aceeptM,Buffer,sizeof(int));
-    if(aceeptM == 1){
+    int aceeptM = 0;
+    Buffer = getMessage(*socket, &response, &controler);
+
+    if(Buffer == NULL){
+        escribir_error_log(*file_log, "No se puedo recibir el mensaje");
+        return -1;
+    }
+    memcpy(&aceeptM, Buffer, sizeof(int));
+
+    if (aceeptM) {
+        escribir_error_log(*file_log,"Aceptado por FileSystem");
         return 0;
-    } else{
+    } else {
+        escribir_error_log(*file_log,"No aceptado por FileSystem");
         return -1;
     }
 }
