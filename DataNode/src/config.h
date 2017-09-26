@@ -10,7 +10,8 @@ typedef struct {
             *nombre_nodo,
             *puerto_dateNode,
             *ruta_databin,
-            *puerto_worker;
+            *puerto_worker,
+            *ip_worker;
 } config;
 
 config *load_config(char *path);

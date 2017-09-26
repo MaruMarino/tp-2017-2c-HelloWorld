@@ -27,11 +27,13 @@ DATANODE:
 -1: getBloque
 -2: respuesta de setBloque
 
-YAMA:
+FILE SYSTEM:
 
-->Identificador: 'Y'
+->Identificador: 'F'
 ->código menajes y explicación:
--
+-0: Handshake con nueva conexion RECHAZADO (Para DataNode,Worker y Yama) 
+-1: Handshake con nueva conexion ACEPTADO (Para DataNode,Worker y Yama) 
+
 
 WORKER:
 

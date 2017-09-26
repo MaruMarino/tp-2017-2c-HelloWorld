@@ -14,7 +14,8 @@
 typedef enum {
 	disponible,
 	no_disponible,
-}estado ;
+}estado;
+
 
 typedef struct {
 	char *ip;
@@ -23,7 +24,7 @@ typedef struct {
 	int inicio_limpio; // 0- NO 1- SI
 	int puerto;
 	int serverfs;
-	int tamanio_total;
+	int espacio_total;
 	int espacio_libre;
 }yamafs_config;
 
@@ -59,17 +60,16 @@ typedef struct{
 	int bloquenodo0; // bloque dentro del nodo donde esta la copia 0 de ese bloque del archivo
 	char *nodo1; // nombre nodo donde esta la copia 1 de ese bloque del archivo
 	int bloquenodo1; // nombre nodo donde esta la copia 1 de ese bloque del archivo
-	int bytesEnBloque; // cantidad de bytes que conforma ese bloque ( >= 1MiB)
+	int bytesEnBloque; // cantidad de bytes que conforma ese bloque ( <= 1MiB)
 
 }bloqueArchivo;
 
 typedef struct{
 
-	int index_directory; // indice asociado al array de directorios
 	int tamanio; // tamaño total del archivo
 	int index_padre; // indice del directorio padre
 	estado estado; // disponible - no disponble
-	char *tipo; // tipo del archivo
+	char *tipo;
 	int cantbloques; // Cantidad de bloques que tiene el archivo
 	t_list *bloques; // lista de CANTBLOQUES elementos, de tipo bloqueArchivo
 
