@@ -7,11 +7,19 @@
  */
 void liberador(int nptr, void *fst, ...);
 
-/* Retorna el peso de todos los elementos de la lista de t_fname.
+/* Retorna el peso de todos los elementos de la lista de t_info_nodo.
+ */
+size_t sizeOfInfoNodos(t_list *nodos);
+
+/* libera por completo los elementos de la lista de t_info_nodo
+ */
+void liberarInfoNodos(t_list *nodos);
+
+/* Retorna el peso de todos los elementos de la lista de char *fname.
  */
 size_t sizeOfFnames(t_list *fnames);
 
-/* libera por completo los elementos de la lista de t_fname, incluido sus char*
+/* libera por completo los elementos de la lista de char *fname
  */
 void liberarFnames(t_list *fnames);
 #endif /* FUNCIONESCOMPARTIDAS_GENERALES_H_ */

@@ -13,8 +13,7 @@ t_info_redLocal *deserializar_info_redLocal(char *info_serial);
 char *serializar_info_redGlobal(t_info_redGlobal *info, size_t *len);
 t_info_redGlobal *deserializar_info_redGlobal(char *info_serial);
 
-char *serializar_info_redGlobalSub(t_info_redGlobalSub *info, size_t *len);
-t_info_redGlobalSub *deserializar_info_redGlobalSub(char *info_serial);
-
+char *serializarFName(char *fn, size_t *len);
+char *deserializarFName(char *fname_serial);
 
 #endif /* SERIALIZACION_H_ */

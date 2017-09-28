@@ -9,7 +9,8 @@
 
 char *serializar_info_trans(t_info_trans *info, size_t *len){
 
-	char *info_serial = malloc(sizeof *info + info->size_prog + (size_t) info->file_out.len);
+	size_t fnlen = strlen(info->file_out) + 1;
+	char *info_serial = malloc(4 * sizeof(int) + info->size_prog + fnlen);
 	if (info_serial == NULL)
 		return NULL;
 
@@ -22,10 +23,10 @@ char *serializar_info_trans(t_info_trans *info, size_t *len){
 	*len += sizeof(int);
 	memcpy(info_serial + *len, &info->bytes_ocup, sizeof(int));
 	*len += sizeof(int);
-	memcpy(info_serial + *len, &info->file_out.len, sizeof(int));
+	memcpy(info_serial + *len, &fnlen, sizeof(int));
 	*len += sizeof(int);
-	memcpy(info_serial + *len, info->file_out.fname, (size_t) info->file_out.len);
-	*len += (size_t) info->file_out.len;
+	memcpy(info_serial + *len, info->file_out, fnlen);
+	*len += fnlen;
 
 	printf("Se serializaron %d bytes\n", *len);
 
@@ -34,18 +35,12 @@ char *serializar_info_trans(t_info_trans *info, size_t *len){
 
 t_info_trans *deserializar_info_trans(char *info_serial){
 
+	size_t fnlen;
 	t_info_trans *info = malloc(sizeof *info);
 
 	size_t off = 0;
 	memcpy(&info->size_prog, info_serial + off, sizeof(int));
 	off += sizeof(int);
-
-	if (info->size_prog <= 0){
-		fprintf(stderr, "size_prog no es valido: %du\n", info->size_prog);
-		free(info);
-		return NULL;
-	}
-
 	info->prog = malloc(info->size_prog);
 	memcpy(info->prog, info_serial + off, info->size_prog);
 	off += info->size_prog;
@@ -53,18 +48,11 @@ t_info_trans *deserializar_info_trans(char *info_serial){
 	off += sizeof(int);
 	memcpy(&info->bytes_ocup, info_serial + off, sizeof(int));
 	off += sizeof(int);
-	memcpy(&info->file_out.len, info_serial + off, sizeof(int));
+	memcpy(&fnlen, info_serial + off, sizeof(int));
 	off += sizeof(int);
-
-	if (info->file_out.len <= 0){
-		fprintf(stderr, "file_out.len no es valido: %d\n", info->file_out.len);
-		liberador(2, info->prog, info);
-		return NULL;
-	}
-
-	info->file_out.fname = malloc((size_t) info->file_out.len);
-	memcpy(info->file_out.fname, info_serial + off, (size_t) info->file_out.len);
-	off += (size_t) info->file_out.len;
+	info->file_out = malloc(fnlen);
+	memcpy(info->file_out, info_serial + off, fnlen);
+	off += fnlen;
 
 	printf("Se deserializaron %d bytes\n", off);
 
@@ -74,11 +62,13 @@ t_info_trans *deserializar_info_trans(char *info_serial){
 char *serializar_info_redLocal(t_info_redLocal *info, size_t *len){
 
 	int i;
-	t_fname *fn;
+	char *fn;
+	size_t auxlen;
+	size_t fnlen = strlen(info->file_out) + 1;
 	size_t size_fnames = sizeOfFnames(info->files);
 
 	char *info_serial = malloc(sizeof(size_t) + info->size_prog + sizeof(int) +
-			size_fnames + sizeof(size_t) + (size_t) info->file_out.len);
+			size_fnames + sizeof(size_t) + fnlen);
 	if (info_serial == NULL)
 		return NULL;
 
@@ -91,16 +81,17 @@ char *serializar_info_redLocal(t_info_redLocal *info, size_t *len){
 	*len += sizeof(int);
 	for (i = 0; i < info->files->elements_count; ++i){
 		fn = list_get(info->files, i);
-		memcpy(info_serial + *len, &fn->len, sizeof(int));
+		auxlen = strlen(fn) + 1;
+		memcpy(info_serial + *len, &auxlen, sizeof(int));
 		*len += sizeof(int);
-		memcpy(info_serial + *len, fn->fname, (size_t) fn->len);
-		*len += (size_t) fn->len;
+		memcpy(info_serial + *len, fn, auxlen);
+		*len += auxlen;
 	}
 
-	memcpy(info_serial + *len, &info->file_out.len, sizeof(int));
+	memcpy(info_serial + *len, &fnlen, sizeof(int));
 	*len += sizeof(int);
-	memcpy(info_serial + *len, info->file_out.fname, (size_t) info->file_out.len);
-	*len += (size_t) info->file_out.len;
+	memcpy(info_serial + *len, info->file_out, fnlen);
+	*len += fnlen;
 
 	printf("Se serializaron %d bytes\n", *len);
 
@@ -109,6 +100,7 @@ char *serializar_info_redLocal(t_info_redLocal *info, size_t *len){
 
 t_info_redLocal *deserializar_info_redLocal(char *info_serial){
 
+	size_t fnlen;
 	int len_list, i;
 	t_info_redLocal *info = malloc(sizeof *info);
 
@@ -124,21 +116,21 @@ t_info_redLocal *deserializar_info_redLocal(char *info_serial){
 
 	info->files = list_create();
 	for (i = 0; i < len_list; ++i){
-		t_fname *fn = malloc(sizeof *fn);
-		memcpy(&fn->len, info_serial + off, sizeof(int));
+		char *fn;
+		memcpy(&fnlen, info_serial + off, sizeof(int));
 		off += sizeof(int);
-		fn->fname = malloc((size_t) fn->len);
-		memcpy(fn->fname, info_serial + off, (size_t) fn->len);
-		off += (size_t) fn->len;
+		fn = malloc(fnlen);
+		memcpy(fn, info_serial + off, fnlen);
+		off += fnlen;
 
 		list_add(info->files, fn);
 	}
 
-	memcpy(&info->file_out.len, info_serial + off, sizeof(int));
+	memcpy(&fnlen, info_serial + off, sizeof(int));
 	off += sizeof(int);
-	info->file_out.fname = malloc((size_t) info->file_out.len);
-	memcpy(info->file_out.fname, info_serial + off, (size_t) info->file_out.len);
-	off += (size_t) info->file_out.len;
+	info->file_out = malloc(fnlen);
+	memcpy(info->file_out, info_serial + off, fnlen);
+	off += fnlen;
 
 	printf("Se deserializaron %d bytes\n", off);
 
@@ -146,60 +138,118 @@ t_info_redLocal *deserializar_info_redLocal(char *info_serial){
 }
 
 char *serializar_info_redGlobal(t_info_redGlobal *info, size_t *len){
-	return serializar_info_redLocal(info, len); // """polimorfismo""" en C :)
-}
 
-t_info_redGlobal *deserializar_info_redGlobal(char *info_serial){
-	return deserializar_info_redLocal(info_serial);
-}
+	int i;
+	size_t ipl, portl, fnl;
+	t_info_nodo *n;
+	size_t list_size = sizeOfInfoNodos(info->nodos);
 
-char *serializar_info_redGlobalSub(t_info_redGlobalSub *info, size_t *len){
-
-	char *info_serial = malloc(3 * sizeof(int) + (size_t) (info->iplen + info->portlen + info->file_in.len));
-	if (info_serial == NULL)
-		return NULL;
+	char *info_serial = malloc(sizeof(int) + info->size_prog + sizeof(int) + list_size);
 
 	*len = 0;
-	memcpy(info_serial, &info->iplen, sizeof(int));
+	memcpy(info_serial + *len, &info->size_prog, sizeof(int));
 	*len += sizeof(int);
-	memcpy(info_serial + *len, info->ip, (size_t) info->iplen);
-	*len += (size_t) info->iplen;
-	memcpy(info_serial + *len, &info->portlen, sizeof(int));
+	memcpy(info_serial + *len, info->prog, info->size_prog);
+	*len += info->size_prog;
+
+	memcpy(info_serial + *len, &info->nodos->elements_count, sizeof(int));
 	*len += sizeof(int);
-	memcpy(info_serial + *len, info->port, (size_t) info->portlen);
-	*len += (size_t) info->portlen;
-	memcpy(info_serial + *len, &info->file_in.len, sizeof(int));
-	*len += sizeof(int);
-	memcpy(info_serial + *len, info->file_in.fname, (size_t) info->file_in.len);
-	*len += (size_t) info->file_in.len;
+	for (i = 0; i < info->nodos->elements_count; ++i){
+		n = list_get(info->nodos, i);
+		ipl = strlen(n->ip) + 1;
+		portl = strlen(n->port) + 1;
+		fnl = strlen(n->fname) + 1;
+
+		memcpy(info_serial + *len, &ipl, sizeof(int));
+		*len += sizeof(int);
+		memcpy(info_serial + *len, n->ip, ipl);
+		*len += ipl;
+		memcpy(info_serial + *len, &portl, sizeof(int));
+		*len += sizeof(int);
+		memcpy(info_serial + *len, n->port, portl);
+		*len += portl;
+		memcpy(info_serial + *len, &fnl, sizeof(int));
+		*len += sizeof(int);
+		memcpy(info_serial + *len, n->fname, fnl);
+		*len += fnl;
+	}
 
 	printf("Se serializaron %d bytes\n", *len);
 
 	return info_serial;
 }
 
-t_info_redGlobalSub *deserializar_info_redGlobalSub(char *info_serial){
+t_info_redGlobal *deserializar_info_redGlobal(char *info_serial){
 
-	t_info_redGlobalSub *info = malloc(sizeof *info);
+	size_t elems, i, ipl, portl, fnl;
+	t_info_redGlobal *info = malloc(sizeof *info);
 
 	size_t off = 0;
-	memcpy(&info->iplen, info_serial, sizeof(int));
+	memcpy(&info->size_prog, info_serial, sizeof(int));
 	off += sizeof(int);
-	info->ip = malloc((size_t) info->iplen);
-	memcpy(info->ip, info_serial + off, (size_t) info->iplen);
-	off += (size_t) info->iplen;
-	memcpy(&info->portlen, info_serial + off, sizeof(int));
-	off += sizeof(int);
-	info->port = malloc((size_t) info->portlen);
-	memcpy(info->port, info_serial + off, (size_t) info->portlen);
-	off += (size_t) info->portlen;
-	memcpy(&info->file_in.len, info_serial + off, sizeof(int));
-	off += sizeof(int);
-	info->file_in.fname = malloc((size_t) info->file_in.len);
-	memcpy(info->file_in.fname, info_serial + off, (size_t) info->file_in.len);
-	off += (size_t) info->file_in.len;
+	info->prog = malloc(info->size_prog);
+	memcpy(info->prog, info_serial + off, info->size_prog);
+	off += info->size_prog;
 
-	printf("Se deserializaron %du bytes\n", off);
+	memcpy(&elems, info_serial + off, sizeof(int));
+	off += sizeof(int);
+	info->nodos = list_create();
+	for (i = 0; i < elems; ++i){
+		t_info_nodo *n = malloc(sizeof *n);
+
+		memcpy(&ipl, info_serial + off, sizeof(int));
+		off += sizeof(int);
+		n->ip = malloc(ipl);
+		memcpy(n->ip, info_serial + off, ipl);
+		off += ipl;
+		memcpy(&portl, info_serial + off, sizeof(int));
+		off += sizeof(int);
+		n->port = malloc(portl);
+		memcpy(n->port, info_serial + off, portl);
+		off += portl;
+		memcpy(&fnl, info_serial + off, sizeof(int));
+		off += sizeof(int);
+		n->fname = malloc(fnl);
+		memcpy(n->fname, info_serial + off, fnl);
+		off += fnl;
+
+		list_add(info->nodos, n);
+	}
+
+	printf("Se deserializaron %d bytes\n", off);
 
 	return info;
+}
+
+char *serializarFName(char *fn, size_t *len){
+
+	size_t fnlen = strlen(fn) + 1;
+	char *fname_serial = malloc(sizeof(int) + fnlen);
+
+	*len = 0;
+	memcpy(fname_serial, &fnlen, sizeof(int));
+	*len += sizeof(int);
+	memcpy(fname_serial + *len, fn, fnlen);
+	*len += fnlen;
+
+	printf("Se serializaron %d bytes\n", *len);
+
+	return fname_serial;
+}
+
+char *deserializarFName(char *fname_serial){
+
+	char *fn;
+	size_t off, fnlen;
+
+	off = 0;
+	memcpy(&fnlen, fname_serial, sizeof(int));
+	off += sizeof(int);
+	fn = malloc(fnlen);
+	memcpy(fn, fname_serial + off, fnlen);
+	off += fnlen;
+
+	printf("Se deserializaron %d bytes\n", off);
+
+	return fn;
 }
