@@ -69,7 +69,7 @@ int waitAccept(const int *socket, t_log **file_log, config *config, const size_t
 
     InfoNodo->ip = config->ip_worker;
     InfoNodo->nodo = config->nombre_nodo;
-    InfoNodo->puerto = (int)strtol(config->puerto_worker,&config->puerto_worker,10);
+    InfoNodo->puerto = (int) strtol(config->puerto_worker, &config->puerto_worker, 10);
     InfoNodo->sizeDatabin = (int) *sizeDataBin;
 
     void *Buffer = serializar_nodo(InfoNodo, &response.sizeData);
@@ -83,17 +83,17 @@ int waitAccept(const int *socket, t_log **file_log, config *config, const size_t
     int aceeptM = 0;
     Buffer = getMessage(*socket, &response, &controler);
 
-    if(Buffer == NULL){
+    if (Buffer == NULL) {
         escribir_error_log(*file_log, "No se puedo recibir el mensaje");
         return -1;
     }
     memcpy(&aceeptM, Buffer, sizeof(int));
 
     if (aceeptM) {
-        escribir_error_log(*file_log,"Aceptado por FileSystem");
+        escribir_log(*file_log, "Aceptado por FileSystem");
         return 0;
     } else {
-        escribir_error_log(*file_log,"No aceptado por FileSystem");
+        escribir_error_log(*file_log, "No aceptado por FileSystem");
         return -1;
     }
 }

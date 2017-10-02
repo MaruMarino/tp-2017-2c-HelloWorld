@@ -90,3 +90,7 @@
 [INFO] 23:57:04:759 DateNode/(24243:24243): cargando el archivo de configuracion
 [INFO] 23:57:04:759 DateNode/(24243:24243): Abriendo DataBin
 [INFO] 23:57:04:759 DateNode/(24243:24243): Estableciendo Conneccion al File System
+[INFO] 20:31:07:743 DateNode/(5229:5229): Se crea el archivo de log
+[INFO] 20:31:07:743 DateNode/(5229:5229): cargando el archivo de configuracion
+[INFO] 20:31:07:743 DateNode/(5229:5229): Abriendo DataBin
+[INFO] 20:31:07:743 DateNode/(5229:5229): Estableciendo Conneccion al File System
