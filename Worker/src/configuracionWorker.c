@@ -7,10 +7,10 @@
 
 #include "configuracionWorker.h"
 
-extern t_log *logger;
+extern t_log *logw;
 
 struct conf_worker *cargarConfig(char *path){
-	log_trace(logger, "Se cargara la configuracion del path: %s\n", path);
+	log_trace(logw, "Se cargara la configuracion del path: %s\n", path);
 
 	t_config *conf = config_create(path);
 	struct conf_worker *conf_w = malloc(sizeof *conf_w);
@@ -26,11 +26,11 @@ struct conf_worker *cargarConfig(char *path){
 
 void mostrarConfig(struct conf_worker *conf){
 
-	log_info(logger, "IP_FILESYSTEM: %s",     conf->ip_filesystem);
-	log_info(logger, "PUERTO_FILESYSTEM: %s", conf->puerto_filesystem);
-	log_info(logger, "NOMBRE_NODO: %s",       conf->nombre_nodo);
-	log_info(logger, "PUERTO_WORKER: %s",     conf->puerto_worker);
-	log_info(logger, "RUTA_DATABIN: %s",      conf->ruta_databin);
+	log_info(logw, "IP_FILESYSTEM: %s",     conf->ip_filesystem);
+	log_info(logw, "PUERTO_FILESYSTEM: %s", conf->puerto_filesystem);
+	log_info(logw, "NOMBRE_NODO: %s",       conf->nombre_nodo);
+	log_info(logw, "PUERTO_WORKER: %s",     conf->puerto_worker);
+	log_info(logw, "RUTA_DATABIN: %s",      conf->ruta_databin);
 
 }
 
