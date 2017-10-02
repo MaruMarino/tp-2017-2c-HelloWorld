@@ -305,3 +305,87 @@ t_estado_master *deserializar_estado_master(char *em_ser)
 
 	return em_des;
 }
+
+int tamanio_nodo(t_nodo *nodo)
+{
+	int tam_nodo = sizeof(t_nodo);
+	tam_nodo += string_length(nodo->ip) +1;
+	tam_nodo += string_length(nodo->nodo) +1;
+
+	return tam_nodo;
+}
+
+int tamanio_transformacion(t_transformacion *transformacion)
+{
+	int tam_transf = sizeof(t_transformacion);
+	tam_transf += string_length(transformacion->temporal) +1;
+	tam_transf += tamanio_nodo(transformacion->nodo);
+
+	return tam_transf;
+}
+
+char *serializar_lista_transformacion(t_list *l_transformacion)
+{
+	char *transfs_serializadas;
+	int tam_malloc = sizeof(t_list);
+	int tam_lista = list_size(l_transformacion);
+	int i = 0;
+	size_t len = 0;
+
+	while(tam_lista > i)
+	{
+		t_transformacion *transf = list_get(l_transformacion, i);
+		tam_malloc += tamanio_transformacion(transf);
+		i++;
+	}
+
+	i = 0;
+	transfs_serializadas = malloc((size_t)tam_malloc);
+	memcpy(transfs_serializadas, &tam_lista, 4);
+	len += 4;
+
+	while(tam_lista > i)
+	{
+		size_t len2 = 0;
+		t_transformacion *transf = list_get(l_transformacion, i);
+		int tr_size = tamanio_transformacion(transf);
+		char *tr_ser = serializar_transformacion(transf, &len2);
+
+		memcpy(transfs_serializadas + len, &tr_size, 4);
+		len += 4;
+		memcpy(transfs_serializadas + len, tr_ser, len2);
+		len += len2;
+
+		i++;
+	}
+
+	return transfs_serializadas;
+}
+
+t_list *deserializar_lista_transformacion(char *lista_ser)
+{
+	t_list *lista_des = list_create();
+	size_t len = 0;
+	int size_list;
+
+	memcpy(&size_list, lista_ser, 4);
+	len += 4;
+
+	while(size_list > 0)
+	{
+		size_t len2 = 0;
+		memcpy(&len2, lista_ser, 4);
+		len += 4;
+		char *tr_ser = malloc(len2);
+		memcpy(tr_ser, lista_ser, len2);
+		len += len2;
+
+		t_transformacion *transf = deserializar_transformacion(tr_ser);
+
+		list_add(lista_des, transf);
+
+		size_list--;
+	}
+
+	return lista_des;
+}

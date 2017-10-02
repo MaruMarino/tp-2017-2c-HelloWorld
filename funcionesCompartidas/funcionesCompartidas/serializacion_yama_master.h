@@ -22,5 +22,9 @@ char *serializar_almacenado(t_almacenado *almacenado, size_t *len);
 t_almacenado *deserializar_almacenado(char *alm_ser);
 char *serializar_estado_master(t_estado_master *estado_master, size_t *len);
 t_estado_master *deserializar_estado_master(char *em_ser);
+int tamanio_nodo(t_nodo *nodo);
+int tamanio_transformacion(t_transformacion *transformacion);
+char *serializar_lista_transformacion(t_list *l_transformacion);
+t_list *deserializar_lista_transformacion(char *lista_ser);
 
 #endif /* FUNCIONESCOMPARTIDAS_SERIALIZACION_YAMA_MASTER_H_ */
