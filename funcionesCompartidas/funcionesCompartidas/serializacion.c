@@ -221,7 +221,39 @@ t_info_redGlobal *deserializar_info_redGlobal(char *info_serial){
 	return info;
 }
 
-char *serializarFName(char *fn, size_t *len){
+char *serializar_stream(char *bytes, size_t bytelen, size_t *len){
+
+	char *bytes_serial = malloc(sizeof(int) + bytelen);
+
+	*len = 0;
+	memcpy(bytes_serial, &bytelen, sizeof(int));
+	*len += sizeof(int);
+	memcpy(bytes_serial + *len, bytes, bytelen);
+	*len += bytelen;
+
+	printf("Se serializaron %d bytes\n", *len);
+
+	return bytes_serial;
+}
+
+char *deserializar_stream(char *bytes_serial, size_t *bytelen){
+
+	char *bytes;
+	size_t off;
+
+	off = 0;
+	memcpy(bytelen, bytes_serial, sizeof(int));
+	off += sizeof(int);
+	bytes = malloc(*bytelen);
+	memcpy(bytes, bytes_serial + off, *bytelen);
+	off += *bytelen;
+
+	printf("Se deserializaron %d bytes\n", off);
+
+	return bytes;
+}
+
+char *serializar_FName(char *fn, size_t *len){
 
 	size_t fnlen = strlen(fn) + 1;
 	char *fname_serial = malloc(sizeof(int) + fnlen);
@@ -237,7 +269,7 @@ char *serializarFName(char *fn, size_t *len){
 	return fname_serial;
 }
 
-char *deserializarFName(char *fname_serial){
+char *deserializar_FName(char *fname_serial){
 
 	char *fn;
 	size_t off, fnlen;
