@@ -45,7 +45,6 @@ typedef struct{
 	int espacio_total;
 	int espacio_libre;
 	t_bitarray *bitmapNodo;
-
 }NODO;
 
 typedef struct{

@@ -60,6 +60,7 @@ void iniciar_consola_FS(){
 		linea = readline("YAMA-FS->");
 		if(!strncmp(linea,"exit",4)){
 			printf("Bai\n");
+			free(linea);
 			break;
 
 		}else{
@@ -114,7 +115,7 @@ char *command_generator (char *text, int state){
 
 	while ((name = commands[list_index++].name)) {
 		if (strncmp(name, text, len) == 0) {
-			return strdup(name);
+			return name;
 		}
 	}
 

@@ -26,6 +26,21 @@
 
 t_log *logw;
 
+
+int makeCommSock(int socket_in, t_log *log, int *control) {
+    int sock_comm;
+    struct sockaddr_in clientAddr;
+    socklen_t clientSize = sizeof(clientAddr);
+    *control = 0;
+
+    if ((sock_comm = accept(socket_in, (struct sockaddr *) &clientAddr, &clientSize)) == -1) {
+        *control = 6;
+        error_sockets(log, control, "");
+    }
+
+    return sock_comm;
+}
+
 int main(int argc, char *argv[]){
 
 	if (argc != 2){
@@ -81,12 +96,13 @@ int main(int argc, char *argv[]){
 
 		if ((mpid = fork()) == 0){ // soy proceso hijo
 			if (masterQuery)
-				subrutinaEjecutor(fd_proc);
+				;
 			else
 				subrutinaServidor(fd_proc);
 
 		} else if (mpid > 0){
-			close(fd_proc);
+			subrutinaEjecutor(fd_proc);
+			//close(fd_proc);
 
 		} else {
 			perror("Fallo fork(). error");

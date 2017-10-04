@@ -7,22 +7,21 @@
 
 #include "FS_administracion.h"
 
-#include <sys/mman.h>
-#include <commons/bitarray.h>
-#include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
+#include <commons/collections/list.h>
+#include <commons/bitarray.h>
 #include <commons/config.h>
-#include <commons/log.h>
 #include <commons/string.h>
+#include <commons/log.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <dirent.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
 #include "estructurasfs.h"
 
@@ -39,6 +38,8 @@ static char *armar_string_nombres_nodos();
 static char *completar_path_metadata(char *);
 static char *nombres_subdirectorios(char *);
 static char *nombres_archivos(char *);
+static void liberar_char_array(char **);
+//static int indice_padre_archivo(char *);
 
 
 // Funciones de recuperacion de estructuras administrativas de un estado anterior //
@@ -73,7 +74,11 @@ int recuperar_estructuras_administrativas(void){
 		i++;
 	}
 
-	// TODO: RECUPERAR METADA ARCHIVOS
+	status = recuperar_metadata_archivos();
+	if(status != 1){
+		log_error(logi,"Error en la recuperacion de metadata de archivos, bai");
+		return status;
+	}
 
 	return 1;
 }
@@ -141,12 +146,7 @@ int recuperar_nodos(void){
 
 	free(path_armado);
 	config_destroy(config_nodos);
-	i=0;
-	while(nombres_nodos[i]!= NULL){
-		free(nombres_nodos[i]);
-		i++;
-	}
-	free(nombres_nodos);
+	liberar_char_array(nombres_nodos);
 
 	return 1;
 }
@@ -182,40 +182,51 @@ int recuperar_bitmap_nodo(NODO *unodo){
 int recuperar_metadata_archivos(void){
 
 	char *nombres_sub = nombres_subdirectorios("archivos");
+	if(nombres_sub == NULL){
+		return -1;
+	}else if(!strncmp(nombres_sub,"NADA",4)){
+		return 1;
+	}
 	char **aux_split = string_split(nombres_sub,"-");
+
 	int i=0;
+	char *subdirectorio;
+	char *fullpath;
+	char *archivoss;
+
 	while(aux_split[i] != NULL){
 
-		char *subdirectorio = string_from_format("archivos/%s",aux_split[i]);
-		char *fullpath = completar_path_metadata(subdirectorio);
-		char *archivoss = nombres_archivos(fullpath);
+		subdirectorio = string_from_format("archivos/%s",aux_split[i]);
+		fullpath = completar_path_metadata(subdirectorio);
+		archivoss = nombres_archivos(fullpath);
 
-		char **aux_split_archs = string_split(archivoss,"-");
-		int c=0;
-		while(aux_split_archs[c] != NULL){
-			char *fullpath_archivo = string_from_format("%s/%s",fullpath,aux_split_archs[c]);
-			recuperar_metadata_un_arhcivo(fullpath_archivo);
-			free(fullpath_archivo);
-			c++;
+		if(archivoss == NULL){
+			free(subdirectorio);
+			free(fullpath);
+			liberar_char_array(aux_split);
+			return -1;
+		}else if(strncmp(archivoss,"NADA",4) != 0){
+			char **aux_split_archs = string_split(archivoss,"-");
+			int c=0;
+			char *fullpath_archivo;
+			while(aux_split_archs[c] != NULL){
+				fullpath_archivo = string_from_format("%s/%s",fullpath,aux_split_archs[c]);
+				recuperar_metadata_un_arhcivo(fullpath_archivo);
+				free(fullpath_archivo);
+				c++;
+			}
+
+			liberar_char_array(aux_split_archs);
+			free(archivoss);
 		}
 
-		c=0;
-		while(aux_split_archs[c] != NULL){
-		free(aux_split_archs[c]);
-		}
-		free(aux_split_archs);
-		free(archivoss);
 		free(fullpath);
 		free(subdirectorio);
 
 		i++;
 	}
 
-	i=0;
-	while(aux_split[i] != NULL){
-	free(aux_split[i]);
-	}
-	free(aux_split);
+	liberar_char_array(aux_split);
 	free(nombres_sub);
 
 	return 1;
@@ -228,7 +239,7 @@ int recuperar_metadata_un_arhcivo(char *fullpath){
 
 	archi->tamanio = config_get_int_value(info,"TAMANIO");
 	archi->tipo = strdup(config_get_string_value(info,"TIPO"));
-	//archi->index_padre = obtener indice del padre todo
+	//archi->index_padre = todo:obtener indice del padre
 	archi->cantbloques = ((config_keys_amount(info) - 2)/3);
 	archi->estado = no_disponible;
 
@@ -254,12 +265,8 @@ int recuperar_metadata_un_arhcivo(char *fullpath){
 
 		list_add(archi->bloques,nuevobloque);
 
-		free(copia0[0]);
-		free(copia0[1]);
-		free(copia0);
-		free(copia1[0]);
-		free(copia1[1]);
-		free(copia1);
+		liberar_char_array(copia0);
+		liberar_char_array(copia1);
 		free(key_bloque_copia0);
 		free(key_bloque_copia1);
 		free(key_bloque_bytes);
@@ -305,8 +312,6 @@ int iniciar_nodos(void){
 	dictionary_put(elementos,"TAMANIO",espacio_total);
 	dictionary_put(elementos,"LIBRE",espacio_libre);
 
-	free(espacio_total);
-	free(espacio_libre);
 
 	char *nomnodos = armar_string_nombres_nodos();
 	dictionary_put(elementos,"NODOS",nomnodos);
@@ -323,8 +328,8 @@ int iniciar_nodos(void){
 
 		free(total);
 		free(libre);
-		free(espacio_total);
-		free(espacio_libre);
+		//free(espacio_total);
+		//free(espacio_libre);
 	}
 
 	list_iterate(nodos,(void *)_agregar_info_nodo);
@@ -333,6 +338,8 @@ int iniciar_nodos(void){
 	config_save(tabla_nodos);
 
 	dictionary_destroy(tabla_nodos->properties);
+	free(espacio_total);
+	free(espacio_libre);
 	free(nomnodos);
 	free(tabla_nodos->path);
 	free(tabla_nodos);
@@ -466,6 +473,10 @@ static char *nombres_subdirectorios(char *donde){
 
 		}
 	}
+	if(cantidad_subdirectorios==0){
+		free(archivos);
+		return "NADA";
+	}
 	char *subnombres = string_substring_from(archivos,1);
 	free(path_armado);
 	free(archivos);
@@ -477,37 +488,50 @@ static char *nombres_subdirectorios(char *donde){
 static char *nombres_archivos(char *donde){
 
 	DIR *directorio;
-		struct dirent *entry;
-		int cantidad_archivos;
-		char *path_armado = strdup(donde);
-		char *archivos = strdup("");
-		directorio = opendir(path_armado);
+	struct dirent *entry;
+	int cantidad_archivos;
+	char *path_armado = strdup(donde);
+	char *archivos = strdup("");
+	directorio = opendir(path_armado);
 
-		if(directorio == NULL) {
-			perror("Error abriendo directorio de archivos");
-			free(path_armado);
-			free(archivos);
-			return NULL;
-		}
-
-		cantidad_archivos = 0;
-
-		for (entry = readdir(directorio); entry != NULL; entry = readdir(directorio)) {
-
-			if (( (strncmp(entry->d_name,".",1)) || (strncmp(entry->d_name,"..",1)) ) && entry->d_type == DT_REG) {
-
-				cantidad_archivos ++;
-
-				string_append(&archivos,"-");
-				string_append(&archivos,entry->d_name);
-
-			}
-		}
-		char *subnombres = string_substring_from(archivos,1);
+	if(directorio == NULL) {
+		perror("Error abriendo directorio de archivos");
 		free(path_armado);
 		free(archivos);
-		closedir(directorio);
+		return NULL;
+	}
 
-		return subnombres;
+	cantidad_archivos = 0;
 
+	for (entry = readdir(directorio); entry != NULL; entry = readdir(directorio)) {
+
+		if (( (strncmp(entry->d_name,".",1)) || (strncmp(entry->d_name,"..",1)) ) && entry->d_type == DT_REG) {
+
+			cantidad_archivos ++;
+
+			string_append(&archivos,"-");
+			string_append(&archivos,entry->d_name);
+
+		}
+	}
+	if(cantidad_archivos==0){
+		free(archivos);
+		return "NADA";
+	}
+	char *subnombres = string_substring_from(archivos,1);
+	free(path_armado);
+	free(archivos);
+	closedir(directorio);
+
+	return subnombres;
+
+}
+static void liberar_char_array(char **miarray){
+
+	int i = 0;
+	while(miarray[i] != NULL){
+		free(miarray[i]);
+		i++;
+	}
+	free(miarray);
 }

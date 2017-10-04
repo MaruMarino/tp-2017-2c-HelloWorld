@@ -21,6 +21,7 @@ int recuperar_metadata_archivos(void);
 int recuperar_metadata_un_arhcivo(char *);
 
 // Funciones de creacion de estructuras administrativas en un inicio limpio
+
 void crear_subdirectorios(void);
 int iniciar_arbol_directorios(void);
 int iniciar_nodos(void);

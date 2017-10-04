@@ -22,7 +22,7 @@ static int cmpstr(const void *p1, const void *p2);
 static void liberarApareo(int nfiles, FILE *fs[nfiles], char *ls[nfiles-1]);
 
 extern t_log *logw;
-char *databin;
+const char *databin = "/home/utnso/yama-test1/WBAN.csv";
 
 char *crearComando(int nargs, char *fst, ...){
 	log_trace(logw, "Se crea un comando de %d argumentos", nargs);
@@ -47,12 +47,6 @@ char *crearComando(int nargs, char *fst, ...){
 
 int crearArchivoBin(char *bin, size_t bin_sz, char *fname){
 
-	if (truncate(fname, 0) == -1){ // elimina fname en caso de que ya existiese
-		perror("Error en trucate del archivo");
-		log_error(logw, "Fallo truncate() de %s", fname);
-		return -1;
-	}
-
 	FILE *f;
 	if((f = fopen(fname, "wb")) == NULL){
 		perror("No se pudo abrir el archivo");
@@ -71,17 +65,13 @@ int crearArchivoBin(char *bin, size_t bin_sz, char *fname){
 
 char *getDataBloque(size_t blk, size_t count){
 
+	FILE *f = fopen(databin, "r");
 	char *dat = malloc(count);
-	return memcpy(dat, databin + maxline * blk, count);
+	fread(dat, maxline, 1, f);
+	return dat;
 }
 
 int crearArchivoData(size_t blk, size_t count, char *fname){
-
-	if (truncate(fname, 0) == -1){ // elimina fname en caso de que ya existiese
-		perror("Error en trucate del archivo");
-		log_error(logw, "Fallo truncate() de %s", fname);
-		return -1;
-	}
 
 	FILE *f;
 	if((f = fopen(fname, "w")) == NULL){
