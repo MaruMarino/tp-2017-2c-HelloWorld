@@ -3,6 +3,7 @@
 #include <string.h>
 #include <commons/string.h>
 
+#include "serializacion_yama_master.h"
 #include "estructuras.h"
 
 char *serializar_nodo(t_nodo *nodo, size_t *len)
@@ -324,13 +325,13 @@ int tamanio_transformacion(t_transformacion *transformacion)
 	return tam_transf;
 }
 
-char *serializar_lista_transformacion(t_list *l_transformacion)
+char *serializar_lista_transformacion(t_list *l_transformacion, size_t *len)
 {
 	char *transfs_serializadas;
 	int tam_malloc = sizeof(t_list);
 	int tam_lista = list_size(l_transformacion);
 	int i = 0;
-	size_t len = 0;
+	*len = 0;
 
 	while(tam_lista > i)
 	{
@@ -342,7 +343,7 @@ char *serializar_lista_transformacion(t_list *l_transformacion)
 	i = 0;
 	transfs_serializadas = malloc((size_t)tam_malloc);
 	memcpy(transfs_serializadas, &tam_lista, 4);
-	len += 4;
+	*len += 4;
 
 	while(tam_lista > i)
 	{
@@ -351,10 +352,10 @@ char *serializar_lista_transformacion(t_list *l_transformacion)
 		int tr_size = tamanio_transformacion(transf);
 		char *tr_ser = serializar_transformacion(transf, &len2);
 
-		memcpy(transfs_serializadas + len, &tr_size, 4);
-		len += 4;
-		memcpy(transfs_serializadas + len, tr_ser, len2);
-		len += len2;
+		memcpy(transfs_serializadas + *len, &tr_size, 4);
+		*len += 4;
+		memcpy(transfs_serializadas + *len, tr_ser, len2);
+		*len += len2;
 
 		i++;
 	}
@@ -374,15 +375,91 @@ t_list *deserializar_lista_transformacion(char *lista_ser)
 	while(size_list > 0)
 	{
 		size_t len2 = 0;
-		memcpy(&len2, lista_ser, 4);
+		memcpy(&len2, lista_ser + len, 4);
 		len += 4;
 		char *tr_ser = malloc(len2);
-		memcpy(tr_ser, lista_ser, len2);
+		memcpy(tr_ser, lista_ser + len, len2);
 		len += len2;
 
 		t_transformacion *transf = deserializar_transformacion(tr_ser);
 
 		list_add(lista_des, transf);
+
+		size_list--;
+	}
+
+	return lista_des;
+}
+
+int tamanio_redGlobal(t_redGlobal *redGlobal)
+{
+	int tam_redGlobal = sizeof(t_redGlobal);
+	tam_redGlobal += string_length(redGlobal->red_global) +1;
+	tam_redGlobal += string_length(redGlobal->temp_red_local) +1;
+	tam_redGlobal += tamanio_nodo(redGlobal->nodo);
+
+	return tam_redGlobal;
+}
+
+char *serializar_lista_redGlobal(t_list *l_redGlobal, size_t *len)
+{
+	char *redGlobs_serializadas;
+	int tam_malloc = sizeof(t_list);
+	int tam_lista = list_size(l_redGlobal);
+	int i = 0;
+	*len = 0;
+
+	while(tam_lista > i)
+	{
+		t_redGlobal *redG = list_get(l_redGlobal, i);
+		tam_malloc += tamanio_redGlobal(redG);
+		i++;
+	}
+
+	i = 0;
+	redGlobs_serializadas = malloc((size_t)tam_malloc);
+	memcpy(redGlobs_serializadas, &tam_lista, 4);
+	*len += 4;
+
+	while(tam_lista > i)
+	{
+		size_t len2 = 0;
+		t_redGlobal *redG = list_get(l_redGlobal, i);
+		int tr_size = tamanio_redGlobal(redG);
+		char *tr_ser = serializar_redGlobal(redG, &len2);
+
+		memcpy(redGlobs_serializadas + *len, &tr_size, 4);
+		*len += 4;
+		memcpy(redGlobs_serializadas + *len, tr_ser, len2);
+		*len += len2;
+
+		i++;
+	}
+
+	return redGlobs_serializadas;
+}
+
+t_list *deserializar_lista_redGlobal(char *lista_ser)
+{
+	t_list *lista_des = list_create();
+	size_t len = 0;
+	int size_list;
+
+	memcpy(&size_list, lista_ser, 4);
+	len += 4;
+
+	while(size_list > 0)
+	{
+		size_t len2 = 0;
+		memcpy(&len2, lista_ser + len, 4);
+		len += 4;
+		char *redG_ser = malloc(len2);
+		memcpy(redG_ser, lista_ser + len, len2);
+		len += len2;
+
+		t_redGlobal *redG = deserializar_redGlobal(redG_ser);
+
+		list_add(lista_des, redG);
 
 		size_list--;
 	}
