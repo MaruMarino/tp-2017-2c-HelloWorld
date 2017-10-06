@@ -12,14 +12,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "FS_administracion.h"
 #include "estructurasfs.h"
 
 extern comando commands[];
+extern yamafs_config *configuracion;
 
 #define cyan  "\x1B[36m"
 #define sin "\x1B[0m"
 
-comando *buscar_comando(char *nombre);
+static comando *buscar_comando(char *nombre);
 
 int fs_ls (char *h){
 	printf("Ejecute ls \n");
@@ -30,7 +32,17 @@ int fs_rename (char *h){
 	return 0;
 }
 int fs_format (char *j){
-	printf("Ejecute format \n");
+
+	if(configuracion->inicio_limpio){
+
+		crear_subdirectorios();
+		iniciar_arbol_directorios();
+		iniciar_nodos();
+		iniciar_bitmaps_nodos();
+
+	configuracion->estado_estable = 1;
+
+	}
 	return 0;
 }
 int fs_mv (char *k){
@@ -98,7 +110,7 @@ int fs_info (char *s){
 	return 0;
 }
 
-comando *buscar_comando(char *nombre){
+static comando *buscar_comando(char *nombre){
 
 	int i;
 	for (i = 0; i< 14; i++){

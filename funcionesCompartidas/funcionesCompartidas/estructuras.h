@@ -52,17 +52,11 @@ typedef struct
 
 typedef struct
 {
-	int len;
-	char *fname;
-} t_fname;
-
-typedef struct
-{
 	size_t size_prog; // tamanio en bytes del programa
 	char *prog; // programa de transferencia
 	size_t bloque; // bloque sobre el cual aplicar
 	int bytes_ocup; // bytes ocupados por bloque
-	t_fname file_out; // nombre del archivo a generar
+	char *file_out; // nombre del archivo a generar
 } t_info_trans;
 
 typedef struct
@@ -70,16 +64,21 @@ typedef struct
 	size_t size_prog; // tamanio en bytes del programa
 	char *prog; // programa de transferencia
 	t_list *files; // lista compuesta por t_fname
-	t_fname file_out;
-} t_info_redLocal, t_info_redGlobal; // la recibe el encargado de reduc global
+	char *file_out;
+} t_info_redLocal; // la recibe el encargado de reduc global
 
 typedef struct
 {
-	int iplen; // cant caracteres del IP
-	char *ip; // ip del Worker responsable de reduccion
-	int portlen; // cant caracteres del puerto
-	char *port; // puerdo del Worker responsable de reduccion
-	t_fname file_in; // archivo que debe enviar
-} t_info_redGlobalSub;
+	char *ip;
+	char *port;
+	char *fname;
+} t_info_nodo;
+
+typedef struct
+{
+	size_t size_prog; // tamanio en bytes del programa
+	char *prog; // programa de transferencia
+	t_list *nodos; // lista con t_info_nodo
+} t_info_redGlobal;
 
 #endif /* FUNCIONESCOMPARTIDAS_ESTRUCTURAS_H_ */

@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -142,6 +143,7 @@ int realizar_handshake(int nuevo_socket){
 	int retornar,estado;
 	header *identificacion = malloc(sizeof(header));
 	header *respuesta = malloc(sizeof(header));
+	memset(respuesta,0,sizeof(header));
 	message *mensajeEnviar;
 	char *buff = getMessage(nuevo_socket,identificacion,&estado);
 
@@ -208,7 +210,7 @@ int realizar_handshake(int nuevo_socket){
 			free(mensajeEnviar);
 		}
 
-	}else if(identificacion->letra == 'N'){
+	}else if(identificacion->letra == 'D'){
 
 		log_info(logi,"Se conectó DATA_NODE");
 
@@ -217,18 +219,22 @@ int realizar_handshake(int nuevo_socket){
 
 		if(configuracion->inicio_limpio == 1){
 
+
 			respuesta->codigo = 0;
 			respuesta->letra = 'F';
-			respuesta->sizeData = 0;
-			mensajeEnviar = createMessage(respuesta,"");
+			respuesta->sizeData = sizeof(int);
+			int resuesta = 1;
+			char *buffer = malloc(sizeof(int));
+			memcpy(buffer,&resuesta,sizeof(int));
+			mensajeEnviar = createMessage(respuesta,buffer);
 
-			send(nuevo_socket,mensajeEnviar->buffer,mensajeEnviar->sizeBuffer,0);
-
+			enviar_message(nuevo_socket,mensajeEnviar,logi,&resuesta);
+			free(buffer);
 			NODO *nuevo_nodo = malloc(sizeof(NODO));
 			nuevo_nodo->soket = nuevo_socket;
 			nuevo_nodo->puerto = nodo_conectado->puerto;
-			nuevo_nodo->ip = nodo_conectado->ip;
-			nuevo_nodo->nombre = nodo_conectado->nodo;
+			nuevo_nodo->ip = strdup(nodo_conectado->ip);
+			nuevo_nodo->nombre =strdup(nodo_conectado->nodo);
 			nuevo_nodo->espacio_total = nodo_conectado->sizeDatabin;
 			nuevo_nodo->espacio_libre = nodo_conectado->sizeDatabin;
 
@@ -243,6 +249,7 @@ int realizar_handshake(int nuevo_socket){
 			free(nodo_conectado);
 			free(mensajeEnviar->buffer);
 			free(mensajeEnviar);
+			free(buff);
 
 		}else{
 
@@ -250,8 +257,6 @@ int realizar_handshake(int nuevo_socket){
 			// si lo es aceptarlo si no rechazarlo
 		}
 
-		free(mensajeEnviar);
-		free(nodo_conectado);
 	}
 
 	free(identificacion);

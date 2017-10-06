@@ -50,26 +50,26 @@ int main(int argc, char **argv) {
 
 	}else{
 
-		log_info(logi, "Restaurando estructuras de un estado anterior, si existe");
+		log_info(logi, "Restaurando estructuras de un estado anterior...");
 		configuracion->inicio_limpio = 0;
 		int res = recuperar_estructuras_administrativas();
 		if(res != 1){
 			liberar_memoria();
 			return EXIT_FAILURE;
 		}
-		log_info(logi, "Listo");
+		log_info(logi, "Estructuras recuperadas");
 	}
 
 	pthread_t hiloConexiones;
-	//pthread_t hiloConsola;
+	pthread_t hiloConsola;
 
 	pthread_create(&hiloConexiones,NULL, (void*)manejo_conexiones, NULL);
-	//pthread_create(&hiloConsola,NULL,(void *)iniciar_consola_FS,NULL);
+	pthread_create(&hiloConsola,NULL,(void *)iniciar_consola_FS,NULL);
 
 	//if argv[2] --clean ->ignorar estado anterior
 	//else restaurar yamaFS desde un estado anterior
 
-	//pthread_join(hiloConsola,NULL);
+	pthread_join(hiloConsola,NULL);
 	pthread_join(hiloConexiones,NULL);
 
 
@@ -99,6 +99,8 @@ void inicializaciones(void){
 
 	configuracion = malloc(sizeof (yamafs_config));
 	configuracion->estado_estable = 0;
+	configuracion->espacio_libre = 0;
+	configuracion->espacio_total = 0;
 	nodos = list_create();
 	archivos = list_create();
 }
@@ -116,9 +118,9 @@ void liberar_memoria(void ){
 		free(self->nombre);
 		msync(self->bitmapNodo->bitarray,self->bitmapNodo->size,MS_SYNC);
 		munmap(self->bitmapNodo->bitarray,self->bitmapNodo->size);
-		free(self->bitmapNodo->bitarray);
 		bitarray_destroy(self->bitmapNodo);
 		free(self);
+
 	}
 	list_destroy_and_destroy_elements(nodos,(void *)_nodo_destroyer);
 
@@ -132,6 +134,7 @@ void liberar_memoria(void ){
 
 		list_destroy_and_destroy_elements(self->bloques,(void *)_bloqueArchiv_destroyer);
 		free(self);
+
 	}
 	list_destroy_and_destroy_elements(archivos,(void *)_archivo_destroyer);
 
