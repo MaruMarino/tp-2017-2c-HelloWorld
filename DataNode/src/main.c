@@ -18,7 +18,7 @@ int waitAccept(const int *socket, t_log **file_log, config *config, const size_t
 int main(int argc, char *argv[]) {
 
     t_log *file_log = crear_archivo_log("DateNode", true,
-                                        "/home/elmigue/Desktop/workFolderUTN/tp-2017-2c-HelloWorld/DataNode/src/log/log");
+                                        "/home/elmigue/Desktop/workSpace/tp-2017-2c-HelloWorld/DataNode/src/log/log");
     int control;
 
     escribir_log(file_log, "cargando el archivo de configuracion");
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
     size_t sizeDataBin;
     size_t sizeFirstDefault = megaByte * 20;
     if (argv[2] != NULL) {
-        sizeDataBin = megaByte * (size_t) argv[2];
+        sizeFirstDefault = megaByte * (size_t) strtol(argv[2],&argv[2],10);
     }
     void *dataBin = openDateBin(&condifguracion->ruta_databin, &sizeDataBin, sizeFirstDefault);
     if (dataBin == NULL) {
@@ -47,6 +47,7 @@ int main(int argc, char *argv[]) {
     if (waitAccept(&socketCliente, &file_log, condifguracion, &sizeDataBin) == -1) {
         return -1;
     }
+
 
     listenRequest(&socketCliente, &file_log, &dataBin);
 
@@ -90,7 +91,7 @@ int waitAccept(const int *socket, t_log **file_log, config *config, const size_t
     memcpy(&aceeptM, Buffer, sizeof(int));
 
     if (aceeptM) {
-        escribir_error_log(*file_log,"Aceptado por FileSystem");
+        escribir_log(*file_log,"Aceptado por FileSystem");
         return 0;
     } else {
         escribir_error_log(*file_log,"No aceptado por FileSystem");
