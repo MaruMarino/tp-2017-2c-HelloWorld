@@ -4,6 +4,9 @@
 #include <netdb.h>
 #include <wait.h>
 #include <unistd.h>
+#include <semaphore.h>
+#include <signal.h>
+#include <errno.h>
 
 #include <commons/config.h>
 #include <commons/string.h>
@@ -22,23 +25,13 @@
 #include "nettingWorker.h"
 #include "rutinasChild.h"
 
-#define maxline 0x10000 // 1 MiB
+#define maxline 0x100000 // 1 MiB
 
 t_log *logw;
 
-
-int makeCommSock(int socket_in, t_log *log, int *control) {
-    int sock_comm;
-    struct sockaddr_in clientAddr;
-    socklen_t clientSize = sizeof(clientAddr);
-    *control = 0;
-
-    if ((sock_comm = accept(socket_in, (struct sockaddr *) &clientAddr, &clientSize)) == -1) {
-        *control = 6;
-        error_sockets(log, control, "");
-    }
-
-    return sock_comm;
+/* El unico proposito de este handler es llamar waitpid() pa matar zombies */
+void handleWorkerRet(int sig){
+	while(waitpid(-1, &sig, WNOHANG) != -1) ; // no-op
 }
 
 int main(int argc, char *argv[]){
@@ -55,23 +48,27 @@ int main(int argc, char *argv[]){
 	pid_t mpid;
 	header head;
 	char *msj;
-	int fd_proc, lis_fd, fd, status;
+	int fd_proc, lis_fd, status;
 	bool masterQuery = false;
 	
 	fd_set masters_set, read_set;
 	FD_ZERO(&masters_set);
 	FD_ZERO(&read_set);
 
+	signal(SIGCHLD, handleWorkerRet);
+
 	if ((lis_fd = makeListenSock(conf->puerto_worker, logw, &status)) < 0){
 		log_error(logw, "No se logro bindear sobre puerto %s\n", conf->puerto_worker);
 		return -1;
 	}
 
-	FD_SET(lis_fd, &masters_set); // todo: si solo existe el lis_fd en el masters_set, creo que no hace falta chequear por otros FD_ISSET y esas cosas...
+	FD_SET(lis_fd, &masters_set);
 	while(1){
 		read_set = masters_set;
 
+		try_select:
 		if (select(lis_fd + 1, &read_set, NULL, NULL, NULL) == -1){
+			if (errno == EINTR) goto try_select;
 			perror("Fallo de select(). error");
 			log_error(logw, "Fallo select()");
 			break;
@@ -82,7 +79,12 @@ int main(int argc, char *argv[]){
 			log_error(logw, "No se pudo establecer una conexion!");
 			continue;
 		}
-		free(getMessage(fd_proc, &head, &status)); // no nos interesa el mensaje
+		if ((msj = getMessageIntr(fd_proc, &head, &status)) == NULL){
+			log_error(logw, "No se pudo recibir mensaje de %c", head.letra);
+			close(fd_proc);
+			continue;
+		}
+		free(msj); // no nos interesa el mensaje
 
 		if (verificarConexion(head, 'M', 0) == 0) // es un Master
 			masterQuery = true;
@@ -95,19 +97,19 @@ int main(int argc, char *argv[]){
 		}
 
 		if ((mpid = fork()) == 0){ // soy proceso hijo
-			if (masterQuery)
-				;
-			else
-				subrutinaServidor(fd_proc);
+			if (masterQuery) // un Master quiere que le procese algo
+				subrutinaEjecutor(fd_proc);
+
+			// un Worker quiere que le sirva alguna informacion
+			subrutinaServidor(fd_proc);
 
 		} else if (mpid > 0){
-			subrutinaEjecutor(fd_proc);
-			//close(fd_proc);
+			close(fd_proc);
 
 		} else {
 			perror("Fallo fork(). error");
 			log_error(logw, "Fallo llamada a fork! Esto es un error fatal!");
-			return EXIT_FAILURE;
+			break;
 		}
 	}
 

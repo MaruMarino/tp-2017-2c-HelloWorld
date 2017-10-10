@@ -2,9 +2,9 @@
 #define ESTRUCTURAS_LOCALES_H_
 
 enum{
-	TRANSF = 10,
-	RED_L  = 11,
-	RED_G  = 12,
+	TRANSF = 1,
+	RED_L  = 2,
+	RED_G  = 3,
 };
 
 #endif

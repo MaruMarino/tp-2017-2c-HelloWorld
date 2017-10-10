@@ -8,6 +8,8 @@
 #include "log.h"
 #include <commons/string.h>
 #include <commons/log.h>
+#include <errno.h>
+#include <signal.h>
 
 void error_sockets(t_log *log, int *controlador, char *proceso);
 
@@ -35,7 +37,9 @@ int establecerConexion(char *ip_dest, char *port_dest, t_log *log, int *control)
         error_sockets(log, control, "");
     }
 
+    retry_connect:
     if (connect(sock_dest, destInfo->ai_addr, destInfo->ai_addrlen) == -1) {
+    	if (errno == EINTR) goto retry_connect;
         *control = 2;
         error_sockets(log, control, "");
     }
@@ -87,7 +91,9 @@ int aceptar_conexion(int socket_in, t_log *log, int *control) {
     socklen_t clientSize = sizeof(clientAddr);
     *control = 0;
 
+    retry_accept:
     if ((sock_comm = accept(socket_in, (struct sockaddr *) &clientAddr, &clientSize)) == -1) {
+    	if (errno == EINTR) goto retry_accept;
         *control = 6;
         error_sockets(log, control, "");
     }
@@ -127,6 +133,22 @@ int enviar_message(int socket_emisor, message *message, t_log *log, int *control
 
     return ret;
 }
+
+int enviar_messageIntr(int socket, message *message, t_log *log, int *control){
+
+    int ret;
+    *control = 0;
+
+    if ((ret = sendall_intr(socket, message->buffer, &message->sizeBuffer, MSG_NOSIGNAL)) == -1){
+        *control = 7;
+        char *emisor = string_itoa(socket);
+        error_sockets(log, control, emisor);
+        free(emisor);
+    }
+
+    return ret;
+}
+
 
 char *recibir(int socket_receptor, t_log *log, int *control) {
     int ret;
@@ -237,4 +259,66 @@ void *getMessage(int socket, header *head,int *status) {
 	}
 
     return buffer;
+}
+
+char *getMessageIntr(int socket, header *head, int *status){
+
+	char *buffer;
+	size_t len = sizeof *head;
+
+	if ((*status = recvall_intr(socket, (char **) &head, &len, 0)) == -1)
+        return NULL;
+
+    buffer = malloc(head->sizeData);
+    if ((*status = recvall_intr(socket, &buffer, &head->sizeData, 0)) == -1){
+    	free(buffer);
+    	return NULL;
+    }
+
+    return buffer;
+}
+
+int recvall_intr(int sock, char **buffer, size_t *len, int flags){
+
+	int status;
+	size_t total = 0;
+	size_t left = *len;
+
+	while (total < *len){
+
+		if ((status = recv(sock, *buffer + total, left, flags)) == -1){
+			if (errno != EINTR){
+				perror("No se pudo recvall'ear el paquete. error");
+				break;
+			}
+		}
+
+		total += (size_t) status;
+		left -= (size_t) status;
+	}
+
+	*len = total;
+	return (status == -1)? -1 : (int) total;
+}
+
+int sendall_intr(int sock, char *buff, size_t *len, int flags){
+
+	int stat;
+	size_t total = 0;
+	size_t left  = *len;
+
+	while (total < *len){
+
+		try_send:
+		if ((stat = send(sock, buff, left, flags)) == -1){
+			if (errno == EINTR) goto try_send;
+			perror("No se pudo sendall'ear el paquete. error");
+			break;
+		}
+		total += (size_t) stat;
+		left  -= (size_t) stat;
+	}
+
+	*len = total;
+	return (stat == -1)? -1 : 0;
 }

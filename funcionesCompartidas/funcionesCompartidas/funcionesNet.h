@@ -39,6 +39,9 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, t_log *log, int *control);
  */
 int enviar_message(int socket_emisor, message *message, t_log *log, int *control);
 
+/* como enviar_message pero se banca interrupciones */
+int enviar_messageIntr(int socket, message *message, t_log *log, int *control);
+
 /* Recibe un mensaje, usando el socket dado - Respeta lo hablado ;)
  */
 char *recibir(int socket_receptor, t_log *log, int *control);
@@ -98,5 +101,23 @@ message * createMessage(header *head, void *data);
  *
  * */
 void *getMessage(int socket,header *head,int *status);
+
+/* como getMessage pero se banca interrupciones */
+char *getMessageIntr(int socket, header *head, int *status);
+
+/* recv con esteroides.
+ * Recibe el *len completo y lo almacena en *buffer, incluso si ocurre alguna
+ * interrupcion. Similar a usar WAITALL para el recv(), pero todavia mejor.
+ * Aunque no es infalible... Retorna -1 si falla; *len en caso exitoso.
+ * **buffer y *len son parametros de retorno.
+ */
+int recvall_intr(int sock, char **buffer, size_t *len, int flags);
+
+/* Envia todos los bytes del buffer que pueda, incluso si se interrumpe la
+ * syscall.
+ * Si falla por algun otro motivo, retorna -1; sino retorna 0.
+ * len es variable de retorno para el size total enviado.
+ */
+int sendall_intr(int sock, char *buff, size_t *len, int flags);
 
 #endif /* FUNCIONES_NET_H_ */

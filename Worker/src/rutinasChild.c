@@ -37,18 +37,18 @@ void subrutinaEjecutor(int sock_m){
 	}
 
 	switch(head.codigo){
-	case 1:
+	case TRANSF:
 		log_trace(logw, "Un Master pide transformacion");
 
 		t_info_trans *info_t = deserializar_info_trans(msj);
 
-		if (crearArchivoBin(info_t->prog, info_t->size_prog, exe_fname) < 0){// ||
-			//!crearArchivoData(info_t->bloque, (size_t) info_t->bytes_ocup, data_fname)){
+		if (crearArchivoBin(info_t->prog, info_t->size_prog, exe_fname) < 0 ||
+			crearArchivoData(info_t->bloque, (size_t) info_t->bytes_ocup, data_fname) < 0){
 			log_error(logw, "No se pudieron crear los archivos de trabajo.");
 			liberador(4, msj, info_t, exe_fname, data_fname);
 			exit(-1);
 		}
-		crearArchivoData(info_t->bloque, (size_t) info_t->bytes_ocup, data_fname);
+
 		if (!makeCommandAndExecute(data_fname, exe_fname, info_t->file_out)){
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberador(4, msj, info_t->prog, info_t->file_out, info_t);

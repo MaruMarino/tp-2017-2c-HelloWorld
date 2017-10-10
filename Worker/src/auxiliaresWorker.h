@@ -40,6 +40,11 @@ int realizarApareo(int nfiles, FILE *fs[nfiles]);
  */
 int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname);
 
+int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns);
+int apareoGlobal(t_list *nodos, char *fname);
+
+void cleanWorkspaceFiles(int nfiles, char *fst, ...);
+
 /* Recrea en el sistema local el archivo alojado en cada Nodo de la lista.
  * Retorna -1 si falla alguna operacion de la rutina. Sino retorna 0.
  */

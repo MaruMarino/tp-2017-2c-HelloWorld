@@ -16,13 +16,15 @@
 #include "auxiliaresWorker.h"
 #include "nettingWorker.h"
 
-#define maxline 0x10000 // 1 MiB
+#define MINSTR(A, PA, B, PB) ((strcmp(A, B) < 0)? (PA) : (PB))
+
+#define maxline 0x100000 // 1 MiB
 
 static int cmpstr(const void *p1, const void *p2);
 static void liberarApareo(int nfiles, FILE *fs[nfiles], char *ls[nfiles-1]);
 
 extern t_log *logw;
-const char *databin = "/home/utnso/yama-test1/WBAN.csv";
+char *databin;
 
 char *crearComando(int nargs, char *fst, ...){
 	log_trace(logw, "Se crea un comando de %d argumentos", nargs);
@@ -179,7 +181,7 @@ int realizarApareo(int nfiles, FILE *fs[nfiles]){
 
 int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname){
 
-	char *cmd = crearComando(6, "cat ", data_fname, "|", exe_fname,
+	char *cmd = crearComando(7, "cat ", data_fname, "|", "./", exe_fname,
 			" | sort -dib > ", out_fname);
 	if (!cmd){
 		log_error(logw, "Fallo la creacion del comando a ejecutar.");
@@ -208,98 +210,107 @@ static void liberarApareo(int nfiles, FILE *fs[nfiles], char *ls[nfiles-1]){
 	}
 }
 
-int apareoGlobal(t_list *nodos, char *fname){
+// todo: revisar liberacion de recursos y parametros
+int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns){
 
+	int i, ctl;
+	char *msj;
 	header head;
 	t_info_nodo *n;
-	FILE *fout;
-	int i, ctl, nquant, min;
-	nquant = list_size(nodos);
-
-	char *lines[nquant], *msj;
-	int fds[nquant];
 
 	// Formalizar conexion con cada Nodo y crear su FILE correspondiente
 	for (i = 0; i < nquant; ++i){
 		n = list_get(nodos, i);
-		if ((fds[i] = establecerConexion(n->ip, n->port, logw, &ctl)) == -1 ||
-			realizarHandshake(fds[i], 'W') < 0){
+		if ((*fds[i] = establecerConexion(n->ip, n->port, logw, &ctl)) == -1 ||
+			realizarHandshake(*fds[i], 'W') < 0){
 			log_error(logw, "No se pudo conectar con Nodo en %s:%s", n->ip, n->port);
 			return -1;
 		}
-	}
 
-	if (truncate(fname, 0) == -1){
-		log_error(logw, "Fallo truncate() del archivo output %s", fname);
-		return -1;
-
-	} else if((fout = fopen(fname, "w")) == NULL){
-		log_error(logw, "No se pudo abrir el archivo de output %s", fname);
-		return -1;
-	}
-
-	// Recibimos las primeras lineas
-	for (i = 0; i < nquant; ++i){
-		if (lines[i] == NULL && fds[i] ) continue;
-
-		msj = getMessage(fds[i], &head, &ctl);
+		msj = getMessage(*fds[i], &head, &ctl);
 		if (ctl == -1 || ctl == 0){
 			log_error(logw, "Fallo obtencion mensaje del Nodo en %s:%s", n->fname, n->ip, n->port);
-			free(lines[i]); lines[i] = NULL;
+			free(*lns[i]); *lns[i] = NULL;
 			return -1;
 		}
 
-		lines[i] = deserializar_stream(msj, &head.sizeData);
-	}
-
-	while(1){ // todo: hacer convergente
-
-		// comparar lineas; voy a tener int min = X con la posicion ganadora
-		// llamo fprintf(fout, lines[i])
-		fprintf(fout, lines[min]);
-		// Obtenemos la proxima linea del Worker ganador
-		msj = getMessage(fds[min], &head, &ctl);
-		if (ctl == -1){
-			log_error(logw, "Fallo obtencion mensaje del Nodo en %s:%s", n->fname, n->ip, n->port);
-			free(lines[min]); lines[min] = NULL;
-			return -1;
-
-		} else if (head.codigo == 12){
-			log_trace(logw, "Se recibio EOF para Nodo en %s:%s", n->fname, n->ip, n->port);
-			close(fds[min]); fds[min] = -1;
-			lines[min] = NULL;
-		}
-
-		lines[min] = deserializar_stream(msj, &head.sizeData);
-
-
-
-		// Recibir la linea del Nodo que falte
-		for (i = 0; i < nquant; ++i){
-			if (fds[i] < 0) continue; // el fd esta cerrado
-
-			msj = getMessage(fds[i], &head, &ctl);
-			if (ctl == -1 || ctl == 0){
-				log_error(logw, "Fallo obtencion mensaje del Nodo en %s:%s", n->fname, n->ip, n->port);
-				// todo: liberar todos los recursos que se pierden
-				free(lines[i]);
-				fds[i] = -1;
-				return -1;
-			}
-
-
-
-			lines[i] = deserializar_stream(msj, &head.sizeData);
-		}
-
-
-
+		*lns[i] = deserializar_stream(msj, &head.sizeData);
 	}
 
 	return 0;
 }
 
-int reproducirFiles(t_list *nodos){
+int apareoGlobal(t_list *nodos, char *fname){
+
+	header head;
+	FILE *fout;
+	char **lines, *msj;
+	int i, ctl, min, nquant, remaining, *fds;
+	remaining = nquant = list_size(nodos);
+
+	lines = malloc((size_t) nquant * sizeof *lines);
+	fds = malloc((size_t) nquant * sizeof *fds);
+
+	if((fout = fopen(fname, "w")) == NULL){
+		perror("Fallo fopen()");
+		log_error(logw, "No se pudo abrir el archivo de output %s", fname);
+		return -1;
+	}
+
+	// Preparamos las primeras lineas a comparar
+	conectarYCargar(nquant, nodos, &fds, &lines);
+	while(remaining){
+
+		// Obtenemos posicion del menor string
+		for (min = 0, i = 1; i < nquant; ++i){
+			if (lines[min] == NULL){
+				min++;
+				continue;
+
+			} else if(lines[i] == NULL)
+				continue;
+
+			min = MINSTR(lines[min], min, lines[i], i);
+		}
+
+		// Escribimos la linea en el FILE de output
+		fputs(lines[min], fout);
+
+		// Obtenemos la proxima linea del menor string
+		msj = getMessage(fds[min], &head, &ctl);
+		if (ctl == -1){
+			log_error(logw, "Fallo obtencion mensaje de Nodo en %d", fds[min]);
+			free(lines[min]); lines[min] = NULL;
+			return -1;
+
+		} else if (head.codigo == 12){
+			log_trace(logw, "Se recibio EOF para Nodo en %d", fds[min]);
+			close(fds[min]); fds[min] = 0;
+			lines[min] = NULL;
+			remaining--;
+			continue;
+		}
+
+		lines[min] = deserializar_stream(msj, &head.sizeData);
+	}
+
+	return 0;
+}
+
+void cleanWorkspaceFiles(int nfiles, char *fst, ...){
+
+	char *fname;
+	va_list filesp;
+	va_start(filesp, fst);
+
+	unlink(fst);
+	for (nfiles--; nfiles > 0; nfiles--){
+		fname = va_arg(filesp, char*);
+		unlink(fname);
+	}
+}
+
+int reproducirFiles(t_list *nodos){ //todo: deprecated
 
 	int i;
 	char *f_data;
