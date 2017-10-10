@@ -90,7 +90,130 @@
 [INFO] 23:57:04:759 DateNode/(24243:24243): cargando el archivo de configuracion
 [INFO] 23:57:04:759 DateNode/(24243:24243): Abriendo DataBin
 [INFO] 23:57:04:759 DateNode/(24243:24243): Estableciendo Conneccion al File System
-[INFO] 20:31:07:743 DateNode/(5229:5229): Se crea el archivo de log
-[INFO] 20:31:07:743 DateNode/(5229:5229): cargando el archivo de configuracion
-[INFO] 20:31:07:743 DateNode/(5229:5229): Abriendo DataBin
-[INFO] 20:31:07:743 DateNode/(5229:5229): Estableciendo Conneccion al File System
+[INFO] 10:04:39:328 DateNode/(9703:9703): Se crea el archivo de log
+[INFO] 10:04:39:329 DateNode/(9703:9703): cargando el archivo de configuracion
+[INFO] 10:05:40:635 DateNode/(9747:9747): Se crea el archivo de log
+[INFO] 10:05:40:635 DateNode/(9747:9747): cargando el archivo de configuracion
+[INFO] 10:05:40:635 DateNode/(9747:9747): Abriendo DataBin
+[ERROR] 10:05:40:636 DateNode/(9747:9747): Error al abrir el data.bin
+[INFO] 10:09:59:724 DateNode/(9813:9813): Se crea el archivo de log
+[INFO] 10:09:59:724 DateNode/(9813:9813): cargando el archivo de configuracion
+[INFO] 10:09:59:724 DateNode/(9813:9813): Abriendo DataBin
+[INFO] 10:09:59:725 DateNode/(9813:9813): Estableciendo Conneccion al File System
+[ERROR] 10:09:59:725 DateNode/(9813:9813): Kernel - Error conectando socket
+[ERROR] 10:09:59:725 DateNode/(9813:9813): Error al intentar establecer conneccion
+[INFO] 10:10:46:582 DateNode/(9844:9844): Se crea el archivo de log
+[INFO] 10:10:46:582 DateNode/(9844:9844): cargando el archivo de configuracion
+[INFO] 10:10:46:582 DateNode/(9844:9844): Abriendo DataBin
+[ERROR] 10:10:46:582 DateNode/(9844:9844): Error al abrir el data.bin
+[INFO] 10:10:57:45 DateNode/(9871:9871): Se crea el archivo de log
+[INFO] 10:10:57:45 DateNode/(9871:9871): cargando el archivo de configuracion
+[INFO] 10:10:57:45 DateNode/(9871:9871): Abriendo DataBin
+[ERROR] 10:10:57:45 DateNode/(9871:9871): Error al abrir el data.bin
+[INFO] 10:11:38:347 DateNode/(9923:9923): Se crea el archivo de log
+[INFO] 10:11:38:348 DateNode/(9923:9923): cargando el archivo de configuracion
+[INFO] 10:11:38:348 DateNode/(9923:9923): Abriendo DataBin
+[INFO] 10:11:38:348 DateNode/(9923:9923): Estableciendo Conneccion al File System
+[ERROR] 10:11:38:348 DateNode/(9923:9923): Kernel - Error conectando socket
+[ERROR] 10:11:38:348 DateNode/(9923:9923): Error al intentar establecer conneccion
+[INFO] 10:12:25:916 DateNode/(9988:9988): Se crea el archivo de log
+[INFO] 10:12:25:917 DateNode/(9988:9988): cargando el archivo de configuracion
+[INFO] 10:12:25:917 DateNode/(9988:9988): Abriendo DataBin
+[INFO] 10:12:25:917 DateNode/(9988:9988): Estableciendo Conneccion al File System
+[ERROR] 10:12:25:917 DateNode/(9988:9988): Kernel - Error conectando socket
+[ERROR] 10:12:25:917 DateNode/(9988:9988): Error al intentar establecer conneccion
+[INFO] 17:53:16:319 DateNode/(2477:2477): Se crea el archivo de log
+[INFO] 17:53:16:319 DateNode/(2477:2477): cargando el archivo de configuracion
+[INFO] 17:53:16:319 DateNode/(2477:2477): Abriendo DataBin
+[INFO] 17:53:16:320 DateNode/(2477:2477): Estableciendo Conneccion al File System
+[ERROR] 17:53:16:320 DateNode/(2477:2477): Kernel - Error conectando socket
+[ERROR] 17:53:16:320 DateNode/(2477:2477): Error al intentar establecer conneccion
+[INFO] 17:53:35:45 DateNode/(2534:2534): Se crea el archivo de log
+[INFO] 17:53:35:45 DateNode/(2534:2534): cargando el archivo de configuracion
+[INFO] 17:53:35:45 DateNode/(2534:2534): Abriendo DataBin
+[INFO] 17:55:05:726 DateNode/(2615:2615): Se crea el archivo de log
+[INFO] 17:55:05:726 DateNode/(2615:2615): cargando el archivo de configuracion
+[INFO] 17:55:05:726 DateNode/(2615:2615): Abriendo DataBin
+[INFO] 17:55:05:726 DateNode/(2615:2615): Estableciendo Conneccion al File System
+[ERROR] 17:55:05:726 DateNode/(2615:2615): Kernel - Error conectando socket
+[ERROR] 17:55:05:726 DateNode/(2615:2615): Error al intentar establecer conneccion
+[INFO] 17:57:03:215 DateNode/(2717:2717): Se crea el archivo de log
+[INFO] 17:57:03:215 DateNode/(2717:2717): cargando el archivo de configuracion
+[INFO] 17:57:03:215 DateNode/(2717:2717): Abriendo DataBin
+[INFO] 17:57:16:103 DateNode/(2759:2759): Se crea el archivo de log
+[INFO] 17:57:16:103 DateNode/(2759:2759): cargando el archivo de configuracion
+[INFO] 17:57:16:103 DateNode/(2759:2759): Abriendo DataBin
+[INFO] 17:57:16:103 DateNode/(2759:2759): Estableciendo Conneccion al File System
+[ERROR] 17:57:16:103 DateNode/(2759:2759): Kernel - Error conectando socket
+[ERROR] 17:57:16:103 DateNode/(2759:2759): Error al intentar establecer conneccion
+[INFO] 19:55:53:752 DateNode/(2278:2278): Se crea el archivo de log
+[INFO] 19:55:53:752 DateNode/(2278:2278): cargando el archivo de configuracion
+[INFO] 19:55:53:752 DateNode/(2278:2278): Abriendo DataBin
+[INFO] 19:55:53:752 DateNode/(2278:2278): Estableciendo Conneccion al File System
+[ERROR] 19:55:56:812 DateNode/(2278:2278): Kernel - Error conectando socket
+[ERROR] 19:55:56:814 DateNode/(2278:2278): Error al intentar establecer conneccion
+[INFO] 19:56:04:323 DateNode/(2311:2311): Se crea el archivo de log
+[INFO] 19:56:04:323 DateNode/(2311:2311): cargando el archivo de configuracion
+[INFO] 19:56:04:324 DateNode/(2311:2311): Abriendo DataBin
+[INFO] 19:56:04:324 DateNode/(2311:2311): Estableciendo Conneccion al File System
+[ERROR] 19:56:07:373 DateNode/(2311:2311): Kernel - Error conectando socket
+[ERROR] 19:56:07:373 DateNode/(2311:2311): Error al intentar establecer conneccion
+[INFO] 20:34:06:1 DateNode/(2795:2795): Se crea el archivo de log
+[INFO] 20:34:06:1 DateNode/(2795:2795): cargando el archivo de configuracion
+[INFO] 20:34:06:1 DateNode/(2795:2795): Abriendo DataBin
+[INFO] 20:34:06:1 DateNode/(2795:2795): Estableciendo Conneccion al File System
+[INFO] 20:34:07:73 DateNode/(2795:2795): Aceptado por FileSystem
+[INFO] 20:34:07:73 DateNode/(2795:2795): Escuchando a maru a q me hable
+[INFO] 20:42:13:195 DateNode/(2964:2964): Se crea el archivo de log
+[INFO] 20:42:13:196 DateNode/(2964:2964): cargando el archivo de configuracion
+[INFO] 20:42:43:912 DateNode/(2971:2971): Se crea el archivo de log
+[INFO] 20:42:43:912 DateNode/(2971:2971): cargando el archivo de configuracion
+[INFO] 20:43:48:238 DateNode/(3006:3006): Se crea el archivo de log
+[INFO] 20:43:48:238 DateNode/(3006:3006): cargando el archivo de configuracion
+[INFO] 20:44:20:835 DateNode/(3019:3019): Se crea el archivo de log
+[INFO] 20:44:20:835 DateNode/(3019:3019): cargando el archivo de configuracion
+[INFO] 20:44:50:93 DateNode/(3047:3047): Se crea el archivo de log
+[INFO] 20:44:50:93 DateNode/(3047:3047): cargando el archivo de configuracion
+[INFO] 20:45:04:907 DateNode/(3080:3080): Se crea el archivo de log
+[INFO] 20:45:04:907 DateNode/(3080:3080): cargando el archivo de configuracion
+[INFO] 20:45:04:907 DateNode/(3080:3080): Abriendo DataBin
+[INFO] 20:45:04:907 DateNode/(3080:3080): Estableciendo Conneccion al File System
+[INFO] 20:45:04:918 DateNode/(3080:3080): Aceptado por FileSystem
+[INFO] 20:45:04:918 DateNode/(3080:3080): Escuchando a maru a q me hable
+[INFO] 20:46:05:708 DateNode/(3144:3144): Se crea el archivo de log
+[INFO] 20:46:06:339 DateNode/(3144:3144): cargando el archivo de configuracion
+[INFO] 20:46:07:542 DateNode/(3144:3144): Abriendo DataBin
+[INFO] 20:46:41:463 DateNode/(3172:3172): Se crea el archivo de log
+[INFO] 20:46:41:463 DateNode/(3172:3172): cargando el archivo de configuracion
+[INFO] 20:46:41:463 DateNode/(3172:3172): Abriendo DataBin
+[INFO] 20:46:41:464 DateNode/(3172:3172): Estableciendo Conneccion al File System
+[INFO] 20:46:41:478 DateNode/(3172:3172): Aceptado por FileSystem
+[INFO] 20:46:41:478 DateNode/(3172:3172): Escuchando a maru a q me hable
+[INFO] 20:46:48:769 DateNode/(3209:3209): Se crea el archivo de log
+[INFO] 20:46:48:769 DateNode/(3209:3209): cargando el archivo de configuracion
+[INFO] 20:46:48:769 DateNode/(3209:3209): Abriendo DataBin
+[INFO] 20:46:48:769 DateNode/(3209:3209): Estableciendo Conneccion al File System
+[INFO] 20:46:48:783 DateNode/(3209:3209): Aceptado por FileSystem
+[INFO] 20:46:48:783 DateNode/(3209:3209): Escuchando a maru a q me hable
+[ERROR] 20:51:58:34 DateNode/(3172:3172): Se desconecto el server
+[ERROR] 20:51:58:35 DateNode/(3209:3209): Se desconecto el server
+[INFO] 21:00:15:579 DateNode/(4399:4399): Se crea el archivo de log
+[INFO] 21:00:15:579 DateNode/(4399:4399): cargando el archivo de configuracion
+[INFO] 21:00:15:580 DateNode/(4399:4399): Abriendo DataBin
+[INFO] 21:00:15:580 DateNode/(4399:4399): Estableciendo Conneccion al File System
+[INFO] 21:00:16:636 DateNode/(4399:4399): Aceptado por FileSystem
+[INFO] 21:00:16:636 DateNode/(4399:4399): Escuchando a maru a q me hable
+[INFO] 21:55:24:577 DateNode/(5190:5190): Se crea el archivo de log
+[INFO] 21:55:24:577 DateNode/(5190:5190): cargando el archivo de configuracion
+[INFO] 21:55:24:577 DateNode/(5190:5190): Abriendo DataBin
+[INFO] 21:55:24:577 DateNode/(5190:5190): Estableciendo Conneccion al File System
+[INFO] 21:55:24:596 DateNode/(5190:5190): Aceptado por FileSystem
+[INFO] 21:55:24:596 DateNode/(5190:5190): Escuchando a maru a q me hable
+[INFO] 21:55:40:125 DateNode/(5197:5197): Se crea el archivo de log
+[INFO] 21:55:40:125 DateNode/(5197:5197): cargando el archivo de configuracion
+[INFO] 21:55:40:126 DateNode/(5197:5197): Abriendo DataBin
+[INFO] 21:55:40:126 DateNode/(5197:5197): Estableciendo Conneccion al File System
+[INFO] 21:55:40:161 DateNode/(5197:5197): Aceptado por FileSystem
+[INFO] 21:55:40:161 DateNode/(5197:5197): Escuchando a maru a q me hable
+[ERROR] 22:26:56:388 DateNode/(4399:4399): Se desconecto el server
+[ERROR] 22:26:56:388 DateNode/(5197:5197): Se desconecto el server

@@ -19,6 +19,10 @@ MASTER:
 -2: Enviar reduccion local a worker
 -3: Enviar reduccion global a worker
 -4: Enviar almacenamiento final a worker
+-5 Enviar resultado de transformacion a YAMA
+-6 Enviar resultado de red local a YAMA
+-7 Enviar resultado de red GLOBAL a YAMA
+-6 Enviar resultado de alm final a YAMA
 
 DATANODE:
 
