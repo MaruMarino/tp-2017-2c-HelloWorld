@@ -94,8 +94,15 @@ void conectar_fs()
 	else
 	{
 		escribir_log(yama_log, "Conectado a FS");
-		enviar(config->socket_fs, "Y000000000000", yama_log, &control);
-		char *rta = recibir(config->socket_fs, yama_log, &control);
+		header *head;
+		header *head2 = malloc(sizeof(head2));
+		head2->codigo = 0;
+		head2->letra = 'Y';
+		head2->sizeData = 0;
+
+		void *mensaje = createMessage(head2, "");
+		enviar_message(config->socket_fs, mensaje, yama_log, &control);
+		char *rta = getMessage(config->socket_fs, head, &control);
 		puts(rta);
 		free(rta);
 	}

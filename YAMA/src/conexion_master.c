@@ -7,6 +7,7 @@
 #include <funcionesCompartidas/log.h>
 #include <funcionesCompartidas/mensaje.h>
 #include <funcionesCompartidas/estructuras.h>
+#include <funcionesCompartidas/serializacion_yama_master.h>
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/log.h>
@@ -45,7 +46,7 @@ void manejo_conexiones()
 		read_fds = master;
 
 		int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, NULL);
-		escribir_log(yama_log, "Actividad detectada en administrador de conexiones");
+		escribir_log(yama_log, "Actividad detectad<a en administrador de conexiones");
 
 		if (selectResult == -1)
 		{
@@ -70,7 +71,7 @@ void manejo_conexiones()
 						//Controlo que no haya pasado nada raro y acepto al nuevo
 						if (controlador == 0)
 						{
-							realizar_handshake_master(nuevo_socket);
+							//realizar_handshake_master(nuevo_socket);
 						}
 
 						//Cargo la nueva conexion a la lista y actualizo el maximo
@@ -99,7 +100,7 @@ void manejar_respuesta(int socket_)
 	int status;
 	char *mensaje = (char *)getMessage(socket_, head, &status);
 	//char *header = get_header(mensaje);
-	if (comparar_header(head->letra, "M"))
+	if (head->letra == 'M')
 	{
 		//int codigo = get_codigo(mensaje);
 		//char *info = get_mensaje(mensaje);
@@ -148,11 +149,16 @@ void enviar_peticion_transformacion(int socket_)
 	transformacion->nodo = nodo;
 	transformacion->temporal = strdup("/archivo/temporal_prueba");
 
+	size_t size_buffer = 0;
+
+	char *t_ser = serializar_transformacion(transformacion, &size_buffer);
+
 	head = malloc(sizeof(header));
 	head->codigo = 1;
 	head->letra = 'Y';
+	head->sizeData = size_buffer;
 
-	mensaje = createMessage(head, transformacion);
+	mensaje = createMessage(head, t_ser);
 	enviar_message(socket_, mensaje, yama_log, &control);
 
 	//agregar frees
