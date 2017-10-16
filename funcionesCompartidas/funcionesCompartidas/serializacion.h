@@ -19,4 +19,7 @@ char *deserializar_stream(char *bytes_serial, size_t *bytelen);
 char *serializar_FName(char *fn, size_t *len);
 char *deserializar_FName(char *fname_serial);
 
+char *serializar_File(t_file *file, size_t *len);
+t_file *deserializar_File(char *file_serial);
+
 #endif /* SERIALIZACION_H_ */

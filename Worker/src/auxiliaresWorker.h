@@ -40,55 +40,33 @@ int realizarApareo(int nfiles, FILE *fs[nfiles]);
  */
 int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname);
 
-int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns);
+/* Se conecta a todos los nodos y va recibiendo de a una linea de cada uno.
+ * Aparea todos los inputs recibidos en el FILE de salida fname.
+ * Retorna -1 si ocurre algun fallo; retorna 0 en salida exitosa.
+ */
 int apareoGlobal(t_list *nodos, char *fname);
+
+/* Dado el IP y Puerto del FileSystem, se le conecta y le envia el archivo
+ * del tipo t_file que corresponde con el filename fname.
+ * Retorna -1 si falla el proceso. Retorna 0 en caso exitoso.
+ */
+int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname);
+
+/* Dada una lista de nodos, se conecta a cada uno de ellos y carga en los
+ * punteros *fds y **lns el file_descriptor y la primera linea de cada nodo.
+ * Estos punteros son los parametros de retorno que interesan.
+ * Ademas retorna -1 si ocurre algun fallo; retorna 0 en salida exitosa.
+ */
+int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns);
+
+/* A partir de un path genera un t_file* con los datos pertinentes */
+t_file *cargarFile(char *fname);
+
+off_t fsize(FILE* f);
 
 void cleanWorkspaceFiles(int nfiles, char *fst, ...);
 
-/* Recrea en el sistema local el archivo alojado en cada Nodo de la lista.
- * Retorna -1 si falla alguna operacion de la rutina. Sino retorna 0.
- */
-int reproducirFiles(t_list *nodos);
-
-/* Se conecta al nodo y obtiene y retorna los datos deserializados del FILE.
- * Retorna tambien el tamanio del file en *fsize.
- * Retorna NULL en caso del algun fallo.
- */
-char *obtenerFileData(t_info_nodo *nodo, size_t *fsize);
-
-/* Recibe varios filenames presuntamente ya ordenados y los aparea.
- * El primer parametro es la cantidad de files que se estan pasando.
- * El ultimo parametro si o si debe ser el filename de output del apareo.
- * Retorna la cantidad de lineas totales apareadas.
- * Retorna -1 si falla la apertura de alguno de los archivos.
- */
-int aparearFiles_(int nfiles, char *fst, ...);
-
-/* Ordena lexicograficamente las entradas de un puntero a lineas,
- * dada la cantidad de lineas a las que apunta el puntero.
- */
-void sort(char **lines[], size_t line_count);
-
-/* Retorna la cantidad de lineas del FILE f
- * En error retorna -1
- *
- * ** NO produce efectos sobre f :)
- */
-size_t countLines(FILE *f);
-
-/* Crea un char**: un puntero donde cada puntero es una linea del FILE f
- * Retorna ademas la dimension del char* (las file_lines)
- * En error retorna NULL y setea file_lines en 0
- *
- * ** NO produce efectos sobre f :)
- */
-char **readFileIntoArray(FILE *f, size_t *file_lines);
-
-/* A partir de char**: un puntero donde cada puntero es un string,
- * sobreescribe linea por linea sobre el FILE f.
- *
- * ** SI produce efectos sobre f, lo trunca zarpado y le escribe :)
- */
-int writeArrayIntoFile(char **lines, int dim, const char *path);
+/* Envia al fd_m el cod_rta y llama exit() con ese mismo valor */
+void terminarEjecucion(int fd_m, int cod_rta);
 
 #endif /* AUXILIARES_WORKER_H_ */

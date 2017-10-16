@@ -4,9 +4,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #include <commons/string.h>
 
+#include <funcionesCompartidas/logicaNodo.h>
 #include <funcionesCompartidas/log.h>
 #include <funcionesCompartidas/estructuras.h>
 #include <funcionesCompartidas/generales.h>
@@ -20,11 +22,12 @@
 
 #define maxline 0x100000 // 1 MiB
 
-static int cmpstr(const void *p1, const void *p2);
 static void liberarApareo(int nfiles, FILE *fs[nfiles], char *ls[nfiles-1]);
 
 extern t_log *logw;
-char *databin;
+extern char *databin;
+
+// todo: trackeate toda mallocacion y frees()
 
 char *crearComando(int nargs, char *fst, ...){
 	log_trace(logw, "Se crea un comando de %d argumentos", nargs);
@@ -61,16 +64,13 @@ int crearArchivoBin(char *bin, size_t bin_sz, char *fname){
 		return -1;
 	}
 
+	if (chmod(fname, 055) == -1){
+		log_error(logw, "No se pudo dar permiso de ejecucion a %s", fname);
+		return -1;
+	}
+
 	fclose(f);
 	return 0;
-}
-
-char *getDataBloque(size_t blk, size_t count){
-
-	FILE *f = fopen(databin, "r");
-	char *dat = malloc(count);
-	fread(dat, maxline, 1, f);
-	return dat;
 }
 
 int crearArchivoData(size_t blk, size_t count, char *fname){
@@ -82,13 +82,13 @@ int crearArchivoData(size_t blk, size_t count, char *fname){
 		return -1;
 	}
 
-	char *data = getDataBloque(blk, count);
-
+	char *data = getDataBloque(databin, blk);
 	if ((fwrite(data, count, 1, f)) != 1){
 		log_error(logw, "No se pudo escribir el programa en %s", fname);
 		return -1;
 	}
 
+	free(data);
 	fclose(f);
 	return 0;
 }
@@ -258,7 +258,10 @@ int apareoGlobal(t_list *nodos, char *fname){
 	}
 
 	// Preparamos las primeras lineas a comparar
-	conectarYCargar(nquant, nodos, &fds, &lines);
+	if (conectarYCargar(nquant, nodos, &fds, &lines) == -1){
+		log_error(logw, "Fallo conexion y carga de textos a aparear");
+		return -1;
+	}
 	while(remaining){
 
 		// Obtenemos posicion del menor string
@@ -297,6 +300,81 @@ int apareoGlobal(t_list *nodos, char *fname){
 	return 0;
 }
 
+int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname){
+
+	message *msj;
+	t_file *file;
+	int sock_fs, ctl;
+	char *file_serial;
+	header head = {.letra = 'W', .codigo = 20};
+
+	if ((file = cargarFile(fname)) == NULL){
+		log_error(logw, "Fallo cargar el t_file %s para enviar", fname);
+		return -1;
+	}
+	file_serial = serializar_File(file, &head.sizeData);
+	msj = createMessage(&head, file_serial);
+
+	if ((sock_fs = establecerConexion(fs_ip, fs_port, logw, &ctl)) == -1){
+		log_error(logw, "Fallo conectar con FileSystem en %s:%s", fs_ip, fs_port);
+		liberador(3, file, file_serial, msj);
+		return -1;
+	}
+
+	if (realizarHandshake(sock_fs, 'F') == -1){
+		log_error(logw, "Fallo handshaking con %s:%s", fs_ip, fs_port);
+		liberador(3, file, file_serial, msj);
+		return -1;
+	}
+
+	if (enviar_message(sock_fs, msj, logw, &ctl) == -1){
+		log_error(logw, "Fallo enviar message a FileSystem en %s:%s", fs_ip, fs_port);
+		liberador(3, file, file_serial, msj);
+		return -1;
+	}
+
+	close(sock_fs);
+	liberador(3, file, file_serial, msj);
+	return 0;
+}
+
+t_file *cargarFile(char *fname){
+
+	FILE *f;
+	t_file *file = malloc(sizeof *file);
+	file->fname = strdup(fname);
+
+	if ((f = fopen(fname, "w")) == NULL){
+		log_error(logw, "No se pudo abrir el archivo %s", fname);
+		liberador(2, file->fname, file);
+		return NULL;
+	}
+
+	if ((file->fsize = fsize(f)) == -1){
+		log_error(logw, "Fallo calculo del file size de %s", fname);
+		liberador(2, file->fname, file);
+		return NULL;
+	}
+	file->data = malloc((size_t) file->fsize);
+
+	fread(file->data, (size_t) file->fsize, 1, f);
+	if (ferror(f)){
+		log_error(logw, "Fallo lectura de datos del FILE %s", fname);
+		liberador(3, file->data, file->fname, file);
+		return NULL;
+	}
+
+	return file;
+}
+
+off_t fsize(FILE* f){
+
+	fseek(f, 0, SEEK_END);
+    off_t len = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    return len;
+}
+
 void cleanWorkspaceFiles(int nfiles, char *fst, ...){
 
 	char *fname;
@@ -310,206 +388,7 @@ void cleanWorkspaceFiles(int nfiles, char *fst, ...){
 	}
 }
 
-int reproducirFiles(t_list *nodos){ //todo: deprecated
-
-	int i;
-	char *f_data;
-	size_t fsize;
-	t_info_nodo *n;
-
-	for (i = 0; i < list_size(nodos); ++i){
-		n = list_get(nodos, i);
-
-		if ((f_data = obtenerFileData(n, &fsize)) == NULL){
-			log_error(logw, "Fallo obtencion de %s del Nodo en %s:%s", n->fname, n->ip, n->port);
-			return -1;
-		}
-
-		if (crearArchivoBin(f_data, fsize, n->fname) == -1){
-			log_error(logw, "Fallo creacion del archivo %s", n->fname);
-			return -1;
-		}
-
-		free(f_data);
-	}
-
-	return 0;
+void terminarEjecucion(int fd_m, int cod_rta){
+	enviarResultado(fd_m, cod_rta);
+	exit(cod_rta);
 }
-
-//todo: rehacer esto que hiciste par nada INIAKI
-char *obtenerFileData(t_info_nodo *n, size_t *fsize){
-
-	int ctl, nodo_fd;
-	char *serial_data, *fdata;
-	message *msj;
-	header head = {.letra = 'W', .codigo = 20, .sizeData = strlen(n->fname) + 1};
-
-	if ((nodo_fd = establecerConexion(n->ip, n->port, logw, &ctl)) == -1){
-		log_error(logw, "No se pudo conectar con Nodo en %s:%s", n->ip, n->port);
-		return NULL;
-	}
-
-	if (realizarHandshake(nodo_fd, 'W') < 0){
-		log_error(logw, "Fallo handshaking con Nodo en %s:%s", n->ip, n->port);
-		return NULL;
-	}
-
-	msj = createMessage(&head, n->fname);
-	if (enviar_message(nodo_fd, msj, logw, &ctl) < 0){
-		log_error(logw, "Fallo envio de mensaje al Nodo en %s:%s", n->fname, n->ip, n->port);
-		free(msj);
-		return NULL;
-	}
-
-	serial_data = getMessage(nodo_fd, &head, &ctl);
-	if (ctl == -1 || ctl == 0){
-		log_error(logw, "Fallo obtencion mensaje del Nodo en %s:%s", n->fname, n->ip, n->port);
-		free(msj);
-		free(serial_data);
-		return NULL;
-	}
-
-	fdata = deserializar_stream(serial_data, fsize);
-
-	close(nodo_fd);
-	free(msj);
-	free(serial_data);
-
-	return fdata;
-}
-
-int aparearFiles_(int nfiles, char *fst, ...){
-
-	int i;
-	char *fname;
-	FILE *fs[nfiles]; // almacenara un puntero a cada file;
-	va_list filep;
-	va_start(filep, fst);
-
-	if((fs[0] = fopen(fst, "r")) == NULL){
-		perror("No se pudo abrir el archivo");
-		log_error(logw, "No se pudo abrir el archivo %s", fst);
-		return -1;
-	}
-
-	// abrimos todos los archivos en modo lectura salvo el ultimo
-	for (i = 1; i < nfiles -1; ++i){
-		fname = va_arg(filep, char*);
-		if((fs[i] = fopen(fname, "r")) == NULL){
-			perror("No se pudo abrir el archivo");
-			log_error(logw, "No se pudo abrir el archivo %s", fname);
-			return -1;
-		}
-	}
-
-	// el ultimo file lo abrimos en modo escritura
-	fname = va_arg(filep, char*);
-	if((fs[nfiles - 1] = fopen(fname, "w")) == NULL){
-		perror("No se pudo abrir el archivo");
-		log_error(logw, "No se pudo abrir el archivo %s", fname);
-		return -1;
-	}
-
-	return realizarApareo(nfiles, fs);
-}
-
-
-long int fsize(FILE* f){
-
-    fseek(f, 0, SEEK_END);
-    long int len = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    return len;
-}
-
-void sort(char ***lines, size_t line_count){
-	qsort((*lines), line_count, sizeof **lines, cmpstr);
-}
-
-/* magia en el ejemplo del `man qsort' */
-static int cmpstr(const void *p1, const void *p2){
-	return strcmp(*(char**) p1, *(char**) p2);
-}
-
-size_t countLines(FILE *f){
-
-	long prev_pos = ftell(f);
-	size_t lines = 0;
-	char *aux = malloc(maxline);
-
-	while(fgets(aux, maxline, f) != NULL)
-		lines++;
-
-	if (ferror(f)) // ocurrio un error durante lectura
-		lines = 0;
-
-	fseek(f, prev_pos, SEEK_SET);
-	free(aux);
-	return lines;
-}
-
-int writeArrayIntoFile(char **lines, int dim, const char *path){
-
-	if (truncate(path, 0) == -1){
-		perror("Error en trucate del archivo:");
-		log_error(logw, "Fallo truncate() de %s", path);
-		return -1;
-	}
-
-	FILE *f;
-	if ((f = fopen(path, "w")) == NULL){
-		perror("Error en fopen:");
-		log_error(logw, "Fallo fopen() de %s", path);
-		return -1;
-	}
-
-	int i;
-	for (i = 0; i < dim && !ferror(f); ++i)
-		fputs(lines[i], f);
-
-	if (ferror(f)){
-		log_error(logw, "Error durante escritura de %s", path);
-		fclose(f);
-		return -1;
-	}
-
-	fclose(f);
-	return 0;
-}
-
-char **readFileIntoArray(FILE *f, size_t *dim){
-
-	size_t i;
-	long prev_pos = ftell(f);
-
-	if ((*dim = countLines(f)) == 0){
-		log_error(logw, "Fallo conteo de lineas! No se carga el array...");
-		return NULL;
-	}
-
-	char *aux = malloc(maxline);
-	char **lines = malloc(*dim * sizeof (char*));
-	for (i = 0; i < *dim && !ferror(f); ++i){
-
-		fgets(aux, maxline, f);
-		lines[i] = malloc(strlen(aux));
-		strcpy(lines[i], aux);
-	}
-
-	if (aux == NULL){ // avisamos el error y liberamos toda la memoria asignada
-		log_error(logw, "Fallo fgets()! No se carga el array...");
-		fseek(f, prev_pos, SEEK_SET);
-		for (; i > 0; free(lines[i]), i--);
-		free(lines);
-		free(aux);
-		*dim = 0;
-		return NULL;
-	}
-
-	fseek(f, prev_pos, SEEK_SET);
-	free(aux);
-	return lines;
-}
-
-
-

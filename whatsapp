@@ -44,6 +44,8 @@ WORKER:
 ->Identificador: 'W'
 ->código menajes y explicación:
  0: HANDSHAKE
+ 7: Worker informa accion OK a Master
+ 8: Worker informa que la accion FALLO a Master
 10: Worker pide file a Worker
 11: Worker manda file a Worker
 12: EOF durante Apareo Global

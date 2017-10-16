@@ -40,8 +40,8 @@ int verificarConexion(header head, char proc, int cod){
 int realizarHandshake(int fd_proc, char proc_expected){
 
 	int ctl;
-	header head = {.letra = 'W', .codigo = 0, .sizeData = 0};
-	message *msj = createMessage(&head, NULL);
+	header head = {.letra = 'W', .codigo = 0, .sizeData = 1};
+	message *msj = createMessage(&head, "");
 
 	if (enviar_message(fd_proc, msj, logw, &ctl) < 0){
 		log_trace(logw, "Fallo realizarHandshake con %d", fd_proc);
@@ -63,5 +63,13 @@ int realizarHandshake(int fd_proc, char proc_expected){
 	}
 
 	return 0;
+}
 
+void enviarResultado(int fd_m, int cod_rta){
+
+	int ctl;
+	header head = {.letra = 'W', .codigo = cod_rta, .sizeData = 1};
+	message *msj = createMessage(&head, "");
+
+	enviar_message(fd_m, msj, logw, &ctl);
 }

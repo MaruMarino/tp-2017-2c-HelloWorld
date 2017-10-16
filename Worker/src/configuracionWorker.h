@@ -2,11 +2,12 @@
 #define CONFIGURACION_WORKER_H_
 
 struct conf_worker {
-	char *ip_filesystem,
-		 *puerto_filesystem,
+	char *ip_fs,
+		 *puerto_fs,
 		 *nombre_nodo,
 		 *puerto_worker,
 		 *ruta_databin;
+	int size_default;
 };
 
 struct conf_worker *cargarConfig(char *path);

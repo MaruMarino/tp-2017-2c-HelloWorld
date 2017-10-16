@@ -13,28 +13,34 @@
 #include "nettingWorker.h"
 #include "estructurasLocales.h"
 #include "auxiliaresWorker.h"
+#include "configuracionWorker.h"
 
-#define maxline 0x10000
+#define maxline 0x100000
 
 extern t_log *logw;
+extern struct conf_worker *conf;
 
-// todo: que responda al Master por caso exitoso o caso fallido
 void subrutinaEjecutor(int sock_m){
-	responderHandshake(sock_m);
 
 	header head;
-	char *msj, *exe_fname, *data_fname;
+	char *msj, *exe_fname, *data_fname, *fname;
 	int status;
+	int rta = FALLO;
 
-	// filenames temporarios para programa y buffer de datos
-	exe_fname  = string_itoa(getpid()); string_append(&exe_fname, ".exec");
-	data_fname = string_itoa(getpid()); string_append(&data_fname, ".dat");
+	if (responderHandshake(sock_m) == -1){
+		log_error(logw, "Fallo respuesta de handshake a Master");
+		terminarEjecucion(sock_m, rta);
+	}
 
 	msj = getMessage(sock_m, &head, &status);
 	if (status == -1 || status == 0){
 		log_error(logw, "Error en la recepcion del mensaje");
-		exit(-1);
+		terminarEjecucion(sock_m, rta);
 	}
+
+	// filenames temporarios para programa y buffer de datos
+	exe_fname  = string_itoa(getpid()); string_append(&exe_fname, ".exec");
+	data_fname = string_itoa(getpid()); string_append(&data_fname, ".dat");
 
 	switch(head.codigo){
 	case TRANSF:
@@ -46,13 +52,13 @@ void subrutinaEjecutor(int sock_m){
 			crearArchivoData(info_t->bloque, (size_t) info_t->bytes_ocup, data_fname) < 0){
 			log_error(logw, "No se pudieron crear los archivos de trabajo.");
 			liberador(4, msj, info_t, exe_fname, data_fname);
-			exit(-1);
+			terminarEjecucion(sock_m, rta);
 		}
 
 		if (!makeCommandAndExecute(data_fname, exe_fname, info_t->file_out)){
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberador(4, msj, info_t->prog, info_t->file_out, info_t);
-			exit(-1);
+			terminarEjecucion(sock_m, rta);
 		}
 
 		break;
@@ -66,21 +72,21 @@ void subrutinaEjecutor(int sock_m){
 			log_error(logw, "No se pudo crear el ejecutable de reduccion.");
 			liberarFnames(info_rl->files);
 			liberador(5, msj, info_rl->prog, info_rl, exe_fname, data_fname);
-			exit(-1);
+			terminarEjecucion(sock_m, rta);
 		}
 
 		if (aparearFiles(info_rl->files, data_fname) == -1){
 			log_error(logw, "No se pudo aparear los archivos temporales");
 			liberarFnames(info_rl->files);
 			liberador(5, msj, info_rl->prog, info_rl, exe_fname, data_fname);
-			exit(-1);
+			terminarEjecucion(sock_m, rta);
 		}
 
 		if (!makeCommandAndExecute(data_fname, exe_fname, info_rl->file_out)){
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberarFnames(info_rl->files);
 			liberador(5, msj, info_rl->prog, info_rl, exe_fname, data_fname);
-			exit(-1);
+			terminarEjecucion(sock_m, rta);
 		}
 
 		break;
@@ -90,14 +96,44 @@ void subrutinaEjecutor(int sock_m){
 
 		t_info_redGlobal *info_rg = deserializar_info_redGlobal(msj);
 
-		//apareoGlobal()
-		//ejecucion()
-		reproducirFiles(info_rg->nodos);
+		if (!crearArchivoBin(info_rg->prog, info_rg->size_prog, exe_fname)){
+			log_error(logw, "No se pudo crear el ejecutable de reduccion.");
+			liberarInfoNodos(info_rg->nodos);
+			liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
+			terminarEjecucion(sock_m, rta);
+		}
+
+		if (apareoGlobal(info_rg->nodos, info_rg->file_out) == -1){
+			log_error(logw, "Fallo apareamiento de archivos");
+			liberarInfoNodos(info_rg->nodos);
+			liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
+			terminarEjecucion(sock_m, rta);
+		}
+
+		if (!makeCommandAndExecute(data_fname, exe_fname, info_rg->file_out)){
+			log_error(logw, "No se pudo completar correctamente la reduccion");
+			liberarInfoNodos(info_rg->nodos);
+			liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
+			terminarEjecucion(sock_m, rta);
+		}
+
+		break;
+
+	case ALMAC:
+		log_trace(logw, "Un Master pide almacenar archivo en Filesystem");
+
+		fname = deserializar_FName(msj);
+
+		if (almacenarFileEnFilesystem(conf->ip_fs, conf->puerto_fs, fname) == -1){
+			log_error(logw, "No se logro almacenar %s en FileSystem", fname);
+			liberador(3, fname, exe_fname, data_fname);
+			terminarEjecucion(sock_m, rta);
+		}
 
 		break;
 	}
 
-	exit(0);
+	terminarEjecucion(sock_m, OK);
 }
 
 void subrutinaServidor(int sock_w){
@@ -115,6 +151,7 @@ void subrutinaServidor(int sock_w){
 	if (responderHandshake(sock_w) == -1){
 		log_error(logw, "No se pudo responder al Worker. Cierro conexion");
 		close(sock_w);
+		free(fbuff);
 		exit(-1);
 	}
 
@@ -137,7 +174,7 @@ void subrutinaServidor(int sock_w){
 		if (ctl <= 0) break;
 
 		if ((ret = getline(&fbuff, &bufflen, f)) == -1 || bufflen > maxline){
-			fbuff = "";
+			strcpy(fbuff, "");
 			if (feof(f)){
 				head_serv.codigo = 12;
 				ret = 0;

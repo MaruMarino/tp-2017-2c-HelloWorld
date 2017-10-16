@@ -12,6 +12,7 @@
 #include <commons/string.h>
 #include <commons/log.h>
 
+#include <funcionesCompartidas/logicaNodo.h>
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/mensaje.h>
 #include <funcionesCompartidas/log.h>
@@ -25,9 +26,10 @@
 #include "nettingWorker.h"
 #include "rutinasChild.h"
 
-#define maxline 0x100000 // 1 MiB
-
 t_log *logw;
+struct conf_worker *conf;
+char *databin;
+size_t dsize;
 
 /* El unico proposito de este handler es llamar waitpid() pa matar zombies */
 void handleWorkerRet(int sig){
@@ -40,9 +42,9 @@ int main(int argc, char *argv[]){
 		puts("Cantidad invalida de argumentos");
 		return -1;
 	}
-	logw = crear_archivo_log("Worker", true, "/home/utnso/conf/worker_log");
+	logw = crear_archivo_log("Worker", true, "/home/utnso/tp-2017-2c-HelloWorld/logs/worker_log");
 
-	struct conf_worker *conf = cargarConfig(argv[1]);
+	conf = cargarConfig(argv[1]);
 	mostrarConfig(conf);
 
 	pid_t mpid;
@@ -55,13 +57,17 @@ int main(int argc, char *argv[]){
 	FD_ZERO(&masters_set);
 	FD_ZERO(&read_set);
 
-	signal(SIGCHLD, handleWorkerRet);
+	if ((databin = openDataBin(conf->ruta_databin, &dsize, conf->size_default)) == NULL){
+		log_error(logw, "Fallo abrir el archivo databin. No se incia el Nodo");
+		return -1;
+	}
 
 	if ((lis_fd = makeListenSock(conf->puerto_worker, logw, &status)) < 0){
 		log_error(logw, "No se logro bindear sobre puerto %s\n", conf->puerto_worker);
 		return -1;
 	}
 
+	signal(SIGCHLD, handleWorkerRet);
 	FD_SET(lis_fd, &masters_set);
 	while(1){
 		read_set = masters_set;

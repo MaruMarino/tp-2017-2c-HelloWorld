@@ -79,6 +79,14 @@ typedef struct
 	size_t size_prog; // tamanio en bytes del programa
 	char *prog; // programa de transferencia
 	t_list *nodos; // lista con t_info_nodo
+	char *file_out;
 } t_info_redGlobal;
+
+typedef struct
+{
+	char *fname;
+	off_t fsize;
+	char *data;
+}t_file; // para facilitar pasar un archivo con un nombre particular
 
 #endif /* FUNCIONESCOMPARTIDAS_ESTRUCTURAS_H_ */

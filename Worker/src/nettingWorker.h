@@ -16,3 +16,6 @@ int verificarConexion(header head, char proc, int cod);
  * Retorna negativo si falla alguna parte del procedimiento. Sino retorna 0.
  */
 int realizarHandshake(int fd_proc, char proc);
+
+/* Avisa al Master en fd_m el resultado de la operacion a traves del cod_rta */
+void enviarResultado(int fd_m, int cod_rta);

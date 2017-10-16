@@ -140,11 +140,12 @@ t_info_redLocal *deserializar_info_redLocal(char *info_serial){
 char *serializar_info_redGlobal(t_info_redGlobal *info, size_t *len){
 
 	int i;
-	size_t ipl, portl, fnl;
+	size_t ipl, portl, fnl, flen;
 	t_info_nodo *n;
+	flen = strlen(info->file_out) + 1;
 	size_t list_size = sizeOfInfoNodos(info->nodos);
 
-	char *info_serial = malloc(sizeof(int) + info->size_prog + sizeof(int) + list_size);
+	char *info_serial = malloc(3 * sizeof(int) + info->size_prog + list_size + flen);
 
 	*len = 0;
 	memcpy(info_serial + *len, &info->size_prog, sizeof(int));
@@ -173,6 +174,11 @@ char *serializar_info_redGlobal(t_info_redGlobal *info, size_t *len){
 		memcpy(info_serial + *len, n->fname, fnl);
 		*len += fnl;
 	}
+
+	memcpy(info_serial + *len, &flen, sizeof(int));
+	*len += sizeof(int);
+	memcpy(info_serial + *len, info->file_out, flen);
+	*len += flen;
 
 	printf("Se serializaron %d bytes\n", *len);
 
@@ -215,6 +221,12 @@ t_info_redGlobal *deserializar_info_redGlobal(char *info_serial){
 
 		list_add(info->nodos, n);
 	}
+
+	memcpy(&fnl, info_serial + off, sizeof(int));
+	off += sizeof(int);
+	info->file_out = malloc(fnl);
+	memcpy(info->file_out, info_serial + off, fnl);
+	off += fnl;
 
 	printf("Se deserializaron %d bytes\n", off);
 
@@ -284,4 +296,40 @@ char *deserializar_FName(char *fname_serial){
 	printf("Se deserializaron %d bytes\n", off);
 
 	return fn;
+}
+
+char *serializar_File(t_file *file, size_t *len){
+
+	size_t flen = strlen(file->fname) + 1;
+	char *file_serial = malloc(sizeof(off_t) + flen + sizeof(int) + (size_t) file->fsize);
+
+	char *fname_serial = serializar_FName(file->fname, len);
+	memcpy(file_serial, fname_serial, *len);
+	free(fname_serial);
+	memcpy(file_serial + *len, &file->fsize, sizeof(int));
+	*len += sizeof(int);
+	memcpy(file_serial + *len, file->data,(size_t) file->fsize);
+	*len += (size_t) file->fsize;
+
+	printf("Se serializaron %d bytes\n", *len);
+
+	return file_serial;
+}
+
+t_file *deserializar_File(char *file_serial){
+
+	size_t off = 0;
+	t_file *file = malloc(sizeof *file);
+
+	file->fname = deserializar_FName(file_serial);
+	memcpy(&off, file_serial, sizeof off);
+	memcpy(&file->fsize, file_serial + off, sizeof(int));
+	off += sizeof(off_t);
+	file->data = malloc((size_t) file->fsize);
+	memcpy(file_serial + off, file->data, (size_t) file->fsize);
+	off += (size_t) file->fsize;
+
+	printf("Se deserializaron %d bytes\n", off);
+
+	return file;
 }
