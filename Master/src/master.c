@@ -1,6 +1,7 @@
-#include <stdio.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <time.h>
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/mensaje.h>
@@ -12,10 +13,10 @@
 #include "master_manager.h"
 #include "estructuras.h"
 
+pthread_mutex_t mutex_estadistica;
+t_list *hilos;
 t_configuracion *config;
 t_estadistica *estadistica;
-t_list *transformar;
-t_list *reducir;
 t_log *log_Mas;
 
 void inicializar_variables();
@@ -44,7 +45,6 @@ int main(int argc, char **argv)
 
 void inicializar_variables()
 {
-	config = malloc(sizeof(t_configuracion));
 	estadistica = malloc(sizeof(t_estadistica));
 	estadistica->inicio_trans = malloc(sizeof(time_t));
 	estadistica->fin_trans = malloc(sizeof(time_t));
@@ -54,10 +54,25 @@ void inicializar_variables()
 	estadistica->fin_reduc_global = malloc(sizeof(time_t));
 	estadistica->inicio_alm = malloc(sizeof(time_t));
 	estadistica->fin_alm = malloc(sizeof(time_t));
+	estadistica->fallo_almacenamiento = 0;
+	estadistica->fallo_reduc_global = 0;
+	estadistica->fallo_reduc_local = 0;
+	estadistica->fallo_transf = 0;
+	estadistica->reduc_ejecutando = 0;
+	estadistica->reduc_paralelo = 0;
+	estadistica->reduc_total = 0;
+	estadistica->reduc_glo_total = 0;
+	estadistica->alm_total = 0;
+	estadistica->transf_ejecutando = 0;
+	estadistica->transf_paralelo = 0;
+	estadistica->transf_total = 0;
+
+	hilos = list_create();
+	config = malloc(sizeof(t_configuracion));
 	config->ip = strdup("");
 	config->puerto = strdup("");
-	transformar = list_create();
-	reducir = list_create();
+
+	pthread_mutex_init(&mutex_estadistica,NULL);
 }
 
 void leer_configuracion()
@@ -84,7 +99,6 @@ char *leer_archivo(char *ruta_arch)
 
 		destino = malloc(fsize + 1);
 		fread(destino,fsize,1,archivo);
-		//fread(mensaje2,sizeof(char),final,archivo);
 
 		fclose(archivo);
 	}
@@ -99,7 +113,7 @@ void conectar_yama()
 
 	config->socket_yama = establecerConexion(config->ip, config->puerto, log_Mas, &controlador);
 
-	if(controlador!=0)
+	if(controlador !=0 )
 		escribir_error_log(log_Mas, "Error conectandose a YAMA");
 	else
 	{
@@ -109,9 +123,13 @@ void conectar_yama()
 		handshake->sizeData = (size_t) string_length(config->path_file_target) + 1;
 
 		message *mensaje = createMessage(handshake, config->path_file_target);
+
 		enviar_message(config->socket_yama, mensaje, log_Mas, &controlador);
+		getMessage(config->socket_yama, handshake, &controlador);
 
 		free(handshake);
+		free(mensaje);
+
 		escuchar_peticiones();
 	}
 }
@@ -127,4 +145,14 @@ void liberar_memoria()
 	free(config->path_file_destino);
 	free(config);
 	liberar_log(log_Mas);
+
+	free(estadistica->inicio_trans);
+	free(estadistica->fin_trans);
+	free(estadistica->inicio_reduc_local);
+	free(estadistica->fin_reduc_local);
+	free(estadistica->inicio_reduc_global);
+	free(estadistica->fin_reduc_global);
+	free(estadistica->inicio_alm);
+	free(estadistica->fin_alm);
+	free(estadistica);
 }

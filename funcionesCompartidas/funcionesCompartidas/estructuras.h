@@ -22,7 +22,7 @@ typedef struct
 typedef struct
 {
 	t_nodo *nodo;
-	char *temp_transformacion;
+	t_list *archivos_temp;
 	char *temp_red_local;
 }t_redLocal;
 
@@ -62,8 +62,8 @@ typedef struct
 typedef struct
 {
 	size_t size_prog; // tamanio en bytes del programa
-	char *prog; // programa de transferencia
-	t_list *files; // lista compuesta por t_fname
+	char *prog; // programa de reduccion local
+	t_list *files; // lista compuesta por string's
 	char *file_out;
 } t_info_redLocal; // la recibe el encargado de reduc global
 
@@ -77,7 +77,7 @@ typedef struct
 typedef struct
 {
 	size_t size_prog; // tamanio en bytes del programa
-	char *prog; // programa de transferencia
+	char *prog; // programa de reduccion global
 	t_list *nodos; // lista con t_info_nodo
 	char *file_out;
 } t_info_redGlobal;

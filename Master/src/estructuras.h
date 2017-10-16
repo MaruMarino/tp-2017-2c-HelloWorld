@@ -23,6 +23,8 @@ typedef struct
 	int reduc_paralelo;
 	int transf_total;
 	int reduc_total;
+	int reduc_glo_total;
+	int alm_total;
 	int fallo_transf;
 	int fallo_reduc_local;
 	int fallo_reduc_global;
