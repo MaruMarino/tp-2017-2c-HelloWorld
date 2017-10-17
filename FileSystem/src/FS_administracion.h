@@ -26,7 +26,7 @@ void crear_subdirectorios(void);
 int iniciar_arbol_directorios(void);
 int iniciar_nodos(void);
 int iniciar_bitmaps_nodos(void);
-
+int setBloque();
 // Funciones para agregar/sacar/modificar elementos de las diferentes estructuras ya creadas (y actualizar archivos a la vez)
 // todo proximamente
 

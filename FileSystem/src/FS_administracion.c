@@ -352,9 +352,9 @@ int iniciar_bitmaps_nodos(void){
 	void _create_bitmap(NODO *self){
 
 		int cantBloques = self->espacio_total / Mib;
-		char bitarray[cantBloques];
-		memset(bitarray,0,cantBloques);
-		self->bitmapNodo = bitarray_create_with_mode(bitarray,sizeof(bitarray),LSB_FIRST);
+		char *bitarray = malloc((size_t)cantBloques);
+		memset(bitarray,0,(size_t)cantBloques);
+		self->bitmapNodo = bitarray_create_with_mode(bitarray,(size_t) cantBloques,LSB_FIRST);
 	}
 
 	list_iterate(nodos,(void *)_create_bitmap);
@@ -534,4 +534,27 @@ static void liberar_char_array(char **miarray){
 		i++;
 	}
 	free(miarray);
+}
+
+int setBloque() {
+    NODO *nodo_fetch = malloc(sizeof(NODO));
+    if (nodos->elements_count) {
+        t_link_element *listHead = nodos->head;
+        while (listHead != NULL) {
+            memcpy(nodo_fetch, listHead->data, sizeof(NODO));
+            printf("[%s]\n", nodo_fetch->nombre);
+            printf("[%d]\n", nodo_fetch->puerto);
+            printf("[%d]\n", nodo_fetch->soket);
+            printf("[%d]\n", nodo_fetch->bitmapNodo->size);
+            for (int i = 0; i < nodo_fetch->bitmapNodo->size; ++i) {
+                printf("[%d]\n", bitarray_test_bit(nodo_fetch->bitmapNodo, i));
+            }
+            listHead = listHead->next;
+        }
+    }else {
+        printf("no hay nodos");
+    }
+
+
+    return 0;
 }

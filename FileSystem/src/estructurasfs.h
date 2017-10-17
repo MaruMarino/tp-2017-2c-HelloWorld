@@ -28,7 +28,7 @@ typedef struct {
 	int espacio_libre;
 }yamafs_config;
 
-typedef int Function (char *);
+typedef int Function ();
 
 typedef struct {
   char *name;

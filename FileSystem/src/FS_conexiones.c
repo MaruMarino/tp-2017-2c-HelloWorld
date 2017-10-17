@@ -12,7 +12,7 @@
 #include <commons/string.h>
 #include <funcionesCompartidas/estructuras.h>
 #include <funcionesCompartidas/funcionesNet.h>
-#include <funcionesCompartidas/serializacion-yama-master.h>
+#include <funcionesCompartidas/serializacion_yama_master.h>
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
