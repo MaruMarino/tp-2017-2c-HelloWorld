@@ -89,4 +89,14 @@ typedef struct
 	char *data;
 }t_file; // para facilitar pasar un archivo con un nombre particular
 
+typedef struct{
+
+	char *nodo0; // nombre nodo donde esta la copia 0 de ese bloque del archivo
+	int bloquenodo0; // bloque dentro del nodo donde esta la copia 0 de ese bloque del archivo
+	char *nodo1; // nombre nodo donde esta la copia 1 de ese bloque del archivo
+	int bloquenodo1; // nombre nodo donde esta la copia 1 de ese bloque del archivo
+	int bytesEnBloque; // cantidad de bytes que conforma ese bloque ( <= 1MiB)
+
+}bloqueArchivo;
+
 #endif /* FUNCIONESCOMPARTIDAS_ESTRUCTURAS_H_ */

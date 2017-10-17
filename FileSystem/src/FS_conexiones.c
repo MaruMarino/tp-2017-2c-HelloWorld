@@ -99,12 +99,11 @@ void manejo_conexiones()
 					{
 						int estado = direccionar(i);
 						if(estado ==  -1){
-							break;
-						}else{
 							FD_CLR(i, &master);
 							close(i);
 							continue;
 						}
+
 					}
 				}
 			}

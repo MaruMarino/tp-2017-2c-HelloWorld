@@ -546,7 +546,8 @@ int setBloque() {
             printf("[%d]\n", nodo_fetch->puerto);
             printf("[%d]\n", nodo_fetch->soket);
             printf("[%d]\n", nodo_fetch->bitmapNodo->size);
-            for (int i = 0; i < nodo_fetch->bitmapNodo->size; ++i) {
+            int i;
+            for ( i = 0; i < nodo_fetch->bitmapNodo->size; ++i) {
                 printf("[%d]\n", bitarray_test_bit(nodo_fetch->bitmapNodo, i));
             }
             listHead = listHead->next;
