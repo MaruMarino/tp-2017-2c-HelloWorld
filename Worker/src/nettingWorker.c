@@ -45,8 +45,10 @@ int realizarHandshake(int fd_proc, char proc_expected){
 
 	if (enviar_message(fd_proc, msj, logw, &ctl) < 0){
 		log_trace(logw, "Fallo realizarHandshake con %d", fd_proc);
+		free(msj);
 		return -1;
 	}
+	free(msj);
 
 	free(getMessage(fd_proc, &head, &ctl));
 	if (ctl == -1){
@@ -72,4 +74,5 @@ void enviarResultado(int fd_m, int cod_rta){
 	message *msj = createMessage(&head, "");
 
 	enviar_message(fd_m, msj, logw, &ctl);
+	free(msj);
 }
