@@ -217,3 +217,48 @@
 [INFO] 21:55:40:161 DateNode/(5197:5197): Escuchando a maru a q me hable
 [ERROR] 22:26:56:388 DateNode/(4399:4399): Se desconecto el server
 [ERROR] 22:26:56:388 DateNode/(5197:5197): Se desconecto el server
+[INFO] 21:28:23:561 DateNode/(17095:17095): Se crea el archivo de log
+[INFO] 21:28:23:562 DateNode/(17095:17095): cargando el archivo de configuracion
+[INFO] 21:28:23:562 DateNode/(17095:17095): Abriendo DataBin
+[INFO] 21:28:23:562 DateNode/(17095:17095): Estableciendo Conneccion al File System
+[ERROR] 21:28:26:615 DateNode/(17095:17095): Kernel - Error conectando socket
+[ERROR] 21:28:26:615 DateNode/(17095:17095): Error al intentar establecer conneccion
+[INFO] 21:28:45:237 DateNode/(17169:17169): Se crea el archivo de log
+[INFO] 21:28:45:237 DateNode/(17169:17169): cargando el archivo de configuracion
+[INFO] 21:28:45:238 DateNode/(17169:17169): Abriendo DataBin
+[INFO] 21:28:45:238 DateNode/(17169:17169): Estableciendo Conneccion al File System
+[INFO] 21:28:45:238 DateNode/(17169:17169): Aceptado por FileSystem
+[INFO] 21:28:45:238 DateNode/(17169:17169): Escuchando a maru a q me hable
+[INFO] 21:29:54:944 DateNode/(17240:17240): Se crea el archivo de log
+[INFO] 21:29:54:945 DateNode/(17240:17240): cargando el archivo de configuracion
+[INFO] 21:29:54:945 DateNode/(17240:17240): Abriendo DataBin
+[INFO] 21:29:54:945 DateNode/(17240:17240): Estableciendo Conneccion al File System
+[ERROR] 21:29:54:945 DateNode/(17240:17240): Kernel - Error conectando socket
+[ERROR] 21:29:54:945 DateNode/(17240:17240): Error al intentar establecer conneccion
+[INFO] 21:31:09:572 DateNode/(17399:17399): Se crea el archivo de log
+[INFO] 21:31:09:572 DateNode/(17399:17399): cargando el archivo de configuracion
+[INFO] 21:31:09:573 DateNode/(17399:17399): Abriendo DataBin
+[INFO] 21:31:09:573 DateNode/(17399:17399): Estableciendo Conneccion al File System
+[INFO] 21:31:09:573 DateNode/(17399:17399): Aceptado por FileSystem
+[INFO] 21:31:09:573 DateNode/(17399:17399): Escuchando a maru a q me hable
+[ERROR] 21:32:43:998 DateNode/(17399:17399): Se desconecto el server
+[INFO] 21:32:49:975 DateNode/(17623:17623): Se crea el archivo de log
+[INFO] 21:32:49:975 DateNode/(17623:17623): cargando el archivo de configuracion
+[INFO] 21:32:49:975 DateNode/(17623:17623): Abriendo DataBin
+[INFO] 21:32:49:976 DateNode/(17623:17623): Estableciendo Conneccion al File System
+[INFO] 21:32:49:976 DateNode/(17623:17623): Aceptado por FileSystem
+[INFO] 21:32:49:976 DateNode/(17623:17623): Escuchando a maru a q me hable
+[ERROR] 21:33:08:235 DateNode/(17623:17623): Se desconecto el server
+[INFO] 21:43:27:373 DateNode/(18075:18075): Se crea el archivo de log
+[INFO] 21:43:27:373 DateNode/(18075:18075): cargando el archivo de configuracion
+[INFO] 21:43:27:373 DateNode/(18075:18075): Abriendo DataBin
+[INFO] 21:43:27:373 DateNode/(18075:18075): Estableciendo Conneccion al File System
+[INFO] 21:43:27:374 DateNode/(18075:18075): Aceptado por FileSystem
+[INFO] 21:43:27:374 DateNode/(18075:18075): Escuchando a maru a q me hable
+[ERROR] 21:46:05:36 DateNode/(18075:18075): Se desconecto el server
+[INFO] 21:46:12:948 DateNode/(18369:18369): Se crea el archivo de log
+[INFO] 21:46:12:948 DateNode/(18369:18369): cargando el archivo de configuracion
+[INFO] 21:46:12:948 DateNode/(18369:18369): Abriendo DataBin
+[INFO] 21:46:12:948 DateNode/(18369:18369): Estableciendo Conneccion al File System
+[INFO] 21:46:12:949 DateNode/(18369:18369): Aceptado por FileSystem
+[INFO] 21:46:12:949 DateNode/(18369:18369): Escuchando a maru a q me hable

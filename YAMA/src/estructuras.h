@@ -8,6 +8,8 @@
 #ifndef ESTRUCTURAS_H_
 #define ESTRUCTURAS_H_
 
+#include <funcionesCompartidas/estructuras.h>
+
 typedef struct
 {
 	char *fs_ip;
@@ -15,6 +17,7 @@ typedef struct
 	char *algortimo_bal;
 	char *yama_puerto;
 	int retardo_plan;
+	int base;
 	int socket_fs;
 	int server_;
 
@@ -51,5 +54,13 @@ typedef struct
 	char *archivo_temporal;
 	e_estado estado;
 }t_estado;
+
+typedef struct
+{
+	t_nodo *nodo;
+	int disponibilidad;
+	int carga_actual;
+	bool clock;
+}t_worker;
 
 #endif /* ESTRUCTURAS_H_ */

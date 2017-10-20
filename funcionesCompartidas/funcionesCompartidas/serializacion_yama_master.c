@@ -108,31 +108,42 @@ t_transformacion *deserializar_transformacion(char *tran)
 
 char *serializar_archivo_temporal(t_list *archivos, size_t *len)
 {
-	*len = 0;
-	void _get_strings_length(char *archivo)
-	{
-		*len += (size_t)string_length(archivo) +1;
-	}
-	list_iterate(archivos, (void *)_get_strings_length);
+	*len = sizeof(t_list);
+		size_t size_l = (size_t)list_size(archivos);
+		int i = 0;
 
-	char *archivos_serializados = malloc(*len);
-	*len = 0;
-	size_t size_l = (size_t)list_size(archivos);
-	memcpy(archivos_serializados, &size_l , 4);
-	*len += 4;
+		while(size_l > 0)
+		{
+			char *arch = list_get(archivos, i);
+			*len += (size_t)string_length(arch) +1;
 
-	void _serializar_archivos(char *archivo)
-	{
-		size_t tam_arch =(size_t)string_length(archivo) + 1;
-		memcpy(archivos_serializados + *len, &tam_arch, 4);
-		*len += 4;
-		memcpy(archivos_serializados + *len, archivo, tam_arch);
-		*len += tam_arch;
-	}
+			i++;
+			size_l --;
+		}
 
-	list_iterate(archivos,(void *) _serializar_archivos);
+		size_l = (size_t)list_size(archivos);
+		*len += 4*size_l;
 
-	return archivos_serializados;
+		char *arch_ser = malloc(*len);
+		*len = 0;
+		memcpy(arch_ser, &size_l, 4);
+		*len +=4;
+		i = 0;
+		while(size_l > 0)
+		{
+			char *arc = list_get(archivos, i);
+			size_t len2 =(size_t) string_length(arc) +1;
+
+			memcpy(arch_ser + *len, &len2, 4);
+			*len += 4;
+			memcpy(arch_ser + *len, arc, len2);
+			*len += len2;
+
+			i++;
+			size_l --;
+		}
+
+		return arch_ser;
 }
 
 char *serializar_redLocal(t_redLocal *red_local, size_t *len)
@@ -143,7 +154,7 @@ char *serializar_redLocal(t_redLocal *red_local, size_t *len)
 	char *lista_archivos = serializar_archivo_temporal(red_local->archivos_temp, &len_archivos);
 	size_t len_temp_red_local = (size_t) string_length(red_local->temp_red_local) + 1;
 	char *nodo = serializar_nodo(red_local->nodo, &len_nodo);
-	char *redLocal_ser = malloc(sizeof(t_redLocal) + len_archivos + len_temp_red_local + len_nodo);
+	char *redLocal_ser = malloc(sizeof(t_redLocal) + len_archivos + len_temp_red_local + len_nodo + 8);
 
 	*len = 0;
 	memcpy(redLocal_ser, lista_archivos, len_archivos);
@@ -196,7 +207,7 @@ t_redLocal *deserializar_redLocal (char *red_local_ser)
 
 	red_local_des->archivos_temp = deserializar_archivo_temporal(red_local_ser, &len);
 
-	memcpy(&len_nodo, red_local_ser, 4);
+	memcpy(&len_nodo, red_local_ser +len, 4);
 	len += 4;
 	nodo_ser = malloc(len_nodo);
 	memcpy(nodo_ser, red_local_ser + len, len_nodo);
