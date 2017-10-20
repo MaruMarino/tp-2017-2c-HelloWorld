@@ -41,7 +41,7 @@ int fs_format(char *j) {
         iniciar_arbol_directorios();
         iniciar_nodos();
         iniciar_bitmaps_nodos();
-        setBloque();
+        setBlock("miguel",6);
 
         configuracion->estado_estable = 1;
 
@@ -105,6 +105,8 @@ int fs_cpfrom(char *o) {
 
 int fs_cpto(char *p) {
     printf("Ejecute cpto \n");
+    char * mjs="Angel";
+    setBlock(mjs,5);
     return 0;
 }
 

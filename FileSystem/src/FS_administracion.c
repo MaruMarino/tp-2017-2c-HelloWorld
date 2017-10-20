@@ -22,7 +22,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
-
+#include <funcionesCompartidas/funcionesNet.h>
+#include <sys/socket.h>
+#include <funcionesCompartidas/estructuras.h>
 #include "estructurasfs.h"
 
 #define Mib 1048576
@@ -542,34 +544,139 @@ static void liberar_char_array(char **miarray) {
     free(miarray);
 }
 
-NODO *getNodoMinusLoader(char *Nodo) {
+int getBlockFree(t_bitarray *listBit) {
+    int i;
+    for (i = 0; i < listBit->size; ++i) {
+        if (!bitarray_test_bit(listBit, i)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+NODO *getNodoMinusLoader(NODO *NodoExcluir, int *numBlock) {
     int maxLibreEspacio = 0;
     NODO *nodoMax = NULL;
     NODO *nodoFetch;
     int i;
-    for (i = 0; i < nodos->elements_count; ++i) {
+    for (i = 0; i < nodos->elements_count; i++) {
         nodoFetch = list_get(nodos, i);
         if (nodoFetch->espacio_libre > maxLibreEspacio) {
-            maxLibreEspacio = nodoFetch->espacio_libre;
-            nodoMax = nodoFetch;
+            *numBlock = getBlockFree(nodoFetch->bitmapNodo);
+            if (!(NodoExcluir != NULL && NodoExcluir->soket == nodoFetch->soket) && *numBlock != -1) {
+                maxLibreEspacio = nodoFetch->espacio_libre;
+                nodoMax = nodoFetch;
+            }
         }
-        return nodoMax;
     }
+    return nodoMax;
 }
 
-int setBloque() {
-
-    for (int i = 0; i < nodos->elements_count; i++) {
-        NODO *nodo_fetch = list_get(nodos, i);
-        printf("[%s]\n", nodo_fetch->nombre);
-        printf("[%d]\n", nodo_fetch->puerto);
-        printf("[%d]\n", nodo_fetch->soket);
-        printf("[%d]\n", nodo_fetch->bitmapNodo->size);
-        printf("[%d]\n", nodo_fetch->espacio_total);
-        printf("[%d]\n", nodo_fetch->espacio_libre);
-        for (int i = 0; i < nodo_fetch->bitmapNodo->size; ++i) {
-            printf("[%d]\n", bitarray_test_bit(nodo_fetch->bitmapNodo, i));
+int cantBlockfree(t_bitarray *listBit) {
+    int i, cant = 0;
+    for (i = 0; i < listBit->size; ++i) {
+        if (!bitarray_test_bit(listBit, i)) {
+            cant++;
         }
     }
+    return cant;
+}
+
+void checkStateNodos() {
+    NODO *nodo_fetch;
+    puts("------------------------------------");
+    for (int i = 0; i < nodos->elements_count; ++i) {
+        nodo_fetch = list_get(nodos, i);
+        printf("[%s]\n", nodo_fetch->nombre);
+        printf("[%d]\n", nodo_fetch->soket);
+        printf("bloque free %d\n", cantBlockfree(nodo_fetch->bitmapNodo));
+        printf("Espacio Libre %d\n", nodo_fetch->espacio_libre);
+    }
+    puts("------------------------------------");
+}
+
+int setBlock(void *buffer, size_t size_buffer) {
+    checkStateNodos();
+    int cantCopy = 0;
+    int control;
+    size_t bufferWithBlockSize = (size_buffer + sizeof(int));
+    void *bufferWithBlock = malloc(bufferWithBlockSize);
+    NODO *nodoSend = NULL;
+    int nodoSendBlock;
+    header reqRes;
+    int insertOk;
+    void *bufferResponse;
+    while (cantCopy < 2) {
+        nodoSend = getNodoMinusLoader(nodoSend, &nodoSendBlock);
+        if (nodoSend == NULL) return -1;
+        reqRes.codigo = 2;
+        reqRes.letra = 'F';
+        reqRes.sizeData = bufferWithBlockSize;
+        memcpy(bufferWithBlock, &nodoSendBlock, sizeof(int));
+        memcpy((bufferWithBlock + sizeof(int)), buffer, size_buffer);
+        message *request = createMessage(&reqRes, bufferWithBlock);
+        if (send(nodoSend->soket, request->buffer, request->sizeBuffer, 0) < 0) {
+            puts("error al enviar primer bloque");
+            return -1;
+        }
+        /*
+        bufferResponse = getMessage(nodoSend->soket,&reqRes,&control);
+        if(bufferResponse == NULL){
+            puts("error al recibir la respuesta");
+            return -1;
+        }
+
+        if(reqRes.codigo != 6){
+            puts("recivio otro mjs");
+            return -1;
+        }
+
+        memcpy(&insertOk, bufferResponse,reqRes.sizeData);
+        if(insertOk == -1){
+            puts("no se inserto el bloque");
+            return -1;
+        }*/
+        bitarray_set_bit(nodoSend->bitmapNodo, nodoSendBlock);
+        nodoSend->espacio_libre -= Mib;
+        cantCopy++;
+    }
+
+    /*checkStateNodos();
+    size_t bufferWithBlockSize = (size_buffer + sizeof(int));
+    void *bufferWithBlock = malloc(bufferWithBlockSize);
+
+    int nodo_FistCopy_block;
+    NODO *nodo_FistCopy = getNodoMinusLoader(NULL, &nodo_FistCopy_block);
+    if (nodo_FistCopy == NULL) return -1;
+
+    int nodo_SecondCopy_block;
+    NODO *nodo_SecondCopy = getNodoMinusLoader(nodo_FistCopy, &nodo_SecondCopy_block);
+    if (nodo_SecondCopy == NULL) return -1;
+
+    header response;
+
+    header request_head;
+    request_head.codigo = 2;
+    request_head.letra = 'F';
+    request_head.sizeData = bufferWithBlockSize;
+    memcpy(bufferWithBlock, &nodo_FistCopy_block, sizeof(int));
+    memcpy((bufferWithBlock + sizeof(int)), buffer, size_buffer);
+    message *request = createMessage(&request_head, bufferWithBlock);
+    if (send(nodo_FistCopy->soket, request->buffer, request->sizeBuffer, 0) < 0) {
+        printf("error al enviar primer bloque");
+        return -1;
+    }
+    getMessage(nodo_FistCopy->soket)
+    bitarray_set_bit(nodo_FistCopy->bitmapNodo, nodo_FistCopy_block);
+
+    memcpy(bufferWithBlock, &nodo_SecondCopy_block, sizeof(int));
+    if (send(nodo_SecondCopy->soket, request->buffer, request->sizeBuffer, 0) < 0) {
+        printf("error al enviar segundo bloque");
+        return -1;
+    }
+    bitarray_set_bit(nodo_SecondCopy->bitmapNodo, nodo_SecondCopy_block);
+
+    checkStateNodos();*/
+    checkStateNodos();
     return 0;
 }
