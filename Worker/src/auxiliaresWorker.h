@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 
+#include "configuracionWorker.h"
+
 /* recibe una cant `nargs' de strings que concatena y retorna en un unico char*
  * Si falla retorna NULL.
  */
@@ -67,6 +69,6 @@ off_t fsize(FILE* f);
 void cleanWorkspaceFiles(int nfiles, char *fst, ...);
 
 /* Envia al fd_m el cod_rta y llama exit() con ese mismo valor */
-void terminarEjecucion(int fd_m, int cod_rta);
+void terminarEjecucion(int fd_m, int cod_rta, t_conf *conf);
 
 #endif /* AUXILIARES_WORKER_H_ */

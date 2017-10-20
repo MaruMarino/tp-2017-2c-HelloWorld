@@ -15,19 +15,22 @@
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/serializacion.h>
 
+#include "configuracionWorker.h"
 #include "auxiliaresWorker.h"
 #include "nettingWorker.h"
+#include "estructurasLocales.h"
 
 #define MINSTR(A, PA, B, PB) ((strcmp(A, B) < 0)? (PA) : (PB))
 
 #define maxline 0x100000 // 1 MiB
 
+static void liberarBuffers(int n, char **buff);
+static void liberarFILEs(int n, FILE *fs[n]);
 static void liberarApareo(int nfiles, FILE *fs[nfiles], char *ls[nfiles-1]);
+static void cerrarSockets(int nfds, int *fds);
 
 extern t_log *logw;
 extern char *databin;
-
-// todo: trackeate toda mallocacion y frees()
 
 char *crearComando(int nargs, char *fst, ...){
 	log_trace(logw, "Se crea un comando de %d argumentos", nargs);
@@ -61,11 +64,13 @@ int crearArchivoBin(char *bin, size_t bin_sz, char *fname){
 
 	if ((fwrite(bin, bin_sz, 1, f)) != 1){
 		log_error(logw, "No se pudo escribir el programa en %s", fname);
+		fclose(f);
 		return -1;
 	}
 
 	if (chmod(fname, 055) == -1){
 		log_error(logw, "No se pudo dar permiso de ejecucion a %s", fname);
+		fclose(f);
 		return -1;
 	}
 
@@ -85,6 +90,8 @@ int crearArchivoData(size_t blk, size_t count, char *fname){
 	char *data = getDataBloque(databin, blk);
 	if ((fwrite(data, count, 1, f)) != 1){
 		log_error(logw, "No se pudo escribir el programa en %s", fname);
+		free(data);
+		fclose(f);
 		return -1;
 	}
 
@@ -106,6 +113,7 @@ int aparearFiles(t_list *fnames, char *fout){
 		if((fs[i] = fopen(fn, "r")) == NULL){
 			perror("No se pudo abrir el archivo");
 			log_error(logw, "No se pudo abrir el archivo %s", fn);
+			liberarFILEs(i, fs);
 			return -1;
 		}
 	}
@@ -113,6 +121,7 @@ int aparearFiles(t_list *fnames, char *fout){
 	if((fs[nfiles -1] = fopen(fout, "w")) == NULL){
 		perror("No se pudo abrir el archivo");
 		log_error(logw, "No se pudo abrir el archivo %s", fout);
+		liberarFILEs(nfiles - 1, fs);
 		return -1;
 	}
 
@@ -175,7 +184,7 @@ int realizarApareo(int nfiles, FILE *fs[nfiles]){
 		apareadas++;
 	}
 
-	fclose(fs[nfiles - 1]);
+	liberarApareo(nfiles, fs, ls);
 	return apareadas;
 }
 
@@ -185,32 +194,18 @@ int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname){
 			" | sort -dib > ", out_fname);
 	if (!cmd){
 		log_error(logw, "Fallo la creacion del comando a ejecutar.");
-		liberador(3, exe_fname, data_fname, cmd);
 		return -1;
 	}
 
 	if (!system(cmd)){ // ejecucion del comando via system()
 		log_error(logw, "Llamada a system() con comando %s fallo.", cmd);
-		liberador(3, exe_fname, data_fname, cmd);
+		free(cmd);
 		return -1;
 	}
 
 	return 0;
 }
 
-static void liberarApareo(int nfiles, FILE *fs[nfiles], char *ls[nfiles-1]){
-
-	int i;
-	for (i = 0; i < nfiles; ++i){
-		if (fs[i] == NULL)
-			continue;
-
-		fclose(fs[i]); fs[i] = NULL;
-		free(ls[i]);   ls[i] = NULL;
-	}
-}
-
-// todo: revisar liberacion de recursos y parametros
 int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns){
 
 	int i, ctl;
@@ -221,20 +216,30 @@ int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns){
 	// Formalizar conexion con cada Nodo y crear su FILE correspondiente
 	for (i = 0; i < nquant; ++i){
 		n = list_get(nodos, i);
-		if ((*fds[i] = establecerConexion(n->ip, n->port, logw, &ctl)) == -1 ||
-			realizarHandshake(*fds[i], 'W') < 0){
+
+		if ((*fds[i] = establecerConexion(n->ip, n->port, logw, &ctl)) == -1){
 			log_error(logw, "No se pudo conectar con Nodo en %s:%s", n->ip, n->port);
+			cerrarSockets(i - 1, *fds);
+			return -1;
+		}
+
+		if (realizarHandshake(*fds[i], 'W') < 0){
+			log_error(logw, "No se pudo conectar con Nodo en %s:%s", n->ip, n->port);
+			cerrarSockets(i, *fds);
 			return -1;
 		}
 
 		msj = getMessage(*fds[i], &head, &ctl);
 		if (ctl == -1 || ctl == 0){
 			log_error(logw, "Fallo obtencion mensaje del Nodo en %s:%s", n->fname, n->ip, n->port);
-			free(*lns[i]); *lns[i] = NULL;
+			cerrarSockets(i, *fds);
+			liberarBuffers(i, *lns);
+			free(msj);
 			return -1;
 		}
 
 		*lns[i] = deserializar_stream(msj, &head.sizeData);
+		free(msj);
 	}
 
 	return 0;
@@ -254,14 +259,17 @@ int apareoGlobal(t_list *nodos, char *fname){
 	if((fout = fopen(fname, "w")) == NULL){
 		perror("Fallo fopen()");
 		log_error(logw, "No se pudo abrir el archivo de output %s", fname);
+		liberador(2, lines, fds);
 		return -1;
 	}
 
 	// Preparamos las primeras lineas a comparar
 	if (conectarYCargar(nquant, nodos, &fds, &lines) == -1){
 		log_error(logw, "Fallo conexion y carga de textos a aparear");
+		liberador(2, lines, fds);
 		return -1;
 	}
+
 	while(remaining){
 
 		// Obtenemos posicion del menor string
@@ -277,13 +285,20 @@ int apareoGlobal(t_list *nodos, char *fname){
 		}
 
 		// Escribimos la linea en el FILE de output
-		fputs(lines[min], fout);
+		if (fputs(lines[min], fout) < 0){
+			log_error(logw, "Fallo escribir linea %s en %s", lines[min], fout);
+			liberarBuffers(nquant, lines);
+			cerrarSockets(nquant, fds);
+			liberador(2, lines, fds);
+		}
 
 		// Obtenemos la proxima linea del menor string
 		msj = getMessage(fds[min], &head, &ctl);
 		if (ctl == -1){
 			log_error(logw, "Fallo obtencion mensaje de Nodo en %d", fds[min]);
-			free(lines[min]); lines[min] = NULL;
+			liberarBuffers(nquant, lines);
+			cerrarSockets(nquant, fds);
+			liberador(2, lines, fds);
 			return -1;
 
 		} else if (head.codigo == 12){
@@ -295,6 +310,7 @@ int apareoGlobal(t_list *nodos, char *fname){
 		}
 
 		lines[min] = deserializar_stream(msj, &head.sizeData);
+		free(msj);
 	}
 
 	return 0;
@@ -306,7 +322,7 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname){
 	t_file *file;
 	int sock_fs, ctl;
 	char *file_serial;
-	header head = {.letra = 'W', .codigo = 20};
+	header head = {.letra = 'W', .codigo = ALMAC_FS};
 
 	if ((file = cargarFile(fname)) == NULL){
 		log_error(logw, "Fallo cargar el t_file %s para enviar", fname);
@@ -317,24 +333,26 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname){
 
 	if ((sock_fs = establecerConexion(fs_ip, fs_port, logw, &ctl)) == -1){
 		log_error(logw, "Fallo conectar con FileSystem en %s:%s", fs_ip, fs_port);
-		liberador(3, file, file_serial, msj);
+		liberador(5, file->data, file->fname, file, file_serial, msj);
 		return -1;
 	}
 
 	if (realizarHandshake(sock_fs, 'F') == -1){
 		log_error(logw, "Fallo handshaking con %s:%s", fs_ip, fs_port);
-		liberador(3, file, file_serial, msj);
+		liberador(5, file->data, file->fname, file, file_serial, msj);
+		close(sock_fs);
 		return -1;
 	}
 
 	if (enviar_message(sock_fs, msj, logw, &ctl) == -1){
 		log_error(logw, "Fallo enviar message a FileSystem en %s:%s", fs_ip, fs_port);
-		liberador(3, file, file_serial, msj);
+		liberador(5, file->data, file->fname, file, file_serial, msj);
+		close(sock_fs);
 		return -1;
 	}
 
 	close(sock_fs);
-	liberador(3, file, file_serial, msj);
+	liberador(5, file->data, file->fname, file, file_serial, msj);
 	return 0;
 }
 
@@ -350,9 +368,10 @@ t_file *cargarFile(char *fname){
 		return NULL;
 	}
 
-	if ((file->fsize = fsize(f)) == -1){
+	if ((file->fsize = fsize(f)) == 0){
 		log_error(logw, "Fallo calculo del file size de %s", fname);
 		liberador(2, file->fname, file);
+		fclose(f);
 		return NULL;
 	}
 	file->data = malloc((size_t) file->fsize);
@@ -361,17 +380,19 @@ t_file *cargarFile(char *fname){
 	if (ferror(f)){
 		log_error(logw, "Fallo lectura de datos del FILE %s", fname);
 		liberador(3, file->data, file->fname, file);
+		fclose(f);
 		return NULL;
 	}
 
+	fclose(f);
 	return file;
 }
 
 off_t fsize(FILE* f){
-
-	fseek(f, 0, SEEK_END);
-    off_t len = ftell(f);
-    fseek(f, 0, SEEK_SET);
+	off_t len;
+	if (fseek(f, 0, SEEK_END) < 0) return 0;
+    if ((len = ftell(f)) < 0) len = 0;
+    if (fseek(f, 0, SEEK_SET) < 0) return 0;
     return len;
 }
 
@@ -381,14 +402,52 @@ void cleanWorkspaceFiles(int nfiles, char *fst, ...){
 	va_list filesp;
 	va_start(filesp, fst);
 
-	unlink(fst);
+	if (unlink(fst) < 0){
+		perror("Fallo unlink:");
+		log_error(logw, "No pudo borrar el archivo %s. Continuando...", fst);
+	}
 	for (nfiles--; nfiles > 0; nfiles--){
 		fname = va_arg(filesp, char*);
-		unlink(fname);
+		if (unlink(fname) < 0){
+			perror("Fallo unlink:");
+			log_error(logw, "No pudo borrar el archivo %s. Continuando...", fname);
+		}
 	}
 }
 
-void terminarEjecucion(int fd_m, int cod_rta){
+void terminarEjecucion(int fd_m, int cod_rta, t_conf *conf){
 	enviarResultado(fd_m, cod_rta);
+	close(fd_m);
+
+	liberarConfig(conf);
+	log_destroy(logw);
 	exit(cod_rta);
+}
+
+
+static void liberarFILEs(int n, FILE *fs[n]){
+	for (; n > 0; n--)
+		if (fs[n] != NULL) fclose(fs[n]);
+}
+
+static void liberarApareo(int nfiles, FILE *fs[nfiles], char *ls[nfiles-1]){
+
+	int i;
+	for (i = 0; i < nfiles; ++i){
+		if (fs[i] == NULL)
+			continue;
+
+		fclose(fs[i]); fs[i] = NULL;
+		free(ls[i]);   ls[i] = NULL;
+	}
+}
+
+static void cerrarSockets(int nfds, int *fds){
+	for (; nfds > 0; nfds--)
+		close(fds[nfds]);
+}
+
+static void liberarBuffers(int n, char **buff){
+	for (; n > 0; n--)
+		free(buff[n]);
 }

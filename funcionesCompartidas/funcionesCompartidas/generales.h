@@ -1,6 +1,9 @@
 #ifndef FUNCIONESCOMPARTIDAS_GENERALES_H_
 #define FUNCIONESCOMPARTIDAS_GENERALES_H_
 
+#include <commons/collections/list.h>
+#include "estructuras.h"
+
 /* Libera los punteros pasados por parametro.
  * nptr indica la cantidad de punteros a liberar y
  * el resto de los parametros son los propios punteros.
