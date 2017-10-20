@@ -21,7 +21,7 @@ extern yamafs_config *configuracion;
 #define cyan  "\x1B[36m"
 #define sin "\x1B[0m"
 
-static comando *buscar_comando(char *nombre);
+comando *buscar_comando(char *nombre);
 
 int fs_ls(char *h) {
     printf("Ejecute ls \n");
@@ -123,7 +123,7 @@ int fs_info(char *s) {
     return 0;
 }
 
-static comando *buscar_comando(char *nombre) {
+comando *buscar_comando(char *nombre) {
 
     int i;
     for (i = 0; i < 14; i++) {

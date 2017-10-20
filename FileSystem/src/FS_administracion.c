@@ -558,8 +558,8 @@ NODO *getNodoMinusLoader(char *Nodo) {
 }
 
 int setBloque() {
-
-    for (int i = 0; i < nodos->elements_count; i++) {
+	int i;
+    for ( i = 0; i < nodos->elements_count; i++) {
         NODO *nodo_fetch = list_get(nodos, i);
         printf("[%s]\n", nodo_fetch->nombre);
         printf("[%d]\n", nodo_fetch->puerto);
@@ -567,7 +567,7 @@ int setBloque() {
         printf("[%d]\n", nodo_fetch->bitmapNodo->size);
         printf("[%d]\n", nodo_fetch->espacio_total);
         printf("[%d]\n", nodo_fetch->espacio_libre);
-        for (int i = 0; i < nodo_fetch->bitmapNodo->size; ++i) {
+        for ( i = 0; i < nodo_fetch->bitmapNodo->size; ++i) {
             printf("[%d]\n", bitarray_test_bit(nodo_fetch->bitmapNodo, i));
         }
     }

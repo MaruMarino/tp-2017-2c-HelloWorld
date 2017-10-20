@@ -25,4 +25,6 @@ void liberarFnames(t_list *fnames);
 
 size_t tamanio_bloque_archivo(bloqueArchivo *info);
 
+size_t tamanio_lista_t_nodo(t_list *nodis);
+
 #endif /* FUNCIONESCOMPARTIDAS_GENERALES_H_ */

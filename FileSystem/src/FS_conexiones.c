@@ -11,6 +11,7 @@
 #include <commons/log.h>
 #include <commons/string.h>
 #include <funcionesCompartidas/estructuras.h>
+#include <funcionesCompartidas/serializacion.h>
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/serializacion_yama_master.h>
 #include <pthread.h>
@@ -152,10 +153,14 @@ int realizar_handshake(int nuevo_socket) {
 
             log_info(logi, "Se conecto YAMA");
 
-            respuesta->codigo = 0;
+            size_t leng=0;
+
+            respuesta->codigo = 2;
             respuesta->letra = 'F';
-            respuesta->sizeData = 0;
-            mensajeEnviar = createMessage(respuesta, "");
+            char *buff = serializar_lista_nodos(nodos,&leng);
+            respuesta->sizeData = leng;
+
+            mensajeEnviar = createMessage(respuesta, buff);
 
             send(nuevo_socket, mensajeEnviar->buffer, mensajeEnviar->sizeBuffer, 0);
             yamasock = nuevo_socket;
@@ -166,7 +171,7 @@ int realizar_handshake(int nuevo_socket) {
         } else {
 
             log_info(logi, "Estado No estable - rechazar YAMA");
-            respuesta->codigo = 1;
+            respuesta->codigo = 0;
             respuesta->letra = 'F';
             respuesta->sizeData = 0;
             mensajeEnviar = createMessage(respuesta, "");
