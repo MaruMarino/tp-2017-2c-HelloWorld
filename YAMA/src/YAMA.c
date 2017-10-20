@@ -106,8 +106,19 @@ void conectar_fs()
 		void *mensaje = createMessage(head2, "");
 		enviar_message(config->socket_fs, mensaje, yama_log, &control);
 		char *rta = getMessage(config->socket_fs, head, &control);
-		puts(rta);
+		if (head->codigo == 0)
+		{
+			escribir_log("YAMA rechazado por FileSystem :(");
+			//que hago?
+		}else if(head->codigo == 2)
+		{
+			escribir_log("Conectado a File System :D");
+		}else
+		{
+			escribir_error_log("No comprendo el mensaje recibido");
+		}
 		free(rta);
+		free(head);
 	}
 }
 

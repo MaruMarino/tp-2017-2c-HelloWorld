@@ -117,3 +117,84 @@ void posicionar_clock()
 	list_destroy(lista_auxiliar);
 }
 
+int _get_index_clock()
+{
+	int index_ = 0;
+	int i = 1;
+
+	while(i)
+	{
+		t_worker *worker = list_get(workers, index_);
+
+		if(!worker->clock)
+			index_ ++;
+		else
+			i = 0;
+	}
+
+	return index_;
+}
+
+t_worker *get_worker(t_list *archivo, int n_bloque)
+{
+	t_worker *worker = NULL;
+	int clock;
+
+	int l_size = list_size(workers);
+
+	clock = get_index_clock();
+
+	bool _bloque_nodo(t_bloque *bloque)
+	{
+		return(bloque->n_bloque == n_bloque);
+	}
+
+	t_list *lista_aux = list_filter(archivo, _bloque_nodo);
+
+	bool _nodo_bloque(t_worker *worker_aux)
+	{
+		t_bloque *bl1 = list_get(lista_aux, 0);
+		t_bloque *bl2 = list_get(lista_aux, 1);
+		return (strcmp(bl1->nodo, worker_aux->nodo) || strcmp(bl2->nodo, worker_aux->nodo->nodo));
+	}
+
+	worker = list_find(workers, _nodo_bloque);
+
+	if(worker != NULL)
+	{
+		int next_index;
+		bool _bloque_archivo(t_bloque *bl2)
+		{
+			return strcmp(bl2->nodo, worker->nodo->nodo);
+		}
+		t_bloque *bl = list_find(lista_aux, _bloque_archivo);
+
+		list_add(worker->bloques, bl);
+		worker->clock = false;
+		if ((clock-1) == l_size)
+			next_index = 0;
+		else
+			next_index = clock + 1;
+
+		t_worker *w_next_clock = list_get(workers, next_index);
+		w_next_clock->clock = true;
+	}else
+	{
+		int encontrado = 0;
+		int fin_busqueda1 = 0;
+		int fin_busqueda2 = 0;
+		while(!encontrado && !fin_busqueda1)
+		{
+
+		}
+	}
+
+	list_destroy(lista_aux);
+
+	return worker;
+}
+
+void obtener_nodo_transformacion(t_list *archivo, t_list *transformaciones, int bloque)
+{
+	t_worker *worker = get_worker(archivo, bloque);
+}
