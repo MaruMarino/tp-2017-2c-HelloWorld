@@ -33,73 +33,82 @@ fd_set read_fds;
 int fdmax;
 int yamasock;
 
-void manejo_conexiones() {
+void manejo_conexiones()
+{
 
 
-    log_info(logi, "Iniciando administrador de conexiones");
+	log_info(logi,"Iniciando administrador de conexiones");
 
-    char *puerto = string_itoa(configuracion->puerto);
-    int control = 0;
-    if ((fdmax = configuracion->serverfs = makeListenSock(puerto, logi, &control)) < 0) {
-        perror("Error en algo de sockets %s\n");
-        free(puerto);
-        pthread_exit((void *) -1);
-    }
-    free(puerto);
-    //Seteo en 0 el master y temporal
-    FD_ZERO(&master);
-    FD_ZERO(&read_fds);
+	char *puerto= string_itoa(configuracion->puerto);
+	int control=0;
+	if ((fdmax = configuracion->serverfs = makeListenSock(puerto,logi,&control)) < 0){
+		perror("Error en algo de sockets %s\n");
+		free(puerto);
+		pthread_exit((void *)-1);
+	}
+	free(puerto);
+	//Seteo en 0 el master y temporal
+	FD_ZERO(&master);
+	FD_ZERO(&read_fds);
 
-    //Cargo el socket server
-    FD_SET(configuracion->serverfs, &master);
+	//Cargo el socket server
+	FD_SET(configuracion->serverfs, &master);
 
-    //Bucle principal
-    while (1) {
-        read_fds = master;
+	//Bucle principal
+	while (1)
+	{
+		read_fds = master;
 
-        int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, NULL);
-        log_info(logi, "Actividad detectada en administrador de conexiones");
+		int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, NULL);
+		log_info(logi,"Actividad detectada en administrador de conexiones");
 
-        if (selectResult == -1) {
-            log_info(logi, "Error en el administrador de conexiones");
-            break;
+		if (selectResult == -1)
+		{
+			log_info(logi,"Error en el administrador de conexiones");
+			break;
 
-        } else {
-            //Recorro los descriptores para ver quien llamo
-            int i;
-            for (i = 0; i <= fdmax; i++) {
-                if (FD_ISSET(i, &read_fds)) {
-                    //Se detecta alguien nuevo llamando?
-                    if (i == configuracion->serverfs) {
-                        //Gestiono la conexion entrante
-                        int nuevo_socket = aceptar_conexion(configuracion->serverfs, logi, &control);
-                        //Controlo que no haya pasado nada raro y acepto al nuevo
+		}
+		else
+		{
+			//Recorro los descriptores para ver quien llamo
+			int i;
+			for (i = 0; i <= fdmax; i++)
+			{
+				if (FD_ISSET(i, &read_fds))
+				{
+					//Se detecta alguien nuevo llamando?
+					if (i == configuracion->serverfs)
+					{
+						//Gestiono la conexion entrante
+						int nuevo_socket = aceptar_conexion(configuracion->serverfs,logi,&control);
+						//Controlo que no haya pasado nada raro y acepto al nuevo
 
-                        int exitoso = realizar_handshake(nuevo_socket);
-                        if (exitoso == 1) {
-                            //Cargo la nueva conexion a la lista y actualizo el maximo
-                            FD_SET(nuevo_socket, &master);
+						int exitoso =realizar_handshake(nuevo_socket);
+						if(exitoso == 1){
+							//Cargo la nueva conexion a la lista y actualizo el maximo
+							FD_SET(nuevo_socket, &master);
 
-                            if (nuevo_socket > fdmax) {
-                                fdmax = nuevo_socket;
-                            }
-                        } else {
-                            close(nuevo_socket);
-                        }
-                    } else {
-                        int estado = direccionar(i);
-                        if (estado == -1) {
-                            break;
-                        } else {
-                            FD_CLR(i, &master);
-                            close(i);
-                            continue;
-                        }
-                    }
-                }
-            }
-        }
-    }
+							if (nuevo_socket > fdmax){
+								fdmax = nuevo_socket;
+							}
+						}else{
+							close(nuevo_socket);
+						}
+					}
+					else
+					{
+						int estado = direccionar(i);
+						if(estado ==  -1){
+							FD_CLR(i, &master);
+							close(i);
+							continue;
+						}
+
+					}
+				}
+			}
+		}
+	}
 }
 
 int direccionar(int socket_rec) {

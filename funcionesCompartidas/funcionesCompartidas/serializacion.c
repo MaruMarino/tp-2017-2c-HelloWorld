@@ -329,7 +329,129 @@ t_file *deserializar_File(char *file_serial){
 	memcpy(file_serial + off, file->data, (size_t) file->fsize);
 	off += (size_t) file->fsize;
 
-	printf("Se deserializaron %d bytes\n", off);
+	//printf("Se deserializaron %d bytes\n", off);
 
 	return file;
+}
+
+//todo testear estas serializaciones
+char *serializar_bloque_archivo(bloqueArchivo *inf,size_t *len){
+
+	size_t desplazamiento = 0;
+	size_t leng = tamanio_bloque_archivo(inf);
+	size_t aux;
+	char *buff = malloc(leng+sizeof(int));
+
+	memcpy(buff+desplazamiento,&leng,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	aux = strlen(inf->nodo0);
+	memcpy(buff+desplazamiento,&aux,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(buff+desplazamiento,inf->nodo0,aux);
+	desplazamiento += aux;
+
+	aux = strlen(inf->nodo1);
+	memcpy(buff+desplazamiento,&aux,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(buff+desplazamiento,inf->nodo1,aux);
+	desplazamiento += aux;
+
+	memcpy(buff+desplazamiento,&inf->bloquenodo0,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	memcpy(buff+desplazamiento,&inf->bloquenodo1,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	memcpy(buff+desplazamiento,&inf->bytesEnBloque,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	*len = desplazamiento;
+
+	return buff;
+}
+bloqueArchivo *deserializar_bloque_archivo(char *serba){
+
+	bloqueArchivo *nuevo = malloc(sizeof(bloqueArchivo));
+	size_t aux;
+	size_t desplazamiento = 0;
+
+	memcpy(&aux,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	nuevo->nodo0 = malloc(aux+1); nuevo->nodo0[aux] = '\0';
+	memcpy(nuevo->nodo0,serba+desplazamiento,aux);
+	desplazamiento += aux;
+
+	memcpy(&aux,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	nuevo->nodo1 = malloc(aux+1); nuevo->nodo0[aux] = '\0';
+	memcpy(nuevo->nodo1,serba+desplazamiento,aux);
+	desplazamiento += aux;
+
+	memcpy(&nuevo->bloquenodo0,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	memcpy(&nuevo->bloquenodo1,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	memcpy(&nuevo->bytesEnBloque,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	return nuevo;
+}
+
+char *serializar_list_bloque_archivo(t_list *info_nodos_arc,size_t *leng){
+
+	size_t lengtotal=0;
+	size_t desplazamiento = 0;
+	int cantnodos = list_size(info_nodos_arc);
+	int i;
+	bloqueArchivo *uno;
+	for(i=0;i<cantnodos;i++){
+		uno = list_get(info_nodos_arc,i);
+		lengtotal += tamanio_bloque_archivo(uno);
+	}
+	char *buffer = malloc(lengtotal + sizeof(int));
+
+	memcpy(buffer+desplazamiento,&cantnodos,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	char *baux;
+	size_t laux = 0;
+	for(i=0;i<cantnodos;i++){
+		uno =list_get(info_nodos_arc,i);
+		baux = serializar_bloque_archivo(uno,&laux);
+		memcpy(buffer+desplazamiento,baux,laux);
+		desplazamiento += laux;
+		free(baux);
+	}
+
+	*leng = desplazamiento;
+
+	return buffer;
+}
+
+t_list *deserializar_lista_bloque_archivo(char *serializacion){
+
+	t_list *final = list_create();
+	size_t desplazamiento=0;
+
+	int cantnodos,i;
+
+	memcpy(&cantnodos,serializacion+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	size_t aux;
+	for(i=0;i<cantnodos;i++){
+
+		memcpy(&aux,serializacion+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		char *baux = malloc(aux);
+		memcpy(baux,serializacion+desplazamiento,aux);
+		bloqueArchivo *nuevito = deserializar_bloque_archivo(baux);
+		list_add(final,nuevito);
+		free(baux);
+	}
+
+	return final;
 }

@@ -22,4 +22,14 @@ char *deserializar_FName(char *fname_serial);
 char *serializar_File(t_file *file, size_t *len);
 t_file *deserializar_File(char *file_serial);
 
+char *serializar_list_bloque_archivo(t_list *info_nodos_arc,size_t *leng);
+t_list *deserializar_lista_bloque_archivo(char *);
+
+char *serializar_bloque_archivo(bloqueArchivo *inf,size_t *len);
+bloqueArchivo *deserializar_bloque_archivo(char *);
+
+char *serializar_lista_nodos(t_list *nodis,size_t *leng);
+t_list *deserializar_lista_nodos(char *);
+
+
 #endif /* SERIALIZACION_H_ */

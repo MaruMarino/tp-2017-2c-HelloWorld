@@ -19,6 +19,7 @@ extern t_configuracion *config;
 extern t_log *log_Mas;
 extern t_list *hilos;
 
+void matar_hilos();
 void error_reduccion_local(t_redLocal *reduccion_local);
 void error_transformacion(t_transformacion *transf);
 void ejecutar_transformador(t_transformacion *transf);
@@ -44,7 +45,9 @@ void escuchar_peticiones()
 			case 2: ;
 				escribir_log(log_Mas, "Se recibio una peticion de reduccion local");
 				t_redLocal *reduccion_local = deserializar_redLocal(buffer);
-				atender_reduccion_local(reduccion_local);
+				pthread_t *hiloPrograma = malloc(sizeof(pthread_t));
+				pthread_create(hiloPrograma,NULL,(void*)atender_reduccion_local,reduccion_local);
+				list_add(hilos, hiloPrograma);
 				break;
 			default:
 				puts("default");
@@ -61,10 +64,10 @@ void atender_tranformacion(t_list *list_transf)
 
 	for(i=0; i<size; i++)
 	{
-		pthread_t hiloPrograma = malloc(sizeof(pthread_t));
+		pthread_t *hiloPrograma = malloc(sizeof(pthread_t));
 
 		t_transformacion *transf = list_get(list_transf,i);
-		pthread_create(&hiloPrograma,NULL,(void*)ejecutar_transformador,transf);
+		pthread_create(hiloPrograma,NULL,(void*)ejecutar_transformador,transf);
 
 		list_add(hilos, hiloPrograma);
 	}
@@ -186,12 +189,12 @@ void ejecutar_transformador(t_transformacion *transf)
 
 	char *estado_a_enviar = serializar_estado_master(t_estado, &header->sizeData);
 
-	message *mensj_transf_est = createMessage(header, buffer_rta);
+	message *mensj_transf_est = createMessage(header, estado_a_enviar);
 	enviar_message(config->socket_yama, mensj_transf_est, log_Mas, &controlador);
 
 	if(controlador > 0)
 	{
-		escribir_log_error(log_Mas, "Fallo enviar mensaje de estado a YAMA");
+		escribir_error_log(log_Mas, "Fallo enviar mensaje de estado a YAMA");
 		error_transformacion(transf);
 		free(header);
 		return;
@@ -240,7 +243,6 @@ void error_transformacion(t_transformacion *transf)
 
 void atender_reduccion_local(t_redLocal *reduccion_local)
 {
-	//debo recibir lista, con n cantidad de peticiones de reduccion
 	int controlador = 0;
 	int socket_local;
 	header *header = malloc(sizeof(header));
@@ -293,9 +295,11 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 
 	//Enviando reduccion local para procesar
 	t_info_redLocal *reduc_loc_work = malloc(sizeof(t_info_redLocal));
-
+	reduc_loc_work->files = list_create();
 	reduc_loc_work->file_out = reduccion_local->temp_red_local;
-
+	reduc_loc_work->size_prog = string_length(config->script_reduc);
+	reduc_loc_work->prog = config->script_reduc;
+	list_add_all(reduc_loc_work->files, reduccion_local->archivos_temp);
 
 	size_t len_total;
 	char *buffer_trans = serializar_info_redLocal(reduc_loc_work, &len_total);
@@ -309,6 +313,7 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 
 	free(buffer_trans);
 	free(mensj_trans);
+	//destruir la lista y la estructura enviada
 
 	if(controlador > 0)
 	{
@@ -318,34 +323,51 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 		return;
 	}
 	else
-		escribir_log_compuesto(log_Mas, "Transformacion enviada a Worker: ",transf->nodo->nodo);
+		escribir_log_compuesto(log_Mas, "Transformacion enviada a Worker: ",reduccion_local->nodo->nodo);
 
 	//Recibo respuesta de Worker
 	void *buffer_rta = getMessage(socket_local, header, &controlador);
 
-	//!!!!!!!!!!!!
-	//PREGUNTAR IÑAKI QUE CODIGO LLEGARA!!!!!!!!!
-	//!!!!!!!!!!!!
-	if((controlador > 0)||(header->codigo != 0))
+	if(controlador > 0)
 	{
-		escribir_log_error_compuesto(log_Mas, "Error respuesta estado transformacion de Worker: ", transf->nodo->nodo);
-		error_transformacion(transf);
+		escribir_log_error_compuesto(log_Mas, "Fallo recibir mensaje de estado reduccion local de Worker: ", reduccion_local->nodo->nodo);
+		error_reduccion_local(reduccion_local);
+		free(header);
+		return;
+	}
+	else if(header->codigo == 8)
+	{
+		escribir_log_error_compuesto(log_Mas, "Error en procesamiento de reduccion local de Worker: ", reduccion_local->nodo->nodo);
+		error_reduccion_local(reduccion_local);
 		free(header);
 		return;
 	}
 	else
-		escribir_log_compuesto(log_Mas, "Respuesta estado recibida de Worker: ",transf->nodo->nodo);
+		escribir_log_compuesto(log_Mas, "Respuesta estado recibida de Worker: ",reduccion_local->nodo->nodo);
 
-	t_estado_master *t_estado = deserializar_estado_master(buffer_rta);
+	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
+
+	t_estado->estado = 2;
+	//t_estado->bloque = //;
+	t_estado->nodo = reduccion_local->nodo->nodo;
 
 	header->letra = 'M';
-	header->codigo = 5;
-	//header->sizeData = len_total;
+	header->codigo = 6;
 
-	message *mensj_transf_est = createMessage(header, buffer_rta);
+	char *estado_a_enviar = serializar_estado_master(t_estado, &header->sizeData);
+
+	message *mensj_transf_est = createMessage(header, estado_a_enviar);
 	enviar_message(config->socket_yama, mensj_transf_est, log_Mas, &controlador);
 
-	escribir_log_compuesto(log_Mas, "Proceso transformacion finalizada para Worker: ",transf->nodo->nodo);
+	if(controlador > 0)
+	{
+		escribir_error_log(log_Mas, "Fallo enviar mensaje de estado a YAMA");
+		error_reduccion_local(reduccion_local);
+		free(header);
+		return;
+	}
+	else
+		escribir_log_compuesto(log_Mas, "Proceso transformacion finalizada para Worker: ",reduccion_local->nodo->nodo);
 
 	quitar_reduccion_local();
 
@@ -357,17 +379,42 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 
 void error_reduccion_local(t_redLocal *reduccion_local)
 {
+	int controlador;
+	size_t len_total;
 
+	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
+	//t_estado->bloque = transf->bloque;
+	t_estado->estado = 3;
+	t_estado->nodo = reduccion_local->nodo->nodo;
+
+	char *serializado = serializar_estado_master(t_estado, &len_total);
+
+	header *header_d = malloc(sizeof(header));
+	header_d->letra = 'M';
+	header_d->codigo = 6;
+	header_d->sizeData = len_total;
+
+	message *mensj_error = createMessage(header_d, serializado);
+	enviar_message(config->socket_yama, mensj_error, log_Mas, &controlador);
+
+	//void *buffer = getMessage(config->socket_yama, header_d, &controlador);
+
+	agregar_fallo_reducc_local();
+
+	free(serializado);
+	free(mensj_error);
+	free(t_estado);
+	free(header_d);
 }
 
 void matar_hilos()
 {
 	void _destruir_elemento(pthread_t *el_hilo){
-		pthread_cancel(el_hilo);
+		pthread_cancel(*el_hilo);
 		free(el_hilo);
 	}
 
-	list_clean_and_destroy_elements(hilos, _destruir_elemento);
+	list_clean_and_destroy_elements(hilos, (void*) _destruir_elemento);
 
 	list_destroy(hilos);
 }

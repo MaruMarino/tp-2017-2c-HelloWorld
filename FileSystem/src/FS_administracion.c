@@ -553,8 +553,8 @@ NODO *getNodoMinusLoader(char *Nodo) {
             maxLibreEspacio = nodoFetch->espacio_libre;
             nodoMax = nodoFetch;
         }
+        return nodoMax;
     }
-    return nodoMax;
 }
 
 int setBloque() {

@@ -18,7 +18,7 @@ int waitAccept(const int *socket, t_log **file_log, config *config, const size_t
 int main(int argc, char *argv[]) {
 
     t_log *file_log = crear_archivo_log("DateNode", true,
-                                        "/home/elmigue/Desktop/workSpace/tp-2017-2c-HelloWorld/DataNode/src/log/log");
+                                        "/home/utnso/logDataNode");
     int control;
 
     escribir_log(file_log, "cargando el archivo de configuracion");

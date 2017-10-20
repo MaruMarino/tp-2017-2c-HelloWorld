@@ -22,4 +22,7 @@ size_t sizeOfFnames(t_list *fnames);
 /* libera por completo los elementos de la lista de char *fname
  */
 void liberarFnames(t_list *fnames);
+
+size_t tamanio_bloque_archivo(bloqueArchivo *info);
+
 #endif /* FUNCIONESCOMPARTIDAS_GENERALES_H_ */

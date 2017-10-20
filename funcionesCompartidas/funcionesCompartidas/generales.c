@@ -70,3 +70,25 @@ void liberarFnames(t_list *fnames){
 		free(fn);
 	}
 }
+
+size_t tamanio_bloque_archivo(bloqueArchivo *ba){
+
+	size_t retorno=0;
+
+	retorno += strlen(ba->nodo0);
+	retorno += strlen(ba->nodo1);
+	retorno += sizeof(bloqueArchivo);
+
+	return retorno;
+}
+
+
+
+
+
+
+
+
+
+
+

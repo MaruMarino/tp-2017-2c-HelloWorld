@@ -18,6 +18,7 @@ t_log *yama_log;
 t_configuracion *config;
 t_list *tabla_estado; //formado por t_estado
 t_list *masters; //formado por t_master, o usar diccionario?
+t_list *workers; //formado por t_worker
 int master_id = 0;
 int job_id = 0;
 
@@ -55,6 +56,7 @@ void inicializar_variables()
 
 	tabla_estado = list_create();
 	masters = list_create();
+	workers = list_create();
 }
 
 void liberar_memoria()
@@ -66,6 +68,7 @@ void liberar_memoria()
 	free(config);
 	list_destroy(tabla_estado);
 	list_destroy(masters);
+	list_destroy(workers);
 }
 
 void leer_configuracion(char *path)
