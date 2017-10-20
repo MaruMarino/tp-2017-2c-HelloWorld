@@ -1,6 +1,9 @@
 #ifndef FUNCIONESCOMPARTIDAS_GENERALES_H_
 #define FUNCIONESCOMPARTIDAS_GENERALES_H_
 
+#include <commons/collections/list.h>
+#include "estructuras.h"
+
 /* Libera los punteros pasados por parametro.
  * nptr indica la cantidad de punteros a liberar y
  * el resto de los parametros son los propios punteros.
@@ -24,5 +27,7 @@ size_t sizeOfFnames(t_list *fnames);
 void liberarFnames(t_list *fnames);
 
 size_t tamanio_bloque_archivo(bloqueArchivo *info);
+
+size_t tamanio_lista_t_nodo(t_list *nodis);
 
 #endif /* FUNCIONESCOMPARTIDAS_GENERALES_H_ */

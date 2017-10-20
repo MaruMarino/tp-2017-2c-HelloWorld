@@ -57,10 +57,20 @@ typedef struct
 
 typedef struct
 {
+	char *nodo;
+	int n_bloque_archivo;
+	int n_bloque;
+	int bytes;
+
+}t_bloque;
+
+typedef struct
+{
 	t_nodo *nodo;
 	int disponibilidad;
 	int carga_actual;
 	bool clock;
+	t_list *bloques;
 }t_worker;
 
 #endif /* ESTRUCTURAS_H_ */

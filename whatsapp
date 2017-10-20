@@ -37,6 +37,7 @@ FILE SYSTEM:
 ->código menajes y explicación:
 -0: Handshake con nueva conexion RECHAZADO (Para DataNode,Worker y Yama) 
 -1: Handshake con nueva conexion ACEPTADO (Para DataNode,Worker y Yama) 
+-2: Lista de nodos existentes serializada para YAMA
 
 
 WORKER:

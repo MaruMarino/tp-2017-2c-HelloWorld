@@ -27,7 +27,7 @@
 #include "rutinasChild.h"
 
 t_log *logw;
-struct conf_worker *conf;
+t_conf *conf;
 char *databin;
 size_t dsize;
 
@@ -59,11 +59,15 @@ int main(int argc, char *argv[]){
 
 	if ((databin = openDataBin(conf->ruta_databin, &dsize, conf->size_default)) == NULL){
 		log_error(logw, "Fallo abrir el archivo databin. No se incia el Nodo");
+		log_destroy(logw);
+		liberarConfig(conf);
 		return -1;
 	}
 
 	if ((lis_fd = makeListenSock(conf->puerto_worker, logw, &status)) < 0){
 		log_error(logw, "No se logro bindear sobre puerto %s\n", conf->puerto_worker);
+		log_destroy(logw);
+		liberarConfig(conf);
 		return -1;
 	}
 
@@ -103,6 +107,7 @@ int main(int argc, char *argv[]){
 		}
 
 		if ((mpid = fork()) == 0){ // soy proceso hijo
+			close(lis_fd);
 			if (masterQuery) // un Master quiere que le procese algo
 				subrutinaEjecutor(fd_proc);
 
@@ -115,10 +120,12 @@ int main(int argc, char *argv[]){
 		} else {
 			perror("Fallo fork(). error");
 			log_error(logw, "Fallo llamada a fork! Esto es un error fatal!");
+			close(fd_proc);
 			break;
 		}
 	}
 
+	log_destroy(logw);
 	liberarConfig(conf);
 	close(lis_fd);
 	return 0;

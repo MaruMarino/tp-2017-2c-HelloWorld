@@ -5,6 +5,7 @@
 #include "estructuras.h"
 #include "generales.h"
 #include "serializacion.h"
+#include "serializacion_yama_master.h"
 
 
 char *serializar_info_trans(t_info_trans *info, size_t *len){
@@ -454,4 +455,72 @@ t_list *deserializar_lista_bloque_archivo(char *serializacion){
 	}
 
 	return final;
+}
+
+char *serializar_lista_nodos(t_list *nodis,size_t *leng){
+
+	size_t tfinal = tamanio_lista_t_nodo(nodis);
+	size_t aux =0;
+	size_t desplazamiento =0;
+	int i = nodis->elements_count;
+	char *buffer = malloc(tfinal + (size_t)sizeof(int)*(i+1));
+
+	t_nodo *nodi;
+	char *subbuffer;
+
+	memcpy(buffer+desplazamiento,&i,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	for(i=0;i<nodis->elements_count;i++){
+
+		nodi= list_get(nodis,i);
+		subbuffer = serializar_nodo(nodi,&aux);
+
+		memcpy(buffer+desplazamiento,&aux,sizeof(int));
+		desplazamiento += sizeof(int);
+
+		memcpy(buffer+desplazamiento,subbuffer,aux);
+		desplazamiento += aux;
+
+		free(subbuffer);
+	}
+
+	*leng = desplazamiento;
+	return buffer;
+
+}
+
+t_list *deserializar_lista_nodos(char *buffer){
+
+	int cant_nodos;
+	size_t desplazamiento = 0;
+	size_t aux = 0;
+	int aux2;
+
+	t_list *nueva = list_create();
+
+	memcpy(&cant_nodos,buffer+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	char *subbuffer;
+
+	for(aux2=0;aux2<cant_nodos;aux2++){
+
+		memcpy(&aux,buffer+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+
+		subbuffer = malloc(aux);
+
+		memcpy(subbuffer,buffer+desplazamiento,aux);
+		desplazamiento += aux;
+
+		t_nodo *nodi = deserializar_nodo(subbuffer,&aux);
+
+		list_add(nueva,nodi);
+
+		free(subbuffer);
+	}
+
+	return nueva;
+
 }

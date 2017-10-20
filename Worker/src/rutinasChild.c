@@ -18,9 +18,11 @@
 #define maxline 0x100000
 
 extern t_log *logw;
-extern struct conf_worker *conf;
+extern t_conf *conf;
 
 void subrutinaEjecutor(int sock_m){
+	pid_t wp = getpid();
+	log_trace(logw, "CHILD [%d]: Corriendo Subrutina Ejecutor", wp);
 
 	header head;
 	char *msj, *exe_fname, *data_fname, *fname;
@@ -29,70 +31,75 @@ void subrutinaEjecutor(int sock_m){
 
 	if (responderHandshake(sock_m) == -1){
 		log_error(logw, "Fallo respuesta de handshake a Master");
-		terminarEjecucion(sock_m, rta);
+		terminarEjecucion(sock_m, rta, conf);
 	}
 
 	msj = getMessage(sock_m, &head, &status);
 	if (status == -1 || status == 0){
 		log_error(logw, "Error en la recepcion del mensaje");
-		terminarEjecucion(sock_m, rta);
+		free(msj);
+		terminarEjecucion(sock_m, rta, conf);
 	}
 
 	// filenames temporarios para programa y buffer de datos
-	exe_fname  = string_itoa(getpid()); string_append(&exe_fname, ".exec");
-	data_fname = string_itoa(getpid()); string_append(&data_fname, ".dat");
+	exe_fname  = string_itoa(wp); string_append(&exe_fname, ".exec");
+	data_fname = string_itoa(wp); string_append(&data_fname, ".dat");
 
 	switch(head.codigo){
 	case TRANSF:
-		log_trace(logw, "Un Master pide transformacion");
+		log_trace(logw, "CHILD [%d]: Ejecuta Transformacion", wp);
 
 		t_info_trans *info_t = deserializar_info_trans(msj);
 
 		if (crearArchivoBin(info_t->prog, info_t->size_prog, exe_fname) < 0 ||
 			crearArchivoData(info_t->bloque, (size_t) info_t->bytes_ocup, data_fname) < 0){
 			log_error(logw, "No se pudieron crear los archivos de trabajo.");
-			liberador(4, msj, info_t, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta);
+			liberador(6, msj, info_t->prog, info_t->file_out, info_t, exe_fname, data_fname);
+			terminarEjecucion(sock_m, rta, conf);
 		}
 
 		if (!makeCommandAndExecute(data_fname, exe_fname, info_t->file_out)){
 			log_error(logw, "No se pudo completar correctamente la reduccion");
-			liberador(4, msj, info_t->prog, info_t->file_out, info_t);
-			terminarEjecucion(sock_m, rta);
+			liberador(6, msj, info_t->prog, info_t->file_out, info_t, exe_fname, data_fname);
+			terminarEjecucion(sock_m, rta, conf);
 		}
 
+		log_trace(logw, "CHILD [%d]: Finaliza Transformacion", wp);
+		liberador(6, msj, info_t->prog, info_t->file_out, info_t, exe_fname, data_fname);
 		break;
 
 	case RED_L:
-		log_trace(logw, "Un Master pide reduccion local");
+		log_trace(logw, "CHILD [%d]: Ejecuta Reduccion Local", wp);
 
 		t_info_redLocal *info_rl = deserializar_info_redLocal(msj);
 
 		if (!crearArchivoBin(info_rl->prog, info_rl->size_prog, exe_fname)){
 			log_error(logw, "No se pudo crear el ejecutable de reduccion.");
 			liberarFnames(info_rl->files);
-			liberador(5, msj, info_rl->prog, info_rl, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta);
+			liberador(6, msj, info_rl->file_out, info_rl->prog, info_rl, exe_fname, data_fname);
+			terminarEjecucion(sock_m, rta, conf);
 		}
 
 		if (aparearFiles(info_rl->files, data_fname) == -1){
 			log_error(logw, "No se pudo aparear los archivos temporales");
 			liberarFnames(info_rl->files);
-			liberador(5, msj, info_rl->prog, info_rl, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta);
+			liberador(6, msj, info_rl->file_out, info_rl->prog, info_rl, exe_fname, data_fname);
+			terminarEjecucion(sock_m, rta, conf);
 		}
 
 		if (!makeCommandAndExecute(data_fname, exe_fname, info_rl->file_out)){
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberarFnames(info_rl->files);
-			liberador(5, msj, info_rl->prog, info_rl, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta);
+			liberador(6, msj, info_rl->file_out, info_rl->prog, info_rl, exe_fname, data_fname);
+			terminarEjecucion(sock_m, rta, conf);
 		}
 
+		log_trace(logw, "CHILD [%d]: Finaliza Reduccion Local", wp);
+		liberador(6, msj, info_rl->file_out, info_rl->prog, info_rl, exe_fname, data_fname);
 		break;
 
 	case RED_G:
-		log_trace(logw, "Un Master pide reduccion global");
+		log_trace(logw, "CHILD [%d]: Ejecuta Reduccion Global", wp);
 
 		t_info_redGlobal *info_rg = deserializar_info_redGlobal(msj);
 
@@ -100,65 +107,69 @@ void subrutinaEjecutor(int sock_m){
 			log_error(logw, "No se pudo crear el ejecutable de reduccion.");
 			liberarInfoNodos(info_rg->nodos);
 			liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta);
+			terminarEjecucion(sock_m, rta, conf);
 		}
 
 		if (apareoGlobal(info_rg->nodos, info_rg->file_out) == -1){
 			log_error(logw, "Fallo apareamiento de archivos");
 			liberarInfoNodos(info_rg->nodos);
 			liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta);
+			terminarEjecucion(sock_m, rta, conf);
 		}
 
 		if (!makeCommandAndExecute(data_fname, exe_fname, info_rg->file_out)){
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberarInfoNodos(info_rg->nodos);
 			liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta);
+			terminarEjecucion(sock_m, rta, conf);
 		}
 
+		log_trace(logw, "CHILD [%d]: Finaliza Reduccion Global", wp);
+		liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
 		break;
 
 	case ALMAC:
-		log_trace(logw, "Un Master pide almacenar archivo en Filesystem");
+		log_trace(logw, "CHILD [%d]: Ejecuta Almacenamiento Final", wp);
 
 		fname = deserializar_FName(msj);
 
 		if (almacenarFileEnFilesystem(conf->ip_fs, conf->puerto_fs, fname) == -1){
 			log_error(logw, "No se logro almacenar %s en FileSystem", fname);
-			liberador(3, fname, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta);
+			liberador(4, msj, fname, exe_fname, data_fname);
+			terminarEjecucion(sock_m, rta, conf);
 		}
 
+		log_trace(logw, "CHILD [%d]: Finaliza Almacenamiento Final", wp);
+		liberador(4, msj, fname, exe_fname, data_fname);
 		break;
 	}
 
-	terminarEjecucion(sock_m, OK);
+	terminarEjecucion(sock_m, OK, conf);
 }
 
 void subrutinaServidor(int sock_w){
+	log_trace(logw, "CHILD [%d]: Corriendo Subrutina Servidor", getpid());
+	liberarConfig(conf);
 
 	int ctl, ret;
-	char *msj, *fname, *line;
+	char *msj, *fname, *line, *fbuff;
 	message *m;
 	FILE *f;
 	header head_cli;
 	header head_serv = {.letra = 'W', .codigo = 11};
-	size_t len = 0;
+	size_t len;
 	size_t bufflen = maxline;
-	char *fbuff = malloc(bufflen);
 
 	if (responderHandshake(sock_w) == -1){
 		log_error(logw, "No se pudo responder al Worker. Cierro conexion");
 		close(sock_w);
-		free(fbuff);
 		exit(-1);
 	}
 
 	ctl = 0;
 	msj = getMessage(sock_w, &head_cli, &ctl);
 	if (ctl == -1 || ctl == 0){
-		log_error(logw, "Fallo conexion con Worker cliente, o se desconecto");
+		log_error(logw, "Fallo conexion con Worker cliente o se desconecto");
 		close(sock_w);
 		exit(-1);
 	}
@@ -170,6 +181,7 @@ void subrutinaServidor(int sock_w){
 		exit(-1);
 	}
 
+	fbuff = malloc(bufflen);
 	do {
 		if (ctl <= 0) break;
 
@@ -185,7 +197,7 @@ void subrutinaServidor(int sock_w){
 				head_serv.codigo = -14;
 		}
 
-		line = serializar_stream(fbuff, bufflen, &len);
+		line = serializar_stream(fbuff, strlen(fbuff) + 1, &len);
 		head_serv.sizeData = len;
 		m = createMessage(&head_serv, line);
 		enviar_message(sock_w, m, logw, &ctl);
@@ -194,14 +206,15 @@ void subrutinaServidor(int sock_w){
 	} while(ret != -1 && (msj = getMessage(sock_w, &head_cli, &ctl)));
 
 	if (ctl == 0){
-		log_info(logw, "Se desconecto el Worker cliente prematuramente");
+		log_error(logw, "Se desconecto el Worker cliente prematuramente");
 		ret = -2;
 
 	} else {
-		log_info(logw, "Fallo recepcion del mensaje del cliente");
+		log_error(logw, "Fallo recepcion del mensaje del cliente");
 		ret = -3;
 	}
 
+	log_trace(logw, "CHILD [%d]: Finalizando Subrutina Servidor", getpid());
 	close(sock_w);
 	fclose(f);
 	liberador(2, fbuff, fname);

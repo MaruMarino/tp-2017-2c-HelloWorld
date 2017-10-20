@@ -31,10 +31,10 @@ typedef struct {
 typedef int Function ();
 
 typedef struct {
-  char *name;
-  Function *func;
-  char *doc;
-  char *sintax;
+	char *name;
+	Function *func;
+	char *doc;
+	char *sintax;
 } comando;
 
 typedef struct{
@@ -53,7 +53,7 @@ typedef struct{
 	int padre;
 }t_directory;
 
-typedef struct{
+/*typedef struct{
 
 	char *nodo0; // nombre nodo donde esta la copia 0 de ese bloque del archivo
 	int bloquenodo0; // bloque dentro del nodo donde esta la copia 0 de ese bloque del archivo
@@ -62,7 +62,7 @@ typedef struct{
 	int bytesEnBloque; // cantidad de bytes que conforma ese bloque ( <= 1MiB)
 
 }bloqueArchivo;
-
+ */
 typedef struct{
 
 	int tamanio; // tamaño total del archivo

@@ -82,11 +82,21 @@ size_t tamanio_bloque_archivo(bloqueArchivo *ba){
 	return retorno;
 }
 
+size_t tamanio_lista_t_nodo(t_list *nodis){
+
+	int i;
+	size_t tfinal = 0;
+	t_nodo *nodi;
+
+	for(i=0;i<nodis->elements_count;i++){
+
+		nodi = list_get(nodis,i);
+		tfinal += strlen(nodi->nodo) + strlen(nodi->ip) + sizeof(t_nodo);
+	}
 
 
-
-
-
+		return tfinal;
+}
 
 
 
