@@ -81,6 +81,7 @@ void leer_configuracion(char *path)
 	string_append(&config->yama_puerto, config_get_string_value(configuracion, "YAMA_PUERTO"));
 	string_append(&config->algortimo_bal, config_get_string_value(configuracion, "ALGORITMO_BALANCEO"));
 	config->retardo_plan = config_get_int_value(configuracion, "RETARDO_PLANIFICACION");
+	config->base = config_get_int_value(configuracion, "BASE");
 	string_append(&config->fs_ip, config_get_string_value(configuracion, "FS_IP"));
 	string_append(&config->fs_puerto, config_get_string_value(configuracion, "FS_PUERTO"));
 
@@ -120,7 +121,7 @@ void conectar_fs()
 			escribir_error_log(yama_log, "No comprendo el mensaje recibido");
 		}
 		free(rta);
-		free(head);
+		free(head2);
 	}
 }
 

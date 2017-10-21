@@ -97,7 +97,7 @@ int get_menor_carga(t_list *lista_auxiliar)
 	int i = 0;
 	int size = list_size(lista_auxiliar);
 
-	while(size<i)
+	while(size > 0)
 	{
 		t_worker *worker = list_get(lista_auxiliar, i);
 
@@ -105,6 +105,7 @@ int get_menor_carga(t_list *lista_auxiliar)
 			menor_carga = worker->carga_actual;
 
 		i++;
+		size--;
 	}
 
 	return menor_carga;
@@ -116,10 +117,10 @@ void posicionar_clock()
 
 	bool _mayor_disponibilidad(t_worker *worker)
 	{
-		return worker->disponibilidad == mayor_disponibilidad;
+		return (worker->disponibilidad == mayor_disponibilidad);
 	}
 
-	t_list *lista_auxiliar = list_filter(workers, _mayor_disponibilidad);
+	t_list *lista_auxiliar  = list_filter(workers, _mayor_disponibilidad);
 
 	int menor_carga = get_menor_carga(lista_auxiliar);
 

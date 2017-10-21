@@ -18,6 +18,61 @@
 extern t_configuracion *config;
 extern t_log *yama_log;
 
+bloqueArchivo *deserializar_bloque_archivo(char *serba){
+
+	bloqueArchivo *nuevo = malloc(sizeof(bloqueArchivo));
+	size_t aux;
+	size_t desplazamiento = 0;
+
+	memcpy(&aux,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	nuevo->nodo0 = malloc(aux+1); nuevo->nodo0[aux] = '\0';
+	memcpy(nuevo->nodo0,serba+desplazamiento,aux);
+	desplazamiento += aux;
+
+	memcpy(&aux,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	nuevo->nodo1 = malloc(aux+1); nuevo->nodo0[aux] = '\0';
+	memcpy(nuevo->nodo1,serba+desplazamiento,aux);
+	desplazamiento += aux;
+
+	memcpy(&nuevo->bloquenodo0,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	memcpy(&nuevo->bloquenodo1,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	memcpy(&nuevo->bytesEnBloque,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	return nuevo;
+}
+t_list *deserializar_lista_bloque_archivo(char *serializacion){
+
+	t_list *final = list_create();
+	size_t desplazamiento=0;
+
+	int cantnodos,i;
+
+	memcpy(&cantnodos,serializacion+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	size_t aux;
+	for(i=0;i<cantnodos;i++){
+
+		memcpy(&aux,serializacion+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		char *baux = malloc(aux);
+		memcpy(baux,serializacion+desplazamiento,aux);
+		desplazamiento += aux;
+		bloqueArchivo *nuevito = deserializar_bloque_archivo(baux);
+		list_add(final,nuevito);
+		free(baux);
+	}
+
+	return final;
+}
+
 void solicitar_informacion_archivo(char *info, int _socket)
 {
 	size_t size_buffer = 0;
@@ -34,11 +89,11 @@ void solicitar_informacion_archivo(char *info, int _socket)
 
 	header head2;
 	t_list *bloques_auxiliar = list_create();
-	message *mensaje2 = getMessage(config->socket_fs, &head2, &control);
+	char *mensaje2 = getMessage(config->socket_fs, &head2, &control);
 
 	if(head2.codigo == 3)
 	{
-		archivo_bloques = deserializar_lista_bloque_archivo(mensaje2->buffer);
+		archivo_bloques = deserializar_lista_bloque_archivo(mensaje2);
 		int i = 0;
 
 		void _convertir_bloques(bloqueArchivo *bloque)
@@ -80,10 +135,10 @@ void solicitar_informacion_archivo(char *info, int _socket)
 		free(self);
 	}
 
-	free(mensaje->buffer);
+	/*free(mensaje->buffer);
 	free(mensaje2->buffer);
 	free(mensaje);
-	free(mensaje2);
+	free(mensaje2);*/
 	list_destroy_and_destroy_elements(archivo_bloques, _destruir_bloque);
 	list_destroy_and_destroy_elements(archivo_bloques, _destruir_bloque2);
 }

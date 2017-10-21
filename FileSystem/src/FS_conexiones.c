@@ -34,6 +34,221 @@ fd_set read_fds;
 int fdmax;
 int yamasock;
 
+message *create_Message(header *head, void *data);
+size_t dtamanio_bloque_archivo(bloqueArchivo *ba){
+
+	size_t retorno=0;
+
+	retorno += strlen(ba->nodo0);
+	retorno += strlen(ba->nodo1);
+	retorno += sizeof(bloqueArchivo);
+
+	return retorno;
+}
+size_t dtamanio_lista_t_nodo(t_list *nodis){
+
+	int i;
+	size_t tfinal = 0;
+	t_nodo *nodi;
+
+	for(i=0;i<nodis->elements_count;i++){
+
+		nodi = list_get(nodis,i);
+		tfinal += strlen(nodi->nodo)+2 + strlen(nodi->ip) + sizeof(t_nodo);
+	}
+
+
+		return tfinal;
+}
+
+char *dserializar_bloque_archivo(bloqueArchivo *inf,size_t *len){
+
+	size_t desplazamiento = 0;
+	size_t leng = dtamanio_bloque_archivo(inf);
+	size_t aux;
+	char *buff = malloc(leng+sizeof(int));
+
+	memcpy(buff+desplazamiento,&leng,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	aux = strlen(inf->nodo0);
+	memcpy(buff+desplazamiento,&aux,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(buff+desplazamiento,inf->nodo0,aux);
+	desplazamiento += aux;
+
+	aux = strlen(inf->nodo1);
+	memcpy(buff+desplazamiento,&aux,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(buff+desplazamiento,inf->nodo1,aux);
+	desplazamiento += aux;
+
+	memcpy(buff+desplazamiento,&inf->bloquenodo0,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	memcpy(buff+desplazamiento,&inf->bloquenodo1,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	memcpy(buff+desplazamiento,&inf->bytesEnBloque,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	*len = desplazamiento;
+
+	return buff;
+}
+bloqueArchivo *ddeserializar_bloque_archivo(char *serba){
+
+	bloqueArchivo *nuevo = malloc(sizeof(bloqueArchivo));
+	size_t aux;
+	size_t desplazamiento = 0;
+
+	memcpy(&aux,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	nuevo->nodo0 = malloc(aux+1); nuevo->nodo0[aux] = '\0';
+	memcpy(nuevo->nodo0,serba+desplazamiento,aux);
+	desplazamiento += aux;
+
+	memcpy(&aux,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	nuevo->nodo1 = malloc(aux+1); nuevo->nodo0[aux] = '\0';
+	memcpy(nuevo->nodo1,serba+desplazamiento,aux);
+	desplazamiento += aux;
+
+	memcpy(&nuevo->bloquenodo0,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	memcpy(&nuevo->bloquenodo1,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	memcpy(&nuevo->bytesEnBloque,serba+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	return nuevo;
+}
+
+char *dserializar_list_bloque_archivo(t_list *info_nodos_arc,size_t *leng){
+
+	size_t lengtotal=0;
+	size_t desplazamiento = 0;
+	int cantnodos = list_size(info_nodos_arc);
+	int i;
+	bloqueArchivo *uno;
+	for(i=0;i<cantnodos;i++){
+		uno = list_get(info_nodos_arc,i);
+		lengtotal += dtamanio_bloque_archivo(uno);
+	}
+	char *buffer = malloc(lengtotal + sizeof(int) + info_nodos_arc->elements_count*sizeof(int));
+
+	memcpy(buffer+desplazamiento,&cantnodos,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	char *baux;
+	size_t laux = 0;
+	for(i=0;i<cantnodos;i++){
+		uno =list_get(info_nodos_arc,i);
+		baux = dserializar_bloque_archivo(uno,&laux);
+		memcpy(buffer+desplazamiento,baux,laux);
+		desplazamiento += laux;
+		free(baux);
+	}
+
+	*leng = desplazamiento;
+
+	return buffer;
+}
+
+t_list *ddeserializar_lista_bloque_archivo(char *serializacion){
+
+	t_list *final = list_create();
+	size_t desplazamiento=0;
+
+	int cantnodos,i;
+
+	memcpy(&cantnodos,serializacion+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	size_t aux;
+	for(i=0;i<cantnodos;i++){
+
+		memcpy(&aux,serializacion+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		char *baux = malloc(aux);
+		memcpy(baux,serializacion+desplazamiento,aux);
+		bloqueArchivo *nuevito = deserializar_bloque_archivo(baux);
+		list_add(final,nuevito);
+		free(baux);
+	}
+
+	return final;
+}
+
+char *dserializar_lista_nodos(t_list *nodis,size_t *leng){
+
+	size_t tfinal = dtamanio_lista_t_nodo(nodis);
+	size_t aux =0;
+	size_t desplazamiento =0;
+	int i = nodis->elements_count;
+	char *buffer = malloc(tfinal + (size_t)sizeof(int)*(i+1));
+
+	t_nodo *nodi;
+	char *subbuffer;
+
+	memcpy(buffer+desplazamiento,&i,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	for(i=0;i<nodis->elements_count;i++){
+
+		nodi= list_get(nodis,i);
+		subbuffer = serializar_nodo(nodi,&aux);
+
+		memcpy(buffer+desplazamiento,&aux,sizeof(int));
+		desplazamiento += sizeof(int);
+
+		memcpy(buffer+desplazamiento,subbuffer,aux);
+		desplazamiento += aux;
+
+		free(subbuffer);
+	}
+
+	*leng = desplazamiento;
+	return buffer;
+
+}
+
+t_list *ddeserializar_lista_nodos(char *buffer){
+
+	int cant_nodos;
+	size_t desplazamiento = 0;
+	size_t aux = 0;
+	int aux2;
+
+	t_list *nueva = list_create();
+
+	memcpy(&cant_nodos,buffer+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	char *subbuffer;
+
+	for(aux2=0;aux2<cant_nodos;aux2++){
+
+		memcpy(&aux,buffer+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+
+		subbuffer = malloc(aux);
+
+		memcpy(subbuffer,buffer+desplazamiento,aux);
+		desplazamiento += aux;
+
+		t_nodo *nodi = deserializar_nodo(subbuffer,&aux);
+
+		list_add(nueva,nodi);
+
+		free(subbuffer);
+	}
+
+	return nueva;
+
+}
 void manejo_conexiones()
 {
 
@@ -134,7 +349,7 @@ int direccionar(int socket_rec) {
 		}
 	}
 
-	free(mensaje);
+	//free(mensaje);
 	return status;
 }
 
@@ -157,7 +372,7 @@ int realizar_handshake(int nuevo_socket) {
 
 			respuesta->codigo = 2;
 			respuesta->letra = 'F';
-			char *buff = serializar_lista_nodos(nodos,&leng);
+			char *buff = dserializar_lista_nodos(nodos,&leng);
 			respuesta->sizeData = leng;
 
 			mensajeEnviar = createMessage(respuesta, buff);
@@ -165,8 +380,9 @@ int realizar_handshake(int nuevo_socket) {
 			send(nuevo_socket, mensajeEnviar->buffer, mensajeEnviar->sizeBuffer, 0);
 			yamasock = nuevo_socket;
 			retornar = 1;
-			free(mensajeEnviar->buffer);
-			free(mensajeEnviar);
+			//todo
+			//free(mensajeEnviar->buffer);
+			//free(mensajeEnviar);
 
 		} else {
 
@@ -271,7 +487,7 @@ int realizar_handshake(int nuevo_socket) {
 
 void atender_mensaje_YAMA(int codigo, void *mensaje) {
 
-	printf("mensaje:%s", (char *) mensaje);
+	//printf("mensaje:%s", (char *) mensaje);
 	switch (codigo) {
 
 	case 0:
@@ -280,6 +496,36 @@ void atender_mensaje_YAMA(int codigo, void *mensaje) {
 		break;
 	case 2:
 		break;
+	case 5:{
+		t_list *listi = list_create();
+		bloqueArchivo b;
+		b.nodo0 = strdup("nodo_1");
+		b.nodo1 = strdup("nodo_2");
+		b.bloquenodo0 = 2;
+		b.bloquenodo1 = 3;
+		b.bytesEnBloque= 1048576;
+
+		bloqueArchivo bc;
+		bc.nodo0 = strdup("nodo_1");
+		bc.nodo1 = strdup("nodo_2");
+		bc.bloquenodo0 = 4;
+		bc.bloquenodo1 = 5;
+		bc.bytesEnBloque= 1048576;
+
+		list_add(listi,&b);
+		list_add(listi,&bc);
+		size_t j;
+		char *hola =dserializar_list_bloque_archivo(listi,&j);
+		header h;
+		h.codigo = 3;
+		h.letra = 'F';
+		h.sizeData = j;
+
+		message *n = create_Message(&h,hola);
+		int c=0;
+		enviar_message(yamasock,n,logi,&c);
+		break;
+	}
 
 	}
 }
@@ -295,4 +541,12 @@ void atender_mensaje_NODO(int codigo, void *mensaje) {
 		break;
 
 	}
+}
+message *create_Message(header *head, void *data) {
+    message *ElMensaje = malloc(sizeof(message));
+    ElMensaje->sizeBuffer = (sizeof(header) + head->sizeData);
+    ElMensaje->buffer = malloc(ElMensaje->sizeBuffer);
+    memcpy(ElMensaje->buffer, head, sizeof(header));
+    memcpy((ElMensaje->buffer + sizeof(header)), data, head->sizeData);
+    return ElMensaje;
 }
