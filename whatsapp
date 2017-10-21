@@ -22,7 +22,7 @@ MASTER:
 -5 Enviar resultado de transformacion a YAMA
 -6 Enviar resultado de red local a YAMA
 -7 Enviar resultado de red GLOBAL a YAMA
--6 Enviar resultado de alm final a YAMA
+-8 Enviar resultado de alm final a YAMA
 
 DATANODE:
 
