@@ -33,9 +33,10 @@ void atender_reduccion_global(t_list *lista_global);
 void escuchar_peticiones()
 {
 	int controlador;
+	int flag_continuar = 1;
 	header *head = malloc(sizeof(head));
 
-	while(1)
+	while(flag_continuar)
 	{
 		void *buffer = getMessage(config->socket_yama, head, &controlador);
 
@@ -63,8 +64,13 @@ void escuchar_peticiones()
 				t_almacenado *almacenado = deserializar_almacenado(buffer);
 				ejecutar_almacenamiento(almacenado);
 				break;
+			case 6: ;
+				escribir_log(log_Mas, "Se recibio una peticion de finalizacion de Master");
+				matar_hilos();
+				flag_continuar = 0;
+				break;
 			default:
-				puts("default");
+				puts("No se reconocio el mensaje recibido");
 				break;
 		}
 		free(buffer);
