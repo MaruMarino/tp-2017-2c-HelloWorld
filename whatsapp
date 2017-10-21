@@ -9,6 +9,7 @@ YAMA
 -3: Petición de reducción global
 -4: Petición de almacenamiento final
 -5: Petición de info de los nodos de un path en particular
+-6: Peticion de finalizacion de Master (Mata todos los hilosde Master)
 
 MASTER:
 
