@@ -20,11 +20,15 @@ extern t_log *log_Mas;
 extern t_list *hilos;
 
 void matar_hilos();
+void error_almacenamiento(t_almacenado *almacenado);
+void error_reduccion_global(t_redGlobal *reduccion_global);
 void error_reduccion_local(t_redLocal *reduccion_local);
 void error_transformacion(t_transformacion *transf);
 void ejecutar_transformador(t_transformacion *transf);
+void ejecutar_almacenamiento(t_almacenado *almacenado);
 void atender_tranformacion(t_list *list_transf);
 void atender_reduccion_local(t_redLocal *reduccion_local);
+void atender_reduccion_global(t_list *lista_global);
 
 void escuchar_peticiones()
 {
@@ -48,6 +52,16 @@ void escuchar_peticiones()
 				pthread_t *hiloPrograma = malloc(sizeof(pthread_t));
 				pthread_create(hiloPrograma,NULL,(void*)atender_reduccion_local,reduccion_local);
 				list_add(hilos, hiloPrograma);
+				break;
+			case 3: ;
+				escribir_log(log_Mas, "Se recibio una peticion de reduccion global");
+				t_list *list_red_global = deserializar_lista_redGlobal(buffer);
+				atender_reduccion_global(list_red_global);
+				break;
+			case 4: ;
+				escribir_log(log_Mas, "Se recibio una peticion de almacenamiento final");
+				t_almacenado *almacenado = deserializar_almacenado(buffer);
+				ejecutar_almacenamiento(almacenado);
 				break;
 			default:
 				puts("default");
@@ -233,7 +247,6 @@ void error_transformacion(t_transformacion *transf)
 	//void *buffer = getMessage(config->socket_yama, header_d, &controlador);
 
 	agregar_fallo_transf();
-	matar_hilos();
 
 	free(serializado);
 	free(mensj_error);
@@ -400,6 +413,342 @@ void error_reduccion_local(t_redLocal *reduccion_local)
 	//void *buffer = getMessage(config->socket_yama, header_d, &controlador);
 
 	agregar_fallo_reducc_local();
+
+	free(serializado);
+	free(mensj_error);
+	free(t_estado);
+	free(header_d);
+}
+
+void atender_reduccion_global(t_list *lista_global)
+{
+	int controlador = 0;
+	int socket_local;
+	header *header = malloc(sizeof(header));
+
+	//Busco al encargado de la reduccion Global
+	bool _buscar_encargado(t_redGlobal *aux){
+		return aux->encargado == 1;
+	}
+	t_redGlobal *encargado = list_find(lista_global, (void*)_buscar_encargado);
+
+	//Conecto con Worker
+	char *port = string_itoa(encargado->nodo->puerto);
+	socket_local = establecerConexion(encargado->nodo->ip, port, log_Mas, &controlador);
+	free(port);
+
+	if(controlador > 0)
+	{
+		escribir_log_error_compuesto(log_Mas, "Error conectandose a Worker: ", encargado->nodo->nodo);
+		error_reduccion_global(encargado);
+		free(header);
+		return;
+	}
+	else
+		escribir_log_compuesto(log_Mas, "Conectado a Worker: ", encargado->nodo->nodo);
+
+	//Realizacion HandShake
+	header->letra = 'M';
+	header->codigo = 0;
+	header->sizeData = 0;
+
+	message *mensj_hand = createMessage(header, "");
+	enviar_message(socket_local, mensj_hand, log_Mas, &controlador);
+	free(mensj_hand);
+
+	if(controlador > 0)
+	{
+		escribir_log_error_compuesto(log_Mas, "Error enviando HandShake Worker: ", encargado->nodo->nodo);
+		error_reduccion_global(encargado);
+		free(header);
+		return;
+	}
+
+	getMessage(socket_local, header, &controlador);
+
+	if((controlador > 0)||(header->codigo != 0))
+	{
+		escribir_log_error_compuesto(log_Mas, "Error recibiendo HandShake Worker: ", encargado->nodo->nodo);
+		error_reduccion_global(encargado);
+		free(header);
+		return;
+	}
+	else
+		escribir_log_compuesto(log_Mas, "HandShake exitoso con Worker: ",encargado->nodo->nodo);
+
+	//Armo la estructura para enviar a Worker
+	t_info_redGlobal *redGlobal = malloc(sizeof(t_info_redGlobal));
+	redGlobal->file_out = encargado->red_global;
+	redGlobal->prog = config->script_reduc;
+	redGlobal->size_prog = string_length(config->script_reduc);
+	redGlobal->nodos = list_create();
+
+	void _agregar_nodo(t_redGlobal *aux){
+		t_info_nodo *nodo = malloc(sizeof(t_info_nodo));
+
+		nodo->ip = aux->nodo->ip;
+		nodo->port = string_itoa(aux->nodo->puerto);
+		nodo->fname = aux->temp_red_local;
+
+		list_add(redGlobal->nodos,nodo);
+	}
+	list_iterate(lista_global, (void*)_agregar_nodo);
+
+	//Envio de pedido de reduccion Global
+	size_t len_total;
+	char *buffer_envio = serializar_info_redGlobal(redGlobal, &len_total);
+
+	header->letra = 'M';
+	header->codigo = 3;
+	header->sizeData = len_total;
+
+	message *mensj_reduc = createMessage(header, buffer_envio);
+	enviar_message(socket_local, mensj_reduc, log_Mas, &controlador);
+
+	free(buffer_envio);
+	free(mensj_reduc);
+
+	if(controlador > 0)
+	{
+		escribir_log_error_compuesto(log_Mas, "Error enviando reduccion Global a Worker: ", encargado->nodo->nodo);
+		error_reduccion_global(encargado);
+		free(header);
+		return;
+	}
+	else
+		escribir_log_compuesto(log_Mas, "Reduccion Global enviada a Worker: ",encargado->nodo->nodo);
+
+	//Recibo respuesta de Worker
+	void *buffer_rta = getMessage(socket_local, header, &controlador);
+
+	if(controlador > 0)
+	{
+		escribir_log_error_compuesto(log_Mas, "Fallo recibir mensaje de estado reduccion Global de Worker: ", encargado->nodo->nodo);
+		error_reduccion_global(encargado);
+		free(header);
+		return;
+	}
+	else if(header->codigo == 8)
+	{
+		escribir_log_error_compuesto(log_Mas, "Error en procesamiento de reduccion Global de Worker: ", encargado->nodo->nodo);
+		error_reduccion_global(encargado);
+		free(header);
+		return;
+	}
+	else
+		escribir_log_compuesto(log_Mas, "Respuesta estado recibida de Worker: ",encargado->nodo->nodo);
+
+	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
+
+	t_estado->estado = 2;
+	//t_estado->bloque = //;
+	t_estado->nodo = encargado->nodo->nodo;
+
+	header->letra = 'M';
+	header->codigo = 7;
+
+	char *estado_a_enviar = serializar_estado_master(t_estado, &header->sizeData);
+
+	message *mensj_transf_est = createMessage(header, estado_a_enviar);
+	enviar_message(config->socket_yama, mensj_transf_est, log_Mas, &controlador);
+
+	if(controlador > 0)
+	{
+		escribir_error_log(log_Mas, "Fallo enviar mensaje de estado a YAMA");
+		error_reduccion_global(encargado);
+		free(header);
+		return;
+	}
+	else
+		escribir_log_compuesto(log_Mas, "Proceso transformacion finalizada para Worker: ",encargado->nodo->nodo);
+
+	quitar_reduccion_global();
+
+	free(buffer_rta);
+	free(t_estado);
+	free(mensj_transf_est);
+	free(header);
+}
+
+void error_reduccion_global(t_redGlobal *reduccion_global)
+{
+	int controlador;
+	size_t len_total;
+
+	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
+	//t_estado->bloque = transf->bloque;
+	t_estado->estado = 3;
+	t_estado->nodo = reduccion_global->nodo->nodo;
+
+	char *serializado = serializar_estado_master(t_estado, &len_total);
+
+	header *header_d = malloc(sizeof(header));
+	header_d->letra = 'M';
+	header_d->codigo = 7;
+	header_d->sizeData = len_total;
+
+	message *mensj_error = createMessage(header_d, serializado);
+	enviar_message(config->socket_yama, mensj_error, log_Mas, &controlador);
+
+	//void *buffer = getMessage(config->socket_yama, header_d, &controlador);
+
+	agregar_fallo_reducc_global();
+
+	free(serializado);
+	free(mensj_error);
+	free(t_estado);
+	free(header_d);
+}
+
+void ejecutar_almacenamiento(t_almacenado *almacenado)
+{
+	int controlador = 0;
+	int socket_local;
+	header *header = malloc(sizeof(header));
+
+	//Conecto con Worker
+	char *port = string_itoa(almacenado->nodo->puerto);
+	socket_local = establecerConexion(almacenado->nodo->ip, port, log_Mas, &controlador);
+	free(port);
+
+	if(controlador > 0)
+	{
+		escribir_log_error_compuesto(log_Mas, "Error conectandose a Worker: ", almacenado->nodo->nodo);
+		error_almacenamiento(almacenado);
+		free(header);
+		return;
+	}
+	else
+		escribir_log_compuesto(log_Mas, "Conectado a Worker: ", almacenado->nodo->nodo);
+
+	//Realizacion HandShake
+	header->letra = 'M';
+	header->codigo = 0;
+	header->sizeData = 0;
+
+	message *mensj_hand = createMessage(header, "");
+	enviar_message(socket_local, mensj_hand, log_Mas, &controlador);
+	free(mensj_hand);
+
+	if(controlador > 0)
+	{
+		escribir_log_error_compuesto(log_Mas, "Error enviando HandShake Worker: ", almacenado->nodo->nodo);
+		error_almacenamiento(almacenado);
+		free(header);
+		return;
+	}
+
+	getMessage(socket_local, header, &controlador);
+
+	if((controlador > 0)||(header->codigo != 0))
+	{
+		escribir_log_error_compuesto(log_Mas, "Error recibiendo HandShake Worker: ", almacenado->nodo->nodo);
+		error_almacenamiento(almacenado);
+		free(header);
+		return;
+	}
+	else
+		escribir_log_compuesto(log_Mas, "HandShake exitoso con Worker: ",almacenado->nodo->nodo);
+
+	//Envio de pedido de reduccion Global
+	size_t len_total;
+	char *buffer_envio = serializar_FName(almacenado->red_global, &len_total);
+
+	header->letra = 'M';
+	header->codigo = 4;
+	header->sizeData = len_total;
+
+	message *mensj_almac = createMessage(header, buffer_envio);
+	enviar_message(socket_local, mensj_almac, log_Mas, &controlador);
+
+	free(buffer_envio);
+	free(mensj_almac);
+
+	if(controlador > 0)
+	{
+		escribir_log_error_compuesto(log_Mas, "Error enviando almacenamineto a Worker: ", almacenado->nodo->nodo);
+		error_almacenamiento(almacenado);
+		free(header);
+		return;
+	}
+	else
+		escribir_log_compuesto(log_Mas, "Almacenamiento enviado a Worker: ",almacenado->nodo->nodo);
+
+	//Recibo respuesta de Worker
+	void *buffer_rta = getMessage(socket_local, header, &controlador);
+
+	if(controlador > 0)
+	{
+		escribir_log_error_compuesto(log_Mas, "Fallo recibir mensaje de estado Almacenado de Worker: ", almacenado->nodo->nodo);
+		error_almacenamiento(almacenado);
+		free(header);
+		return;
+	}
+	else if(header->codigo == 8)
+	{
+		escribir_log_error_compuesto(log_Mas, "Error en procesamiento de Almacenado de Worker: ", almacenado->nodo->nodo);
+		error_almacenamiento(almacenado);
+		free(header);
+		return;
+	}
+	else
+		escribir_log_compuesto(log_Mas, "Respuesta estado recibida de Worker: ", almacenado->nodo->nodo);
+
+	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
+
+	t_estado->estado = 2;
+	//t_estado->bloque = //;
+	t_estado->nodo = almacenado->nodo->nodo;
+
+	header->letra = 'M';
+	header->codigo = 8;
+
+	char *estado_a_enviar = serializar_estado_master(t_estado, &header->sizeData);
+
+	message *mensj_transf_est = createMessage(header, estado_a_enviar);
+	enviar_message(config->socket_yama, mensj_transf_est, log_Mas, &controlador);
+
+	if(controlador > 0)
+	{
+		escribir_error_log(log_Mas, "Fallo enviar mensaje de estado a YAMA");
+		error_almacenamiento(almacenado);
+		free(header);
+		return;
+	}
+	else
+		escribir_log_compuesto(log_Mas, "Proceso Almacenado finalizado para Worker: ", almacenado->nodo->nodo);
+
+	quitar_almacenamiento();
+
+	free(buffer_rta);
+	free(t_estado);
+	free(mensj_transf_est);
+	free(header);
+}
+
+void error_almacenamiento(t_almacenado *almacenado)
+{
+	int controlador;
+	size_t len_total;
+
+	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
+	//t_estado->bloque = transf->bloque;
+	t_estado->estado = 3;
+	t_estado->nodo = almacenado->nodo->nodo;
+
+	char *serializado = serializar_estado_master(t_estado, &len_total);
+
+	header *header_d = malloc(sizeof(header));
+	header_d->letra = 'M';
+	header_d->codigo = 8;
+	header_d->sizeData = len_total;
+
+	message *mensj_error = createMessage(header_d, serializado);
+	enviar_message(config->socket_yama, mensj_error, log_Mas, &controlador);
+
+	//void *buffer = getMessage(config->socket_yama, header_d, &controlador);
+
+	agregar_fallo_reducc_global();
 
 	free(serializado);
 	free(mensj_error);
