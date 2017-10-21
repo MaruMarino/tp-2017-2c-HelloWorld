@@ -37,6 +37,10 @@ int iniciar_bitmaps_nodos(void);
 
 int setBlock(void *buffer, size_t size_buffer);
 
+int exitProcess(NODO *nameNodo);
+
+void checkStateNodos();
+
 // Funciones para agregar/sacar/modificar elementos de las diferentes estructuras ya creadas (y actualizar archivos a la vez)
 // todo ABM estructuras administrativas proximamente
 
