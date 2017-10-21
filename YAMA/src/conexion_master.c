@@ -107,7 +107,7 @@ void manejar_respuesta(int socket_)
 		switch (head->codigo)
 		{
 			case 0:; //procesar archivo
-				solicitar_informacion_archivo(mensaje); //aca file me debería devolver algo
+				solicitar_informacion_archivo(mensaje, socket_); //aca file me debería devolver algo
 				enviar_peticion_transformacion(socket_);
 				break;
 			default:
