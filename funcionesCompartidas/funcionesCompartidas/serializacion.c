@@ -339,7 +339,7 @@ t_file *deserializar_File(char *file_serial){
 char *serializar_bloque_archivo(bloqueArchivo *inf,size_t *len){
 
 	size_t desplazamiento = 0;
-	size_t leng = dtamanio_bloque_archivo(inf);
+	size_t leng = tamanio_bloque_archivo(inf);
 	size_t aux;
 	char *buff = malloc(leng+sizeof(int));
 
@@ -410,7 +410,7 @@ char *serializar_list_bloque_archivo(t_list *info_nodos_arc,size_t *leng){
 	bloqueArchivo *uno;
 	for(i=0;i<cantnodos;i++){
 		uno = list_get(info_nodos_arc,i);
-		lengtotal += dtamanio_bloque_archivo(uno);
+		lengtotal += tamanio_bloque_archivo(uno);
 	}
 	char *buffer = malloc(lengtotal + sizeof(int));
 
@@ -449,6 +449,7 @@ t_list *deserializar_lista_bloque_archivo(char *serializacion){
 		desplazamiento += sizeof(int);
 		char *baux = malloc(aux);
 		memcpy(baux,serializacion+desplazamiento,aux);
+		desplazamiento += aux;
 		bloqueArchivo *nuevito = deserializar_bloque_archivo(baux);
 		list_add(final,nuevito);
 		free(baux);
@@ -463,7 +464,7 @@ char *serializar_lista_nodos(t_list *nodis,size_t *leng){
 	size_t aux =0;
 	size_t desplazamiento =0;
 	int i = nodis->elements_count;
-	char *buffer = malloc(tfinal + (size_t)sizeof(int)*(i+1));
+	char *buffer = malloc(tfinal + sizeof(int)*((size_t)i+1));
 
 	t_nodo *nodi;
 	char *subbuffer;

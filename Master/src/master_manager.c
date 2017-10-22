@@ -32,15 +32,15 @@ void atender_reduccion_global(t_list *lista_global);
 
 void escuchar_peticiones()
 {
-	int controlador;
+	int controlador = 0;
 	int flag_continuar = 1;
-	header *head = malloc(sizeof(head));
+	header head;
 
-	while(flag_continuar)
+	while((flag_continuar)&&(controlador==0))
 	{
-		void *buffer = getMessage(config->socket_yama, head, &controlador);
+		char *buffer = getMessage(config->socket_yama, &head, &controlador);
 
-		switch(head->codigo)
+		switch(head.codigo)
 		{
 			case 1: ;
 				escribir_log(log_Mas, "Se recibio una/s peticion/es de transformacion");
@@ -82,15 +82,21 @@ void atender_tranformacion(t_list *list_transf)
 	int i;
 	int size = list_size(list_transf);
 
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
 	for(i=0; i<size; i++)
 	{
-		pthread_t *hiloPrograma = malloc(sizeof(pthread_t));
+		pthread_t hiloPrograma;
 
 		t_transformacion *transf = list_get(list_transf,i);
-		pthread_create(hiloPrograma,NULL,(void*)ejecutar_transformador,transf);
+		pthread_create(&hiloPrograma,&attr,(void*)ejecutar_transformador,transf);
 
-		list_add(hilos, hiloPrograma);
+		list_add(hilos, &hiloPrograma);
 	}
+
+	pthread_attr_destroy(&attr);
 }
 
 void ejecutar_transformador(t_transformacion *transf)
@@ -103,6 +109,9 @@ void ejecutar_transformador(t_transformacion *transf)
 
 	//Conecto con Worker
 	char *port = string_itoa(transf->nodo->puerto);
+
+	printf("%s %s\n", transf->nodo->ip, port);
+
 	socket_local = establecerConexion(transf->nodo->ip, port, log_Mas, &controlador);
 	free(port);
 
@@ -133,7 +142,10 @@ void ejecutar_transformador(t_transformacion *transf)
 		return;
 	}
 
-	getMessage(socket_local, header, &controlador);
+	message *matame = getMessage(socket_local, header, &controlador);
+
+	free(matame->buffer);
+	free(matame);
 
 	if((controlador > 0)||(header->codigo != 0))
 	{
@@ -179,7 +191,7 @@ void ejecutar_transformador(t_transformacion *transf)
 		escribir_log_compuesto(log_Mas, "Transformacion enviada a Worker: ",transf->nodo->nodo);
 
 	//Recibo respuesta de Worker
-	void *buffer_rta = getMessage(socket_local, header, &controlador);
+	message *buffer_rta = getMessage(socket_local, header, &controlador);
 
 	if(controlador > 0)
 	{
@@ -224,6 +236,7 @@ void ejecutar_transformador(t_transformacion *transf)
 
 	quitar_transformacion();
 
+	free(buffer_rta->buffer);
 	free(buffer_rta);
 	free(t_estado);
 	free(mensj_transf_est);
@@ -237,7 +250,7 @@ void error_transformacion(t_transformacion *transf)
 
 	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
 	t_estado->bloque = transf->bloque;
-	t_estado->estado = 3;
+	t_estado->estado = 1;
 	t_estado->nodo = transf->nodo->nodo;
 
 	char *serializado = serializar_estado_master(t_estado, &len_total);
@@ -300,7 +313,10 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 		return;
 	}
 
-	getMessage(socket_local, header, &controlador);
+	message *matame = getMessage(socket_local, header, &controlador);
+
+	free(matame->buffer);
+	free(matame);
 
 	if((controlador > 0)||(header->codigo != 0))
 	{
@@ -345,7 +361,7 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 		escribir_log_compuesto(log_Mas, "Transformacion enviada a Worker: ",reduccion_local->nodo->nodo);
 
 	//Recibo respuesta de Worker
-	void *buffer_rta = getMessage(socket_local, header, &controlador);
+	message *buffer_rta = getMessage(socket_local, header, &controlador);
 
 	if(controlador > 0)
 	{
@@ -390,6 +406,7 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 
 	quitar_reduccion_local();
 
+	free(buffer_rta->buffer);
 	free(buffer_rta);
 	free(t_estado);
 	free(mensj_transf_est);
@@ -403,7 +420,7 @@ void error_reduccion_local(t_redLocal *reduccion_local)
 
 	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
 	//t_estado->bloque = transf->bloque;
-	t_estado->estado = 3;
+	t_estado->estado = 1;
 	t_estado->nodo = reduccion_local->nodo->nodo;
 
 	char *serializado = serializar_estado_master(t_estado, &len_total);
@@ -470,7 +487,10 @@ void atender_reduccion_global(t_list *lista_global)
 		return;
 	}
 
-	getMessage(socket_local, header, &controlador);
+	message *matame = getMessage(socket_local, header, &controlador);
+
+	free(matame->buffer);
+	free(matame);
 
 	if((controlador > 0)||(header->codigo != 0))
 	{
@@ -525,7 +545,7 @@ void atender_reduccion_global(t_list *lista_global)
 		escribir_log_compuesto(log_Mas, "Reduccion Global enviada a Worker: ",encargado->nodo->nodo);
 
 	//Recibo respuesta de Worker
-	void *buffer_rta = getMessage(socket_local, header, &controlador);
+	message *buffer_rta = getMessage(socket_local, header, &controlador);
 
 	if(controlador > 0)
 	{
@@ -570,6 +590,7 @@ void atender_reduccion_global(t_list *lista_global)
 
 	quitar_reduccion_global();
 
+	free(buffer_rta->buffer);
 	free(buffer_rta);
 	free(t_estado);
 	free(mensj_transf_est);
@@ -583,7 +604,7 @@ void error_reduccion_global(t_redGlobal *reduccion_global)
 
 	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
 	//t_estado->bloque = transf->bloque;
-	t_estado->estado = 3;
+	t_estado->estado = 1;
 	t_estado->nodo = reduccion_global->nodo->nodo;
 
 	char *serializado = serializar_estado_master(t_estado, &len_total);
@@ -644,7 +665,10 @@ void ejecutar_almacenamiento(t_almacenado *almacenado)
 		return;
 	}
 
-	getMessage(socket_local, header, &controlador);
+	message *matame = getMessage(socket_local, header, &controlador);
+
+	free(matame->buffer);
+	free(matame);
 
 	if((controlador > 0)||(header->codigo != 0))
 	{
@@ -681,7 +705,7 @@ void ejecutar_almacenamiento(t_almacenado *almacenado)
 		escribir_log_compuesto(log_Mas, "Almacenamiento enviado a Worker: ",almacenado->nodo->nodo);
 
 	//Recibo respuesta de Worker
-	void *buffer_rta = getMessage(socket_local, header, &controlador);
+	message *buffer_rta = getMessage(socket_local, header, &controlador);
 
 	if(controlador > 0)
 	{
@@ -726,6 +750,7 @@ void ejecutar_almacenamiento(t_almacenado *almacenado)
 
 	quitar_almacenamiento();
 
+	free(buffer_rta->buffer);
 	free(buffer_rta);
 	free(t_estado);
 	free(mensj_transf_est);
@@ -739,7 +764,7 @@ void error_almacenamiento(t_almacenado *almacenado)
 
 	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
 	//t_estado->bloque = transf->bloque;
-	t_estado->estado = 3;
+	t_estado->estado = 1;
 	t_estado->nodo = almacenado->nodo->nodo;
 
 	char *serializado = serializar_estado_master(t_estado, &len_total);
