@@ -1,6 +1,8 @@
 #ifndef SERIALIZACION_H_
 #define SERIALIZACION_H_
 
+#include <commons/collections/list.h>
+#include "estructuras.h"
 /* A partir de 'info' arma un char* con una longitud de len bytes */
 char *serializar_info_trans(t_info_trans *info, size_t *len);
 

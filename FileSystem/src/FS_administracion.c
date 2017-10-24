@@ -587,7 +587,8 @@ int cantBlockfree(t_bitarray *listBit) {
 void checkStateNodos() {
     NODO *nodo_fetch;
     puts("------------------------------------");
-    for (int i = 0; i < nodos->elements_count; ++i) {
+    int i ;
+    for (i = 0; i < nodos->elements_count; ++i) {
         nodo_fetch = list_get(nodos, i);
         printf("name --> [%s]\n", nodo_fetch->nombre);
         printf("socket --> [%d]\n", nodo_fetch->soket);

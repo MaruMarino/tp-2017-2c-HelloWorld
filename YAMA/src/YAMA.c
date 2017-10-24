@@ -13,6 +13,7 @@
 #include "estructuras.h"
 #include "conexion_master.h"
 #include "conexion_fs.h"
+#include "clocks.h"
 
 t_log *yama_log;
 t_configuracion *config;
@@ -80,6 +81,7 @@ void leer_configuracion(char *path)
 	string_append(&config->yama_puerto, config_get_string_value(configuracion, "YAMA_PUERTO"));
 	string_append(&config->algortimo_bal, config_get_string_value(configuracion, "ALGORITMO_BALANCEO"));
 	config->retardo_plan = config_get_int_value(configuracion, "RETARDO_PLANIFICACION");
+	config->base = config_get_int_value(configuracion, "BASE");
 	string_append(&config->fs_ip, config_get_string_value(configuracion, "FS_IP"));
 	string_append(&config->fs_puerto, config_get_string_value(configuracion, "FS_PUERTO"));
 
@@ -108,17 +110,18 @@ void conectar_fs()
 		char *rta = getMessage(config->socket_fs, head, &control);
 		if (head->codigo == 0)
 		{
-			escribir_log("YAMA rechazado por FileSystem :(");
+			escribir_log(yama_log, "YAMA rechazado por FileSystem :(");
 			//que hago?
 		}else if(head->codigo == 2)
 		{
-			escribir_log("Conectado a File System :D");
+			escribir_log(yama_log, "Conectado a File System :D");
+			armar_workers(rta);
 		}else
 		{
-			escribir_error_log("No comprendo el mensaje recibido");
+			escribir_error_log(yama_log, "No comprendo el mensaje recibido");
 		}
 		free(rta);
-		free(head);
+		free(head2);
 	}
 }
 

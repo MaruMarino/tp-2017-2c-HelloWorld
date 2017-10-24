@@ -91,7 +91,7 @@ size_t tamanio_lista_t_nodo(t_list *nodis){
 	for(i=0;i<nodis->elements_count;i++){
 
 		nodi = list_get(nodis,i);
-		tfinal += strlen(nodi->nodo) + strlen(nodi->ip) + sizeof(t_nodo);
+		tfinal += strlen(nodi->nodo)+2 + strlen(nodi->ip) + sizeof(t_nodo);
 	}
 
 

@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <funcionesCompartidas/funcionesNet.h>
+#include <funcionesCompartidas/serializacion.h>
+#include <funcionesCompartidas/serializacion_yama_master.h>
 #include <funcionesCompartidas/log.h>
 #include <commons/config.h>
 #include <commons/string.h>
@@ -16,25 +18,24 @@
 
 extern t_configuracion *config;
 extern t_list *workers;
+extern t_log *yama_log;
 
-void armar_workers()
+void armar_workers(char *rta)
 {
-	//acá habría que deserializar lo que me mande maru en el handshake y ponerle en disponibilidad la base
-}
+	t_list *nodos_aux = deserializar_lista_nodos(rta);
 
-void calcular_disponibilidad()
-{
-	void disponibilidad(t_worker *worker)
+	void _armar_workers(t_nodo *nodo)
 	{
-		int pwl = 0;
-		if(strcmp(config->algortimo_bal,"CLOCK"))
-		{
-			int maxima_carga = get_maxima_carga();
-			pwl = maxima_carga - worker->carga_actual;
-		}
-		worker->disponibilidad = config->base + pwl;
+		t_worker *worker = malloc(sizeof(t_worker));
+		worker->bloques = list_create();
+		worker->carga_actual = 0;
+		worker->disponibilidad = config->base;
+		worker->clock = false;
+		worker->nodo = nodo;
+
+		list_add(workers, worker);
 	}
-	list_iterate(workers, disponibilidad);
+	list_iterate(nodos_aux, (void *)_armar_workers);
 }
 
 int get_maxima_carga()
@@ -53,6 +54,22 @@ int get_maxima_carga()
 		i++;
 	}
 	return maximo;
+}
+
+
+void calcular_disponibilidad()
+{
+	void disponibilidad(t_worker *worker)
+	{
+		int pwl = 0;
+		if(strcmp(config->algortimo_bal,"CLOCK"))
+		{
+			int maxima_carga = get_maxima_carga();
+			pwl = maxima_carga - worker->carga_actual;
+		}
+		worker->disponibilidad = config->base + pwl;
+	}
+	list_iterate(workers,(void *) disponibilidad);
 }
 
 int get_mayor_disponibilidad()
@@ -80,7 +97,7 @@ int get_menor_carga(t_list *lista_auxiliar)
 	int i = 0;
 	int size = list_size(lista_auxiliar);
 
-	while(size<i)
+	while(size > 0)
 	{
 		t_worker *worker = list_get(lista_auxiliar, i);
 
@@ -88,30 +105,39 @@ int get_menor_carga(t_list *lista_auxiliar)
 			menor_carga = worker->carga_actual;
 
 		i++;
+		size--;
 	}
 
 	return menor_carga;
 }
 
+
+
 void posicionar_clock()
 {
 	int mayor_disponibilidad = get_mayor_disponibilidad();
 
-	bool _mayor_disponibilidad(t_worker *worker)
-	{
-		return worker->disponibilidad == mayor_disponibilidad;
-	}
+	t_list *lista_auxiliar = list_create();
+	int size_l = list_size(workers);
+	int i;
 
-	t_list *lista_auxiliar = list_filter(workers, _mayor_disponibilidad);
+	for(i = 0 ; i < size_l ; i++)
+	{
+		t_worker *worker = list_get(workers, i);
+		if(worker->disponibilidad == mayor_disponibilidad)
+		{
+			list_add(lista_auxiliar, worker);
+		}
+	}
 
 	int menor_carga = get_menor_carga(lista_auxiliar);
 
-	bool _menor_disponibilidad(t_worker *worker)
+	bool _menor_carga(t_worker *worker)
 	{
 		return worker->carga_actual == menor_carga;
 	}
 
-	t_worker *worker_ = list_find(workers, _menor_disponibilidad);
+	t_worker *worker_ = list_find(workers, (void *)_menor_carga);
 	worker_->clock = true;
 
 	list_destroy(lista_auxiliar);
@@ -142,23 +168,26 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 
 	int l_size = list_size(workers);
 
-	clock = get_index_clock();
+	clock = _get_index_clock();
 
-	bool _bloque_nodo(t_bloque *bloque)
+	t_list *lista_aux = list_create();
+	int i;
+	for(i = 0; i < l_size; i++)
 	{
-		return(bloque->n_bloque == n_bloque);
-	}
+		t_bloque *bl = list_get(archivo, i);
 
-	t_list *lista_aux = list_filter(archivo, _bloque_nodo);
+		if(bl->n_bloque == n_bloque)
+			list_add(lista_aux, bl);
+	}
 
 	bool _nodo_bloque(t_worker *worker_aux)
 	{
 		t_bloque *bl1 = list_get(lista_aux, 0);
 		t_bloque *bl2 = list_get(lista_aux, 1);
-		return (strcmp(bl1->nodo, worker_aux->nodo) || strcmp(bl2->nodo, worker_aux->nodo->nodo));
+		return (strcmp(bl1->nodo, worker_aux->nodo->nodo) || strcmp(bl2->nodo, worker_aux->nodo->nodo));
 	}
 
-	worker = list_find(workers, _nodo_bloque);
+	worker = list_find(workers,(void *) _nodo_bloque);
 
 	if(worker != NULL)
 	{
@@ -167,7 +196,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 		{
 			return strcmp(bl2->nodo, worker->nodo->nodo);
 		}
-		t_bloque *bl = list_find(lista_aux, _bloque_archivo);
+		t_bloque *bl = list_find(lista_aux, (void *)_bloque_archivo);
 
 		list_add(worker->bloques, bl);
 		worker->clock = false;
@@ -182,7 +211,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 	{
 		int encontrado = 0;
 		int fin_busqueda1 = 0;
-		int fin_busqueda2 = 0;
+		//int fin_busqueda2 = 0;
 		while(!encontrado && !fin_busqueda1)
 		{
 
@@ -197,4 +226,39 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 void obtener_nodo_transformacion(t_list *archivo, t_list *transformaciones, int bloque)
 {
 	t_worker *worker = get_worker(archivo, bloque);
+	int ind = list_size(worker->bloques) - 1;
+	t_bloque *bloque_ = list_get(worker->bloques, ind);
+	t_transformacion *transf = malloc(sizeof(t_transformacion));
+	transf->bloque = bloque_->n_bloque_archivo;
+	transf->bytes = bloque_->bytes;
+	transf->nodo = worker->nodo;
+	transf->temporal = "prueba" ;
+
+	list_add(transformaciones, transf);
+}
+
+void ejecutar_clock(t_list *archivo_bloques, int cant_bloques, int _socket)
+{
+	int i = 0;
+	calcular_disponibilidad();
+	posicionar_clock();
+
+	t_list *transformaciones = list_create();
+	while(cant_bloques > 0)
+	{
+		obtener_nodo_transformacion(archivo_bloques, transformaciones, i);
+
+		i++;
+		cant_bloques--;
+	}
+
+	header head;
+	head.codigo = 1;
+	head.letra = 'Y';
+	int control;
+
+	char *transformaciones_ser = serializar_lista_transformacion(transformaciones, &head.sizeData);
+
+	message *mensaje = createMessage(&head, transformaciones_ser);
+	enviar_message(_socket, mensaje, yama_log, &control);
 }

@@ -1,7 +1,7 @@
 #ifndef CLOCKS_H_
 #define CLOCKS_H_
 
-void armar_workers();
+void armar_workers(char *);
 void calcular_disponibilidad();
 int get_maxima_carga();
 int get_mayor_disponibilidad();
