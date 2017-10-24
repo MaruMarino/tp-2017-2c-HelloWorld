@@ -125,9 +125,11 @@ void conectar_yama()
 		message *mensaje = createMessage(handshake, config->path_file_target);
 
 		enviar_message(config->socket_yama, mensaje, log_Mas, &controlador);
+		/*
 		getMessage(config->socket_yama, handshake, &controlador);
-
+		*/
 		free(handshake);
+		free(mensaje->buffer);
 		free(mensaje);
 
 		escuchar_peticiones();

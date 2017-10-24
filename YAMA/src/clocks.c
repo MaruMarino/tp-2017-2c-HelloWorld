@@ -166,7 +166,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 	t_worker *worker = NULL;
 	int clock;
 
-	int l_size = list_size(workers);
+	int l_size = list_size(archivo);
 
 	clock = _get_index_clock();
 
@@ -176,7 +176,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 	{
 		t_bloque *bl = list_get(archivo, i);
 
-		if(bl->n_bloque == n_bloque)
+		if(bl->n_bloque_archivo == n_bloque)
 			list_add(lista_aux, bl);
 	}
 
@@ -184,23 +184,27 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 	{
 		t_bloque *bl1 = list_get(lista_aux, 0);
 		t_bloque *bl2 = list_get(lista_aux, 1);
-		return (strcmp(bl1->nodo, worker_aux->nodo->nodo) || strcmp(bl2->nodo, worker_aux->nodo->nodo));
+		int resultado_parcial = strcmp(bl1->nodo, worker_aux->nodo->nodo) || strcmp(bl2->nodo, worker_aux->nodo->nodo);
+		int otro_resultado = worker_aux->clock == true;
+
+		return (resultado_parcial && otro_resultado);
 	}
 
 	worker = list_find(workers,(void *) _nodo_bloque);
 
+	int w_size = list_size(workers);
 	if(worker != NULL)
 	{
 		int next_index;
 		bool _bloque_archivo(t_bloque *bl2)
 		{
-			return strcmp(bl2->nodo, worker->nodo->nodo);
+			return !strcmp(bl2->nodo, worker->nodo->nodo);
 		}
 		t_bloque *bl = list_find(lista_aux, (void *)_bloque_archivo);
 
 		list_add(worker->bloques, bl);
 		worker->clock = false;
-		if ((clock-1) == l_size)
+		if ((clock + 1) == w_size)
 			next_index = 0;
 		else
 			next_index = clock + 1;

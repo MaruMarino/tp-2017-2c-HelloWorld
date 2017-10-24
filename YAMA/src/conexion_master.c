@@ -95,16 +95,15 @@ void manejo_conexiones()
 
 void manejar_respuesta(int socket_)
 {
-
-	header *head;
+	header head;
 	int status;
-	char *mensaje = (char *)getMessage(socket_, head, &status);
+	char *mensaje = (char *)getMessage(socket_, &head, &status);
 	//char *header = get_header(mensaje);
-	if (head->letra == 'M')
+	if (head.letra == 'M')
 	{
 		//int codigo = get_codigo(mensaje);
 		//char *info = get_mensaje(mensaje);
-		switch (head->codigo)
+		switch (head.codigo)
 		{
 			case 0:; //procesar archivo
 				solicitar_informacion_archivo(mensaje, socket_); //aca file me debería devolver algo
@@ -116,7 +115,6 @@ void manejar_respuesta(int socket_)
 		}
 	} else log_error(yama_log, "Mensaje de emisor desconocido");
 	free(mensaje);
-	free(head);
 }
 
 void realizar_handshake_master(int socket_)

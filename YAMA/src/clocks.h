@@ -7,5 +7,6 @@ int get_maxima_carga();
 int get_mayor_disponibilidad();
 int get_menor_carga(t_list *lista_auxiliar);
 void posicionar_clock();
+void ejecutar_clock(t_list *archivo_bloques, int cant_bloques, int _socket);
 
 #endif /* CLOCKS_H_ */
