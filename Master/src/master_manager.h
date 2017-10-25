@@ -9,5 +9,6 @@
 #define MASTER_MANAGER_H_
 
 void escuchar_peticiones();
+void atender_tranformacion(t_list *list_transf);
 
 #endif /* MASTER_MANAGER_H_ */

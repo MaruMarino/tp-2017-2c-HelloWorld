@@ -36,7 +36,7 @@ void escuchar_peticiones()
 	int flag_continuar = 1;
 	header head;
 
-	while((flag_continuar)&&(controlador==0))
+	while((flag_continuar)&&(controlador >= 0))
 	{
 		char *buffer = getMessage(config->socket_yama, &head, &controlador);
 
@@ -88,9 +88,11 @@ void atender_tranformacion(t_list *list_transf)
 
 	for(i=0; i<size; i++)
 	{
+		//verificar s se estan guardando bien los id de los hilos!
 		pthread_t hiloPrograma;
 
 		t_transformacion *transf = list_get(list_transf,i);
+
 		pthread_create(&hiloPrograma,&attr,(void*)ejecutar_transformador,transf);
 
 		list_add(hilos, &hiloPrograma);
@@ -110,7 +112,7 @@ void ejecutar_transformador(t_transformacion *transf)
 	//Conecto con Worker
 	char *port = string_itoa(transf->nodo->puerto);
 
-	printf("%s %s\n", transf->nodo->ip, port);
+	printf("%s %s\n", transf->nodo->ip, port);//print prueba
 
 	socket_local = establecerConexion(transf->nodo->ip, port, log_Mas, &controlador);
 	free(port);
@@ -142,12 +144,11 @@ void ejecutar_transformador(t_transformacion *transf)
 		return;
 	}
 
-	message *matame = getMessage(socket_local, header, &controlador);
+	char *matame = getMessage(socket_local, header, &controlador);
 
-	free(matame->buffer);
 	free(matame);
 
-	if((controlador > 0)||(header->codigo != 0))
+	if((controlador < 0)||(header->codigo != 0))
 	{
 		escribir_log_error_compuesto(log_Mas, "Error recibiendo HandShake Worker: ", transf->nodo->nodo);
 		error_transformacion(transf);
@@ -191,9 +192,9 @@ void ejecutar_transformador(t_transformacion *transf)
 		escribir_log_compuesto(log_Mas, "Transformacion enviada a Worker: ",transf->nodo->nodo);
 
 	//Recibo respuesta de Worker
-	message *buffer_rta = getMessage(socket_local, header, &controlador);
+	char *buffer_rta = getMessage(socket_local, header, &controlador);
 
-	if(controlador > 0)
+	if(controlador < 0)
 	{
 		escribir_log_error_compuesto(log_Mas, "Fallo recibir mensaje de estado transformacion de Worker: ", transf->nodo->nodo);
 		error_transformacion(transf);
@@ -236,7 +237,6 @@ void ejecutar_transformador(t_transformacion *transf)
 
 	quitar_transformacion();
 
-	free(buffer_rta->buffer);
 	free(buffer_rta);
 	free(t_estado);
 	free(mensj_transf_est);
@@ -313,12 +313,11 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 		return;
 	}
 
-	message *matame = getMessage(socket_local, header, &controlador);
+	char *matame = getMessage(socket_local, header, &controlador);
 
-	free(matame->buffer);
 	free(matame);
 
-	if((controlador > 0)||(header->codigo != 0))
+	if((controlador < 0)||(header->codigo != 0))
 	{
 		escribir_log_error_compuesto(log_Mas, "Error recibiendo HandShake Worker: ", reduccion_local->nodo->nodo);
 		error_reduccion_local(reduccion_local);
@@ -361,7 +360,7 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 		escribir_log_compuesto(log_Mas, "Transformacion enviada a Worker: ",reduccion_local->nodo->nodo);
 
 	//Recibo respuesta de Worker
-	message *buffer_rta = getMessage(socket_local, header, &controlador);
+	char *buffer_rta = getMessage(socket_local, header, &controlador);
 
 	if(controlador > 0)
 	{
@@ -406,7 +405,6 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 
 	quitar_reduccion_local();
 
-	free(buffer_rta->buffer);
 	free(buffer_rta);
 	free(t_estado);
 	free(mensj_transf_est);
@@ -487,12 +485,11 @@ void atender_reduccion_global(t_list *lista_global)
 		return;
 	}
 
-	message *matame = getMessage(socket_local, header, &controlador);
+	char *matame = getMessage(socket_local, header, &controlador);
 
-	free(matame->buffer);
 	free(matame);
 
-	if((controlador > 0)||(header->codigo != 0))
+	if((controlador < 0)||(header->codigo != 0))
 	{
 		escribir_log_error_compuesto(log_Mas, "Error recibiendo HandShake Worker: ", encargado->nodo->nodo);
 		error_reduccion_global(encargado);
@@ -545,9 +542,9 @@ void atender_reduccion_global(t_list *lista_global)
 		escribir_log_compuesto(log_Mas, "Reduccion Global enviada a Worker: ",encargado->nodo->nodo);
 
 	//Recibo respuesta de Worker
-	message *buffer_rta = getMessage(socket_local, header, &controlador);
+	char *buffer_rta = getMessage(socket_local, header, &controlador);
 
-	if(controlador > 0)
+	if(controlador < 0)
 	{
 		escribir_log_error_compuesto(log_Mas, "Fallo recibir mensaje de estado reduccion Global de Worker: ", encargado->nodo->nodo);
 		error_reduccion_global(encargado);
@@ -590,7 +587,6 @@ void atender_reduccion_global(t_list *lista_global)
 
 	quitar_reduccion_global();
 
-	free(buffer_rta->buffer);
 	free(buffer_rta);
 	free(t_estado);
 	free(mensj_transf_est);
@@ -665,12 +661,11 @@ void ejecutar_almacenamiento(t_almacenado *almacenado)
 		return;
 	}
 
-	message *matame = getMessage(socket_local, header, &controlador);
+	char *matame = getMessage(socket_local, header, &controlador);
 
-	free(matame->buffer);
 	free(matame);
 
-	if((controlador > 0)||(header->codigo != 0))
+	if((controlador < 0)||(header->codigo != 0))
 	{
 		escribir_log_error_compuesto(log_Mas, "Error recibiendo HandShake Worker: ", almacenado->nodo->nodo);
 		error_almacenamiento(almacenado);
@@ -705,9 +700,9 @@ void ejecutar_almacenamiento(t_almacenado *almacenado)
 		escribir_log_compuesto(log_Mas, "Almacenamiento enviado a Worker: ",almacenado->nodo->nodo);
 
 	//Recibo respuesta de Worker
-	message *buffer_rta = getMessage(socket_local, header, &controlador);
+	char *buffer_rta = getMessage(socket_local, header, &controlador);
 
-	if(controlador > 0)
+	if(controlador < 0)
 	{
 		escribir_log_error_compuesto(log_Mas, "Fallo recibir mensaje de estado Almacenado de Worker: ", almacenado->nodo->nodo);
 		error_almacenamiento(almacenado);
@@ -750,7 +745,6 @@ void ejecutar_almacenamiento(t_almacenado *almacenado)
 
 	quitar_almacenamiento();
 
-	free(buffer_rta->buffer);
 	free(buffer_rta);
 	free(t_estado);
 	free(mensj_transf_est);

@@ -6,6 +6,10 @@
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/mensaje.h>
 #include <funcionesCompartidas/log.h>
+
+#include <unistd.h>
+#include <funcionesCompartidas/estructuras.h>
+
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/string.h>
