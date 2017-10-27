@@ -8,6 +8,7 @@
 extern t_log *logw;
 
 int responderHandshake(int fd_proc){
+	log_trace(logw, "Se responde handshake al socket %d", fd_proc);
 
 	int ctl;
 	header head = {.letra = 'W', .codigo = 0, .sizeData = 0};
@@ -23,13 +24,14 @@ int responderHandshake(int fd_proc){
 }
 
 int verificarConexion(header head, char proc, int cod){
+	log_trace(logw, "Se verifica que la conexion sea con el proceso %c", proc);
 
 	if (head.letra != proc){
-		log_info(logw, "El emisor no es %c! Se recibio: %c", head.letra);
+		log_info(logw, "El emisor no es %c! Se recibio: %c", proc, head.letra);
 		return -1;
 
 	} else if (head.codigo != cod){
-		log_info(logw, "El codigo no es %d! Se recibio: %d", head.codigo);
+		log_info(logw, "El codigo no es %d! Se recibio: %d", cod, head.codigo);
 		return -2;
 	}
 
@@ -68,6 +70,7 @@ int realizarHandshake(int fd_proc, char proc_expected){
 }
 
 void enviarResultado(int fd_m, int cod_rta){
+	log_trace(logw, "Se envia un resultado a Master en socket %d", fd_m);
 
 	int ctl;
 	header head = {.letra = 'W', .codigo = cod_rta, .sizeData = 1};
