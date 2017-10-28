@@ -44,7 +44,6 @@ int fs_format(char *j) {
         iniciar_arbol_directorios();
         iniciar_nodos();
         iniciar_bitmaps_nodos();
-        setBlock("miguel",6);
 
 		configuracion->estado_estable = 1;
 

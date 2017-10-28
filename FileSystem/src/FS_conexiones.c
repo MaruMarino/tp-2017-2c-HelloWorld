@@ -25,6 +25,7 @@
 #include <unistd.h>
 
 #include "estructurasfs.h"
+#include "FS_administracion.h"
 
 
 extern yamafs_config *configuracion;
@@ -35,13 +36,14 @@ fd_set read_fds;
 int fdmax;
 int yamasock;
 
+
 message *create_Message(header *head, void *data);
 size_t dtamanio_bloque_archivo(bloqueArchivo *ba){
 
 	size_t retorno=0;
 
-	retorno += strlen(ba->nodo0);
-	retorno += strlen(ba->nodo1);
+	retorno += strlen(ba->nodo0) + 1;
+	retorno += strlen(ba->nodo1) + 1;
 	retorno += sizeof(bloqueArchivo);
 
 	return retorno;
@@ -72,13 +74,13 @@ char *dserializar_bloque_archivo(bloqueArchivo *inf,size_t *len){
 	memcpy(buff+desplazamiento,&leng,sizeof(int));
 	desplazamiento += sizeof(int);
 
-	aux = strlen(inf->nodo0);
+	aux = strlen(inf->nodo0)+1;
 	memcpy(buff+desplazamiento,&aux,sizeof(int));
 	desplazamiento += sizeof(int);
 	memcpy(buff+desplazamiento,inf->nodo0,aux);
 	desplazamiento += aux;
 
-	aux = strlen(inf->nodo1);
+	aux = strlen(inf->nodo1) +1;
 	memcpy(buff+desplazamiento,&aux,sizeof(int));
 	desplazamiento += sizeof(int);
 	memcpy(buff+desplazamiento,inf->nodo1,aux);
@@ -175,6 +177,7 @@ t_list *ddeserializar_lista_bloque_archivo(char *serializacion){
 		desplazamiento += sizeof(int);
 		char *baux = malloc(aux);
 		memcpy(baux,serializacion+desplazamiento,aux);
+        desplazamiento += aux;
 		bloqueArchivo *nuevito = deserializar_bloque_archivo(baux);
 		list_add(final,nuevito);
 		free(baux);
@@ -335,7 +338,7 @@ int direccionar(int socket_rec) {
 	char *mensaje = getMessage(socket_rec, header_mensaje, &status);
 
 	if (status == -1) {
-		perror("Error recibiendo");
+	//	perror("Error recibiendo");
 	} else if (status == 0) {
 		log_info(logi, "Se desconecto socket");
 	} else {
@@ -356,21 +359,20 @@ int direccionar(int socket_rec) {
 
 int realizar_handshake(int nuevo_socket) {
 
-	int retornar, estado;
-	header *identificacion = malloc(sizeof(header));
-	header *respuesta = malloc(sizeof(header));
-	memset(respuesta, 0, sizeof(header));
-	message *mensajeEnviar;
-	char *buff = getMessage(nuevo_socket, identificacion, &estado);
+    int retornar, estado;
+    header *identificacion = malloc(sizeof(header));
+    header *respuesta = malloc(sizeof(header));
+    memset(respuesta, 0, sizeof(header));
+    message *mensajeEnviar;
+    char *buff = getMessage(nuevo_socket, identificacion, &estado);
 
-	if (identificacion->letra == 'Y') {
+    if (identificacion->letra == 'Y') {
 
-		if (configuracion->estado_estable) {
+        if (configuracion->estado_estable) {
 
-			log_info(logi, "Se conecto YAMA");
+            log_info(logi, "Se conecto YAMA");
 
-			size_t leng=0;
-
+            size_t leng = 0;
 			respuesta->codigo = 2;
 			respuesta->letra = 'F';
 			char *buff = dserializar_lista_nodos(nodos,&leng);
@@ -433,50 +435,51 @@ int realizar_handshake(int nuevo_socket) {
 
 	} else if (identificacion->letra == 'D') {
 
-		log_info(logi, "Se conectó DATA_NODE");
+        //checkStateNodos();
+        log_info(logi, "Se conectó DATA_NODE");
 
-		size_t leng;
-		t_nodo *nodo_conectado = deserializar_nodo(buff, &leng);
+        size_t leng;
+        t_nodo *nodo_conectado = deserializar_nodo(buff, &leng);
+        respuesta->codigo = 0;
+        respuesta->letra = 'F';
+        respuesta->sizeData = sizeof(int);
+        int resuesta = 0;
+        NODO *nuevo_nodo = malloc(sizeof(NODO));
 
-		if (configuracion->inicio_limpio == 1) {
+        nuevo_nodo->soket = nuevo_socket;
+        nuevo_nodo->puerto = nodo_conectado->puerto;
+        nuevo_nodo->ip = strdup(nodo_conectado->ip);
+        nuevo_nodo->nombre = strdup(nodo_conectado->nodo);
 
+        char *buffer = malloc(sizeof(int));
+        if (configuracion->inicio_limpio == 1) {
+            nuevo_nodo->espacio_total = nodo_conectado->sizeDatabin;
+            nuevo_nodo->espacio_libre = nodo_conectado->sizeDatabin;
 
-			respuesta->codigo = 0;
-			respuesta->letra = 'F';
-			respuesta->sizeData = sizeof(int);
-			int resuesta = 1;
-			char *buffer = malloc(sizeof(int));
-			memcpy(buffer, &resuesta, sizeof(int));
-			mensajeEnviar = createMessage(respuesta, buffer);
+            configuracion->espacio_total += nuevo_nodo->espacio_total;
+            configuracion->espacio_libre += nuevo_nodo->espacio_total;
 
-			enviar_message(nuevo_socket, mensajeEnviar, logi, &resuesta);
-			free(buffer);
-			NODO *nuevo_nodo = malloc(sizeof(NODO));
-			nuevo_nodo->soket = nuevo_socket;
-			nuevo_nodo->puerto = nodo_conectado->puerto;
-			nuevo_nodo->ip = strdup(nodo_conectado->ip);
-			nuevo_nodo->nombre = strdup(nodo_conectado->nodo);
-			nuevo_nodo->espacio_total = nodo_conectado->sizeDatabin;
-			nuevo_nodo->espacio_libre = nodo_conectado->sizeDatabin;
+            list_add(nodos, nuevo_nodo);
+            resuesta = 1;
+            retornar = 1;
+        } else {
+            if (exitProcess(nuevo_nodo)){
+                checkStateNodos();
+                resuesta = 1;
+                retornar = 1;
+            }
+        }
+        memcpy(buffer, &resuesta, sizeof(int));
+        mensajeEnviar = createMessage(respuesta, buffer);
 
-			configuracion->espacio_total += nuevo_nodo->espacio_total;
-			configuracion->espacio_libre += nuevo_nodo->espacio_total;
+        enviar_message(nuevo_socket, mensajeEnviar, logi, &resuesta);
 
-			list_add(nodos, nuevo_nodo);
-			retornar = 1;
-
-			free(nodo_conectado->ip);
-			free(nodo_conectado->nodo);
-			free(nodo_conectado);
-			free(mensajeEnviar->buffer);
-			free(mensajeEnviar);
-			free(buff);
-
-		} else {
-
-			//chequear que sea un nodo conectado con anterioridad
-			// si lo es aceptarlo si no rechazarlo
-		}
+        free(nodo_conectado->ip);
+        free(nodo_conectado->nodo);
+        free(nodo_conectado);
+        free(mensajeEnviar->buffer);
+        free(mensajeEnviar);
+        free(buff);
 
 	}
 
@@ -528,21 +531,22 @@ void atender_mensaje_YAMA(int codigo, void *mensaje) {
 		break;
 	}
 
-	}
+    }
 }
 
 void atender_mensaje_NODO(int codigo, void *mensaje) {
 
-	printf("mensaje:%s", (char *) mensaje);
-	switch (codigo) {
+    printf("mensaje:%s", (char *) mensaje);
+    switch (codigo) {
 
-	case 1: // ESCRIBIR ARCHIVO
-		break;
-	case 2: // LEER ARCHIVO
-		break;
+        case 1: // ESCRIBIR ARCHIVO
+            break;
+        case 2: // LEER ARCHIVO
+            break;
 
-	}
+    }
 }
+
 message *create_Message(header *head, void *data) {
     message *ElMensaje = malloc(sizeof(message));
     ElMensaje->sizeBuffer = (sizeof(header) + head->sizeData);

@@ -42,6 +42,7 @@ int main(int argc, char *argv[]){
 		puts("Cantidad invalida de argumentos");
 		return -1;
 	}
+	puts("Se crea archivo de log en /home/utnso/tp-2017-2c-HelloWorld/logs/worker_log");
 	logw = crear_archivo_log("Worker", true, "/home/utnso/tp-2017-2c-HelloWorld/logs/worker_log");
 
 	conf = cargarConfig(argv[1]);
@@ -106,6 +107,7 @@ int main(int argc, char *argv[]){
 			continue;
 		}
 
+		log_trace(logw, "Se procede a forkear el proceso..."); //todo: puede haber lios de concurrencia con el log comaprtido entre procesos
 		if ((mpid = fork()) == 0){ // soy proceso hijo
 			close(lis_fd);
 			if (masterQuery) // un Master quiere que le procese algo
@@ -115,6 +117,7 @@ int main(int argc, char *argv[]){
 			subrutinaServidor(fd_proc);
 
 		} else if (mpid > 0){
+			log_trace(logw, "Main Worker cierra socket contra Master...");
 			close(fd_proc);
 
 		} else {
@@ -125,6 +128,7 @@ int main(int argc, char *argv[]){
 		}
 	}
 
+	log_trace(logw, "Se procede a liberar los ultimos recursos...");
 	log_destroy(logw);
 	liberarConfig(conf);
 	close(lis_fd);

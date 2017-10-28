@@ -6,6 +6,10 @@
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/mensaje.h>
 #include <funcionesCompartidas/log.h>
+
+#include <unistd.h>
+#include <funcionesCompartidas/estructuras.h>
+
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/string.h>
@@ -125,9 +129,11 @@ void conectar_yama()
 		message *mensaje = createMessage(handshake, config->path_file_target);
 
 		enviar_message(config->socket_yama, mensaje, log_Mas, &controlador);
+		/*
 		getMessage(config->socket_yama, handshake, &controlador);
-
+		*/
 		free(handshake);
+		free(mensaje->buffer);
 		free(mensaje);
 
 		escuchar_peticiones();

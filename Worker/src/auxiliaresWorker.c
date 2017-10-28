@@ -54,6 +54,7 @@ char *crearComando(int nargs, char *fst, ...){
 }
 
 int crearArchivoBin(char *bin, size_t bin_sz, char *fname){
+	log_trace(logw, "Se crea archivo ejecutable %s", fname);
 
 	FILE *f;
 	if((f = fopen(fname, "wb")) == NULL){
@@ -79,6 +80,7 @@ int crearArchivoBin(char *bin, size_t bin_sz, char *fname){
 }
 
 int crearArchivoData(size_t blk, size_t count, char *fname){
+	log_trace(logw, "Se crea archivo de datos %s", fname);
 
 	FILE *f;
 	if((f = fopen(fname, "w")) == NULL){
@@ -101,6 +103,8 @@ int crearArchivoData(size_t blk, size_t count, char *fname){
 }
 
 int aparearFiles(t_list *fnames, char *fout){
+	log_trace(logw, "Se van a aparear files\n"
+			"Se prepara su apertura, previa al apareo...", list_size(fnames));
 
 	int i;
 	int nfiles = list_size(fnames) + 1; // + 1 para el fout
@@ -129,6 +133,7 @@ int aparearFiles(t_list *fnames, char *fout){
 }
 
 int realizarApareo(int nfiles, FILE *fs[nfiles]){
+	log_trace(logw, "Se comienza a realizar el apareo efectivo de los files");
 
 	int minp, i, nulls;
 	int apareadas = 0;
@@ -189,6 +194,7 @@ int realizarApareo(int nfiles, FILE *fs[nfiles]){
 }
 
 int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname){
+	log_trace(logw, "CHILD [%d] crea y ejecuta su comando", getpid());
 
 	char *cmd = crearComando(7, "cat ", data_fname, "|", "./", exe_fname,
 			" | sort -dib > ", out_fname);
@@ -197,6 +203,7 @@ int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname){
 		return -1;
 	}
 
+	log_trace(logw, "Se llama a system para ejecutar comando %s", cmd);
 	if (!system(cmd)){ // ejecucion del comando via system()
 		log_error(logw, "Llamada a system() con comando %s fallo.", cmd);
 		free(cmd);
@@ -207,6 +214,7 @@ int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname){
 }
 
 int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns){
+	log_trace(logw, "Se conecta a cada nodo y cargan las primeras lineas a aparear");
 
 	int i, ctl;
 	char *msj;
@@ -246,6 +254,7 @@ int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns){
 }
 
 int apareoGlobal(t_list *nodos, char *fname){
+	log_trace(logw, "Se realizara apareo global de files");
 
 	header head;
 	FILE *fout;
@@ -317,6 +326,7 @@ int apareoGlobal(t_list *nodos, char *fname){
 }
 
 int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname){
+	log_trace(logw, "Se realiza el almacenamiento en YAMAFS de %s", fname);
 
 	message *msj;
 	t_file *file;
@@ -357,6 +367,7 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname){
 }
 
 t_file *cargarFile(char *fname){
+	log_trace(logw, "Se carga el file %s en un archivo para enviar", fname);
 
 	FILE *f;
 	t_file *file = malloc(sizeof *file);
@@ -416,6 +427,8 @@ void cleanWorkspaceFiles(int nfiles, char *fst, ...){
 }
 
 void terminarEjecucion(int fd_m, int cod_rta, t_conf *conf){
+	log_trace(logw, "Se termina la ejecucion del CHILD [%d]", getpid());
+
 	enviarResultado(fd_m, cod_rta);
 	close(fd_m);
 

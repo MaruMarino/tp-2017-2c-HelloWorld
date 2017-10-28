@@ -55,9 +55,11 @@ void listenRequest(const int *socketCliente, t_log **file_log, void **dataBin) {
 }
 
 int enviarBloque(header *req, void **buffer) {
+    escribir_log(_log_file, "Buscando Bloque");
     unsigned int numBloque;
     memcpy(&numBloque, *buffer, req->sizeData);
     void *bloqueData = getBloque(&_dataBin, numBloque);
+    printf("------Buscando bloque ----[%d]\n",numBloque);
     header headSend;
     headSend.letra = 'D';
     headSend.codigo = 1;
@@ -80,6 +82,7 @@ int insertarBloqueData(header *req, void **buffer) {
     void *newbloqueData = malloc(bloqueData);
     memcpy(&numBloque, *buffer, sizeof(int));
     memcpy(newbloqueData, (*buffer + sizeof(int)), req->sizeData);
+    printf("------insertando en el bloque ----[%d]\n",numBloque);
     insertBloque(&_dataBin, &newbloqueData, numBloque, bloqueData);
 
     return 1;
