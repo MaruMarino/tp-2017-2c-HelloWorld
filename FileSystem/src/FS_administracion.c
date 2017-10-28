@@ -7,25 +7,27 @@
 
 #include "FS_administracion.h"
 
-#include <funcionesCompartidas/estructuras.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <commons/bitarray.h>
 #include <commons/collections/dictionary.h>
 #include <commons/collections/list.h>
-#include <commons/bitarray.h>
 #include <commons/config.h>
-#include <commons/string.h>
 #include <commons/log.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
+#include <commons/string.h>
 #include <dirent.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <funcionesCompartidas/funcionesNet.h>
-#include <sys/socket.h>
 #include <funcionesCompartidas/estructuras.h>
+#include <funcionesCompartidas/funcionesNet.h>
+#include <funcionesCompartidas/generales.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "estructurasfs.h"
 
 #define Mib 1048576
@@ -45,7 +47,6 @@ static char *nombres_subdirectorios(char *);
 
 static char *nombres_archivos(char *);
 
-static void liberar_char_array(char **);
 //static int indice_padre_archivo(char *);
 
 
@@ -533,16 +534,6 @@ static char *nombres_archivos(char *donde) {
 
 	return subnombres;
 
-}
-
-static void liberar_char_array(char **miarray) {
-
-	int i = 0;
-	while (miarray[i] != NULL) {
-		free(miarray[i]);
-		i++;
-	}
-	free(miarray);
 }
 
 

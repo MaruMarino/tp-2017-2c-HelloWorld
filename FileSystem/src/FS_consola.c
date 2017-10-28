@@ -38,7 +38,7 @@ comando commands[] = {
 		{ "mv", fs_mv, "Mover un Archivo o Directorio","mv [path_original] [path_final]" },
 		{ "cat",fs_cat, "Mostrar contenido de un archivo como texto plano","cat ​[path_archivo]" },
 		{ "mkdir",fs_mkdir, "Crear directorio", "mkdir [path_dir]"},
-		{ "cpfrom", fs_cpfrom, "Copiar un archivo local al yamafs","cpfrom​ [path_archivo_origen] [directorio_yamafs]" },
+		{ "cpfrom", fs_cpfrom, "Copiar un archivo local al yamafs","cpfrom​ [path_archivo_local] [directorio_yamafs] [tipo_archivo]" },
 		{ "cpto", fs_cpto, "Copiar un archivo del yamafs al local", "cpto [path_archivo_yamafs] [directorio_filesystem]"},
 		{ "cpblock", fs_cpblock, "Crear una copia de un bloque de un archivo en el nodo dado","cpblock ​[path_archivo] [nro_bloque id_nodo]" },
 		{ "md5", fs_md5, "Solicitar el MD5 de un archivo en yamafs","md5​ [path_archivo_yamafs]" },

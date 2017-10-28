@@ -9,6 +9,8 @@
 #include "FS_funciones.h"
 
 #include <commons/string.h>
+#include <funcionesCompartidas/generales.h>
+#include <commons/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -17,6 +19,7 @@
 
 extern comando commands[];
 extern yamafs_config *configuracion;
+extern t_log *logi;
 
 #define cyan  "\x1B[36m"
 #define sin "\x1B[0m"
@@ -28,7 +31,7 @@ int fs_ls(char *h) {
 	return 0;
 }
 
-int fs_rename(char *h) {
+int fs_rename(char *i) {
 	printf("Ejecute rename \n");
 	return 0;
 }
@@ -77,7 +80,7 @@ int fs_payuda(char *duda) {
 
 	comando *buscado = buscar_comando(comando_pedido);
 	if (buscado == NULL) {
-		printf(" Ingrese un comando válido,para consultar los disponibles ingrese '%sayuda%s'\n", cyan, sin);
+		printf("Ingrese un comando válido,para consultar los disponibles ingrese '%sayuda%s'\n", cyan, sin);
 	} else {
 		printf("%s%s%s | %s | %s \n", cyan, buscado->name, sin, buscado->doc, buscado->sintax);
 	}
@@ -93,34 +96,52 @@ int fs_cat(char *n) {
 	return 0;
 }
 
-int fs_mkdir(char *n) {
-	printf("Ejecute mkdir con %s \n", n);
+int fs_mkdir(char *p) {
+
+	log_info(logi,"Ejecute mkdir con %s \n", p);
+
 	return 0;
 }
 
-int fs_cpfrom(char *o) {
-	printf("Ejecute cpfrom \n");
+int fs_cpfrom(char *q) {
+
+
+	int i = 0;
+	char *paths = string_substring_from(q,6);
+	char **split_paths = string_split(paths," ");
+
+	while(split_paths[i]!= NULL){
+		i++;
+	};
+
+	if(i == 4){
+		//todo cantidad correcta de parametros, ejecutar comando
+	}else{
+		printf("La cantidad de parámetros es incorrecta, ingrese '%s? cpfrom%s' para más información\n",cyan,sin);
+	}
+
+	log_info(logi,"Ejecute cpfrom \n");
 	return 0;
 }
 
-int fs_cpto(char *p) {
+int fs_cpto(char *r) {
     printf("Ejecute cpto \n");
     char *mjs = "Angel";
     setBlock(mjs, 5);
     return 0;
 }
 
-int fs_cpblock(char *q) {
+int fs_cpblock(char *s) {
 	printf("Ejecute cpblock \n");
 	return 0;
 }
 
-int fs_md5(char *r) {
+int fs_md5(char *t) {
 	printf("Ejecute md5 \n");
 	return 0;
 }
 
-int fs_info(char *s) {
+int fs_info(char *u) {
 	printf("Ejecute info \n");
 	return 0;
 }

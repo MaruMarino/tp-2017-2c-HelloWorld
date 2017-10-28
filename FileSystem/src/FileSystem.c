@@ -8,7 +8,6 @@
  ============================================================================
  */
 
-
 #include <commons/bitarray.h>
 #include <commons/collections/list.h>
 #include <commons/config.h>

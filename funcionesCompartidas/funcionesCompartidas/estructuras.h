@@ -2,6 +2,7 @@
 #define FUNCIONESCOMPARTIDAS_ESTRUCTURAS_H_
 
 #include <commons/collections/list.h>
+#include <stdio.h>
 
 typedef struct
 {

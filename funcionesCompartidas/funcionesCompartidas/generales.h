@@ -1,6 +1,7 @@
 #ifndef FUNCIONESCOMPARTIDAS_GENERALES_H_
 #define FUNCIONESCOMPARTIDAS_GENERALES_H_
 
+#include <stdio.h>
 #include <commons/collections/list.h>
 #include "estructuras.h"
 
@@ -29,5 +30,7 @@ void liberarFnames(t_list *fnames);
 size_t tamanio_bloque_archivo(bloqueArchivo *info);
 
 size_t tamanio_lista_t_nodo(t_list *nodis);
+
+void liberar_char_array(char **);
 
 #endif /* FUNCIONESCOMPARTIDAS_GENERALES_H_ */

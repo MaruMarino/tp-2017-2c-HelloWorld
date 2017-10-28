@@ -98,6 +98,16 @@ size_t tamanio_lista_t_nodo(t_list *nodis){
 		return tfinal;
 }
 
+void liberar_char_array(char **miarray) {
+
+	int i = 0;
+	while (miarray[i] != NULL) {
+		free(miarray[i]);
+		i++;
+	}
+	free(miarray);
+}
+
 
 
 
