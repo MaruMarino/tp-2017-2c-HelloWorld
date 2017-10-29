@@ -125,8 +125,6 @@ int fs_cpfrom(char *q) {
 
 int fs_cpto(char *r) {
     printf("Ejecute cpto \n");
-    char *mjs = "Angel";
-    setBlock(mjs, 5);
     return 0;
 }
 
