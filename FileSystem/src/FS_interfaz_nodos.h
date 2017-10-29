@@ -21,6 +21,7 @@ void checkStateNodos();
 
 void *contenido_archivo(char *pathlocal,int *fsize);
 
+int dividir_enviar_archivo(char *contenido, int fsize, char *tipo); // tipo B-binrio T-texto
 /*todo Funciones para realizar Leer Archivo*/
 
 #endif /* FS_INTERFAZ_NODOS_H_ */

@@ -164,6 +164,14 @@ void *contenido_archivo(char * pathlocal,int  *filesize){
 	return buff;
 }
 
+int dividir_enviar_archivo(char *contenido, int fsize, char *tipo){
+
+
+	if(!strcmp(tipo,"B") || !strcmp(tipo,"b")){
+		// dividir normal en
+	}
+}
+
 
 
 /* todo: FUNCIONES LEER ARCHIVO */

@@ -505,19 +505,19 @@ void atender_mensaje_YAMA(int codigo, void *mensaje) {
 		bloqueArchivo b;
 		b.nodo0 = strdup("nodo_1");
 		b.nodo1 = strdup("nodo_2");
-		b.bloquenodo0 = 2;
-		b.bloquenodo1 = 3;
+		b.bloquenodo0 = 0;
+		b.bloquenodo1 = 0;
 		b.bytesEnBloque= 1048576;
-
+/*
 		bloqueArchivo bc;
 		bc.nodo0 = strdup("nodo_1");
 		bc.nodo1 = strdup("nodo_2");
 		bc.bloquenodo0 = 4;
 		bc.bloquenodo1 = 5;
 		bc.bytesEnBloque= 1048576;
-
+*/
 		list_add(listi,&b);
-		list_add(listi,&bc);
+	//	list_add(listi,&bc);
 		size_t j;
 		char *hola =dserializar_list_bloque_archivo(listi,&j);
 		header h;
