@@ -57,8 +57,8 @@ void subrutinaEjecutor(int sock_m){
 			liberador(6, msj, info_t->prog, info_t->file_out, info_t, exe_fname, data_fname);
 			terminarEjecucion(sock_m, rta, conf);
 		}
-
-		if (!makeCommandAndExecute(data_fname, exe_fname, info_t->file_out)){
+		// todo: mala validacion envias un 0 como success pero y entraba como error
+		if (makeCommandAndExecute(data_fname, exe_fname, info_t->file_out)){
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberador(6, msj, info_t->prog, info_t->file_out, info_t, exe_fname, data_fname);
 			terminarEjecucion(sock_m, rta, conf);
@@ -72,8 +72,8 @@ void subrutinaEjecutor(int sock_m){
 		log_trace(logw, "CHILD [%d]: Ejecuta Reduccion Local", wp);
 
 		t_info_redLocal *info_rl = deserializar_info_redLocal(msj);
-
-		if (!crearArchivoBin(info_rl->prog, info_rl->size_prog, exe_fname)){
+		//todo: mala validacion envias un 0 como success pero y entraba como error
+		if (crearArchivoBin(info_rl->prog, info_rl->size_prog, exe_fname)){
 			log_error(logw, "No se pudo crear el ejecutable de reduccion.");
 			liberarFnames(info_rl->files);
 			liberador(6, msj, info_rl->file_out, info_rl->prog, info_rl, exe_fname, data_fname);
@@ -86,8 +86,8 @@ void subrutinaEjecutor(int sock_m){
 			liberador(6, msj, info_rl->file_out, info_rl->prog, info_rl, exe_fname, data_fname);
 			terminarEjecucion(sock_m, rta, conf);
 		}
-
-		if (!makeCommandAndExecute(data_fname, exe_fname, info_rl->file_out)){
+	//todo: mala validacion envias un 0 como success pero y entraba como error
+		if (makeCommandAndExecute(data_fname, exe_fname, info_rl->file_out)){
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberarFnames(info_rl->files);
 			liberador(6, msj, info_rl->file_out, info_rl->prog, info_rl, exe_fname, data_fname);
@@ -102,8 +102,8 @@ void subrutinaEjecutor(int sock_m){
 		log_trace(logw, "CHILD [%d]: Ejecuta Reduccion Global", wp);
 
 		t_info_redGlobal *info_rg = deserializar_info_redGlobal(msj);
-
-		if (!crearArchivoBin(info_rg->prog, info_rg->size_prog, exe_fname)){
+//todo: mala validacion envias un 0 como success pero y entraba como error
+		if (crearArchivoBin(info_rg->prog, info_rg->size_prog, exe_fname)){
 			log_error(logw, "No se pudo crear el ejecutable de reduccion.");
 			liberarInfoNodos(info_rg->nodos);
 			liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
@@ -116,8 +116,8 @@ void subrutinaEjecutor(int sock_m){
 			liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
 			terminarEjecucion(sock_m, rta, conf);
 		}
-
-		if (!makeCommandAndExecute(data_fname, exe_fname, info_rg->file_out)){
+//todo: mala validacion envias un 0 como success pero y entraba como error
+		if (makeCommandAndExecute(data_fname, exe_fname, info_rg->file_out)){
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberarInfoNodos(info_rg->nodos);
 			liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);

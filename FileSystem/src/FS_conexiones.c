@@ -14,6 +14,7 @@
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/serializacion.h>
 #include <funcionesCompartidas/serializacion_yama_master.h>
+#include "FS_interfaz_nodos.h"
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -27,7 +28,6 @@
 #include "estructurasfs.h"
 #include "FS_administracion.h"
 
-
 extern yamafs_config *configuracion;
 extern t_list *nodos;
 extern t_log *logi;
@@ -36,8 +36,8 @@ fd_set read_fds;
 int fdmax;
 int yamasock;
 
-
 message *create_Message(header *head, void *data);
+
 size_t dtamanio_bloque_archivo(bloqueArchivo *ba){
 
 	size_t retorno=0;
@@ -48,6 +48,7 @@ size_t dtamanio_bloque_archivo(bloqueArchivo *ba){
 
 	return retorno;
 }
+
 size_t dtamanio_lista_t_nodo(t_list *nodis){
 
 	int i;
@@ -99,6 +100,7 @@ char *dserializar_bloque_archivo(bloqueArchivo *inf,size_t *len){
 
 	return buff;
 }
+
 bloqueArchivo *ddeserializar_bloque_archivo(char *serba){
 
 	bloqueArchivo *nuevo = malloc(sizeof(bloqueArchivo));
@@ -253,6 +255,7 @@ t_list *ddeserializar_lista_nodos(char *buffer){
 	return nueva;
 
 }
+
 void manejo_conexiones()
 {
 

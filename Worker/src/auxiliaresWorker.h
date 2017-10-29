@@ -34,6 +34,7 @@ int aparearFiles(t_list *fnames, char *fout);
  * Retorna -1 en caso de error de escritura/lectura a un FILE
  */
 int realizarApareo(int nfiles, FILE *fs[nfiles]);
+//int realizarApareo(int nfiles, FILE **fs[]);
 
 /* Crea y ejecuta un comando que pipea' los datos del archivo data_fname al
  * programa ejecutable exe_fname y vuelca el resultado en un archivo out_fname.
@@ -64,7 +65,7 @@ int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns);
 /* A partir de un path genera un t_file* con los datos pertinentes */
 t_file *cargarFile(char *fname);
 
-off_t fsize(FILE* f);
+off_t fsize(FILE *f);
 
 void cleanWorkspaceFiles(int nfiles, char *fst, ...);
 
