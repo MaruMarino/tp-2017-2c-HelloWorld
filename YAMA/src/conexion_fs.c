@@ -32,9 +32,13 @@ void solicitar_informacion_archivo(char *info, int _socket)
 	message *mensaje = createMessage(&head, info);
 	enviar_message(config->socket_fs, mensaje, yama_log, &control);
 
+	escribir_log(yama_log, "Se solicitó a FS información de los bloques del archivo");
+
 	header head2;
 	t_list *bloques_auxiliar = list_create();
 	char *mensaje2 = getMessage(config->socket_fs, &head2, &control);
+
+	escribir_log(yama_log, "Se recibió la información de los bloques de FS");
 
 	if(head2.codigo == 3)
 	{

@@ -48,11 +48,12 @@ typedef struct
 {
 	int job;
 	int master;
-	int nodo;
+	char *nodo;
 	int bloque;
 	e_etapa etapa;
 	char *archivo_temporal;
 	e_estado estado;
+	int cant_bloques_nodo;
 }t_estado;
 
 typedef struct
@@ -61,7 +62,6 @@ typedef struct
 	int n_bloque_archivo;
 	int n_bloque;
 	int bytes;
-
 }t_bloque;
 
 typedef struct

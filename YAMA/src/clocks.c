@@ -15,6 +15,7 @@
 #include "estructuras.h"
 #include "conexion_master.h"
 #include "conexion_fs.h"
+#include "clocks.h"
 
 extern t_configuracion *config;
 extern t_list *workers;
@@ -55,7 +56,6 @@ int get_maxima_carga()
 	}
 	return maximo;
 }
-
 
 void calcular_disponibilidad()
 {
@@ -111,8 +111,6 @@ int get_menor_carga(t_list *lista_auxiliar)
 	return menor_carga;
 }
 
-
-
 void posicionar_clock()
 {
 	int mayor_disponibilidad = get_mayor_disponibilidad();
@@ -161,6 +159,17 @@ int _get_index_clock()
 	return index_;
 }
 
+void sumar_disponibilidad_base()
+{
+	int w_size = list_size(workers);
+	int i;
+	for(i = 0; i < w_size; i++)
+	{
+		t_worker *wk = list_get(workers, i);
+		wk->disponibilidad += config->base;
+	}
+}
+
 t_worker *get_worker(t_list *archivo, int n_bloque)
 {
 	t_worker *worker = NULL;
@@ -204,21 +213,72 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 
 		list_add(worker->bloques, bl);
 		worker->clock = false;
-		if ((clock + 1) == w_size)
-			next_index = 0;
-		else
-			next_index = clock + 1;
+		worker->carga_actual++;
+
+		//if(worker->disponibilidad > 0)
+			worker->disponibilidad--;
+		//else
+			//worker->disponibilidad = config->base;
+		//if ((clock + 1) == w_size)
+			//next_index = 0;
+		//else
+			//next_index = clock + 1;
+		next_index = (clock + 1) % w_size;
 
 		t_worker *w_next_clock = list_get(workers, next_index);
-		w_next_clock->clock = true;
+
+		if(worker->disponibilidad > 0)
+			w_next_clock->clock = true;
+		else
+		{
+			w_next_clock->disponibilidad += config->base;
+			int next_index2 = (next_index + 1) % w_size;
+			int encontrado = 0;
+			while(!encontrado)
+			{
+				t_worker * worker2 = list_get(workers, next_index2);
+
+				if (worker2->disponibilidad > 0)
+				{
+					encontrado = 1;
+					worker2->clock = true;
+				}
+				else
+					next_index2 = (clock + 1) % w_size;
+			}
+		}
 	}else
 	{
+		int next_index = (clock + 1) % w_size;
 		int encontrado = 0;
-		int fin_busqueda1 = 0;
-		//int fin_busqueda2 = 0;
-		while(!encontrado && !fin_busqueda1)
+		int vuelta_completa = 0;
+		int cant = 0;
+		while(!encontrado && !vuelta_completa)
 		{
+			t_worker * worker2 = list_get(workers, next_index);
 
+			bool _bloque(t_bloque *bl)
+			{
+				return bl->n_bloque_archivo == n_bloque;
+			}
+			if (list_any_satisfy(worker2->bloques, _bloque) && worker2->disponibilidad > 0)
+			{
+				encontrado = 1;
+				worker2->disponibilidad --;
+				worker2->carga_actual++;
+			}
+			else
+			{
+				next_index = (clock + 1) % w_size;
+				cant ++;
+				if(cant == w_size)
+					vuelta_completa = 1;
+			}
+		}
+		if(vuelta_completa)
+		{
+			sumar_disponibilidad_base();
+			return get_worker(archivo, n_bloque);
 		}
 	}
 
@@ -243,6 +303,7 @@ void obtener_nodo_transformacion(t_list *archivo, t_list *transformaciones, int 
 
 void ejecutar_clock(t_list *archivo_bloques, int cant_bloques, int _socket)
 {
+	escribir_log(yama_log, "Empieza el algoritmo de pre-planificación");
 	int i = 0;
 	calcular_disponibilidad();
 	posicionar_clock();
@@ -266,3 +327,79 @@ void ejecutar_clock(t_list *archivo_bloques, int cant_bloques, int _socket)
 	message *mensaje = createMessage(&head, transformaciones_ser);
 	enviar_message(_socket, mensaje, yama_log, &control);
 }
+
+typedef struct
+{
+	t_nodo *nodo;
+	t_list *archivos_temp;
+	char *temp_red_local;
+}t_redLocal;
+
+t_master *find_master(int sockt)
+{
+	int l_size = list_size(masters);
+	int i = 0;
+	int encontrado = 0;
+	t_master *master_ ;
+
+	while (!encontrado)
+	{
+		master_ = list_get(masters, i);
+		if(master_->socket_ == sockt)
+			encontrado = 1;
+		else
+			i++;
+	}
+
+	return master_;
+}
+
+t_worker *find_worker(char *nodo)
+{
+	int l_size = list_size(workers);
+	int i = 0;
+	int encontrado = 0;
+	t_worker * wk;
+
+	while(!encontrado)
+	{
+		wk = list_get(workers, i);
+		if(!strcmp(nodo, wk->nodo->nodo))
+			encontrado = 1;
+		else
+			i++;
+	}
+
+	return wk;
+}
+
+void enviar_reduccion_local(t_estado_master *estado_tr, int socket_)
+{
+	t_redLocal *red_l = malloc(sizeof(t_redLocal));
+	t_master *master_ = find_master(socket_);
+	t_worker *wk = find_worker(estado_tr->nodo);
+	t_list *lista_auxiliar = list_create();
+	list_add(lista_auxiliar, "prueba2");
+
+	red_l->nodo = wk->nodo;
+	red_l->temp_red_local = "prueba";
+	red_l->archivos_temp = lista_auxiliar;
+
+	size_t len;
+	char *red_local_ser = serializar_redLocal(red_l, &len);
+
+	int control;
+
+	header head;
+	head.codigo = 2;
+	head.letra = 'Y';
+	head.sizeData = len;
+
+	message *mensaje = createMessage(head, (void *)red_local_ser);
+	enviar_message(socket_, mensaje, yama_log, &control);
+	//cambiar_estado(master_->master,estado_tr->nodo, estado_tr->bloque)
+	list_destroy(lista_auxiliar);
+	free(red_l);
+}
+
+//todo cuando se desconecte un master poner en null el socket

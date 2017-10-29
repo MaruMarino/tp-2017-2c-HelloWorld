@@ -105,9 +105,23 @@ void manejar_respuesta(int socket_)
 		//char *info = get_mensaje(mensaje);
 		switch (head.codigo)
 		{
-			case 0:; //procesar archivo
+			case 0:; //procesar archivo -> peticion transformacion
+				escribir_log(yama_log, "Se recibió archivo para procesar");
 				solicitar_informacion_archivo(mensaje, socket_); //aca file me debería devolver algo
-				enviar_peticion_transformacion(socket_);
+				//enviar_peticion_transformacion(socket_);
+				break;
+			case 5:; //reduccion local
+				escribir_log(yama_log,"Se recibió el estado de una transformacion");
+				t_estado_master *estado_tr = deserializar_estado_master(mensaje);
+				enviar_reduccion_local(estado_tr, socket_);
+
+				//preguntar que necesita que le mande cuando no está lista la reduccion local
+				break;
+			case 6:;
+				break;
+			case 7:;
+				break;
+			case 8:;
 				break;
 			default:
 				printf("default");
