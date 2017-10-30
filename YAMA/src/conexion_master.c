@@ -16,6 +16,7 @@
 #include "conexion_master.h"
 #include "conexion_fs.h"
 #include "manejo_tabla_estados.h"
+#include "clocks.h"
 
 extern t_configuracion *config;
 extern t_log *yama_log;
@@ -71,6 +72,8 @@ void manejo_conexiones()
 						//Controlo que no haya pasado nada raro y acepto al nuevo
 						if (controlador == 0)
 						{
+							int id_m = master_id++;
+							list_add(masters, &id_m);
 							//realizar_handshake_master(nuevo_socket);
 						}
 
@@ -113,8 +116,10 @@ void manejar_respuesta(int socket_)
 			case 5:; //reduccion local
 				escribir_log(yama_log,"Se recibió el estado de una transformacion");
 				t_estado_master *estado_tr = deserializar_estado_master(mensaje);
-				enviar_reduccion_local(estado_tr, socket_);
-
+				if(estado_tr->estado == 2)
+				{
+					enviar_reduccion_local(estado_tr, socket_);
+				}else; //replanificar
 				//preguntar que necesita que le mande cuando no está lista la reduccion local
 				break;
 			case 6:;

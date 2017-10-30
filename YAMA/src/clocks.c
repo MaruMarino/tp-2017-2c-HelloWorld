@@ -7,6 +7,7 @@
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/serializacion.h>
 #include <funcionesCompartidas/serializacion_yama_master.h>
+#include <funcionesCompartidas/estructuras.h>
 #include <funcionesCompartidas/log.h>
 #include <commons/config.h>
 #include <commons/string.h>
@@ -19,6 +20,7 @@
 
 extern t_configuracion *config;
 extern t_list *workers;
+extern t_list *masters;
 extern t_log *yama_log;
 
 void armar_workers(char *rta)
@@ -328,16 +330,8 @@ void ejecutar_clock(t_list *archivo_bloques, int cant_bloques, int _socket)
 	enviar_message(_socket, mensaje, yama_log, &control);
 }
 
-typedef struct
-{
-	t_nodo *nodo;
-	t_list *archivos_temp;
-	char *temp_red_local;
-}t_redLocal;
-
 t_master *find_master(int sockt)
 {
-	int l_size = list_size(masters);
 	int i = 0;
 	int encontrado = 0;
 	t_master *master_ ;
@@ -395,7 +389,7 @@ void enviar_reduccion_local(t_estado_master *estado_tr, int socket_)
 	head.letra = 'Y';
 	head.sizeData = len;
 
-	message *mensaje = createMessage(head, (void *)red_local_ser);
+	message *mensaje = createMessage(&head, (void *)red_local_ser);
 	enviar_message(socket_, mensaje, yama_log, &control);
 	//cambiar_estado(master_->master,estado_tr->nodo, estado_tr->bloque)
 	list_destroy(lista_auxiliar);

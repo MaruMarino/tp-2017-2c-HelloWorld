@@ -66,7 +66,7 @@ t_estado *get_estado(int master, char *nodo, int bloque)
 	bool find_estado(t_estado *estado)
 	{
 		return (estado->master == master && estado->bloque == bloque
-				&& !(strcmp(estado->nodo), nodo));
+				&& !(strcmp(estado->nodo, nodo)));
 	}
 
 	return (t_estado *)list_find(tabla_estado, (void *)find_estado);
