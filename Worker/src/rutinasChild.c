@@ -29,21 +29,21 @@ void subrutinaEjecutor(int sock_m){
 	int status;
 	int rta = FALLO;
 
+	// filenames temporarios para programa y buffer de datos
+	exe_fname  = string_itoa(wp); string_append(&exe_fname, ".exec");
+	data_fname = string_itoa(wp); string_append(&data_fname, ".dat");
+
 	if (responderHandshake(sock_m) == -1){
 		log_error(logw, "Fallo respuesta de handshake a Master");
-		terminarEjecucion(sock_m, rta, conf);
+		terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 	}
 
 	msj = getMessage(sock_m, &head, &status);
 	if (status == -1 || status == 0){
 		log_error(logw, "Error en la recepcion del mensaje");
 		free(msj);
-		terminarEjecucion(sock_m, rta, conf);
+		terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 	}
-
-	// filenames temporarios para programa y buffer de datos
-	exe_fname  = string_itoa(wp); string_append(&exe_fname, ".exec");
-	data_fname = string_itoa(wp); string_append(&data_fname, ".dat");
 
 	switch(head.codigo){
 	case TRANSF:
@@ -54,78 +54,78 @@ void subrutinaEjecutor(int sock_m){
 		if (crearArchivoBin(info_t->prog, info_t->size_prog, exe_fname) < 0 ||
 			crearArchivoData(info_t->bloque, (size_t) info_t->bytes_ocup, data_fname) < 0){
 			log_error(logw, "No se pudieron crear los archivos de trabajo.");
-			liberador(6, msj, info_t->prog, info_t->file_out, info_t, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta, conf);
+			liberador(4, msj, info_t->prog, info_t->file_out, info_t);
+			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
-		// todo: mala validacion envias un 0 como success pero y entraba como error
-		if (makeCommandAndExecute(data_fname, exe_fname, info_t->file_out)){
+
+		if (makeCommandAndExecute(data_fname, exe_fname, info_t->file_out) < 0){
 			log_error(logw, "No se pudo completar correctamente la reduccion");
-			liberador(6, msj, info_t->prog, info_t->file_out, info_t, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta, conf);
+			liberador(4, msj, info_t->prog, info_t->file_out, info_t);
+			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
 		log_trace(logw, "CHILD [%d]: Finaliza Transformacion", wp);
-		liberador(6, msj, info_t->prog, info_t->file_out, info_t, exe_fname, data_fname);
+		liberador(4, msj, info_t->prog, info_t->file_out, info_t);
 		break;
 
 	case RED_L:
 		log_trace(logw, "CHILD [%d]: Ejecuta Reduccion Local", wp);
 
 		t_info_redLocal *info_rl = deserializar_info_redLocal(msj);
-		//todo: mala validacion envias un 0 como success pero y entraba como error
-		if (crearArchivoBin(info_rl->prog, info_rl->size_prog, exe_fname)){
+
+		if (crearArchivoBin(info_rl->prog, info_rl->size_prog, exe_fname) < 0){
 			log_error(logw, "No se pudo crear el ejecutable de reduccion.");
 			liberarFnames(info_rl->files);
-			liberador(6, msj, info_rl->file_out, info_rl->prog, info_rl, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta, conf);
+			liberador(4, msj, info_rl->file_out, info_rl->prog, info_rl);
+			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
 		if (aparearFiles(info_rl->files, data_fname) == -1){
 			log_error(logw, "No se pudo aparear los archivos temporales");
 			liberarFnames(info_rl->files);
-			liberador(6, msj, info_rl->file_out, info_rl->prog, info_rl, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta, conf);
+			liberador(4, msj, info_rl->file_out, info_rl->prog, info_rl);
+			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
-	//todo: mala validacion envias un 0 como success pero y entraba como error
-		if (makeCommandAndExecute(data_fname, exe_fname, info_rl->file_out)){
+
+		if (makeCommandAndExecute(data_fname, exe_fname, info_rl->file_out) < 0){
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberarFnames(info_rl->files);
-			liberador(6, msj, info_rl->file_out, info_rl->prog, info_rl, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta, conf);
+			liberador(4, msj, info_rl->file_out, info_rl->prog, info_rl);
+			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
 		log_trace(logw, "CHILD [%d]: Finaliza Reduccion Local", wp);
-		liberador(6, msj, info_rl->file_out, info_rl->prog, info_rl, exe_fname, data_fname);
+		liberador(4, msj, info_rl->file_out, info_rl->prog, info_rl);
 		break;
 
 	case RED_G:
 		log_trace(logw, "CHILD [%d]: Ejecuta Reduccion Global", wp);
 
 		t_info_redGlobal *info_rg = deserializar_info_redGlobal(msj);
-//todo: mala validacion envias un 0 como success pero y entraba como error
-		if (crearArchivoBin(info_rg->prog, info_rg->size_prog, exe_fname)){
+
+		if (crearArchivoBin(info_rg->prog, info_rg->size_prog, exe_fname) < 0){
 			log_error(logw, "No se pudo crear el ejecutable de reduccion.");
 			liberarInfoNodos(info_rg->nodos);
-			liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta, conf);
+			liberador(4, msj, info_rg->prog, info_rg->file_out, info_rg);
+			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
 		if (apareoGlobal(info_rg->nodos, info_rg->file_out) == -1){
 			log_error(logw, "Fallo apareamiento de archivos");
 			liberarInfoNodos(info_rg->nodos);
-			liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta, conf);
+			liberador(4, msj, info_rg->prog, info_rg->file_out, info_rg);
+			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
-//todo: mala validacion envias un 0 como success pero y entraba como error
-		if (makeCommandAndExecute(data_fname, exe_fname, info_rg->file_out)){
+
+		if (makeCommandAndExecute(data_fname, exe_fname, info_rg->file_out) < 0){
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberarInfoNodos(info_rg->nodos);
-			liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta, conf);
+			liberador(4, msj, info_rg->prog, info_rg->file_out, info_rg);
+			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
 		log_trace(logw, "CHILD [%d]: Finaliza Reduccion Global", wp);
-		liberador(6, msj, info_rg->prog, info_rg->file_out, info_rg, exe_fname, data_fname);
+		liberador(4, msj, info_rg->prog, info_rg->file_out, info_rg);
 		break;
 
 	case ALMAC:
@@ -135,16 +135,18 @@ void subrutinaEjecutor(int sock_m){
 
 		if (almacenarFileEnFilesystem(conf->ip_fs, conf->puerto_fs, fname) == -1){
 			log_error(logw, "No se logro almacenar %s en FileSystem", fname);
-			liberador(4, msj, fname, exe_fname, data_fname);
-			terminarEjecucion(sock_m, rta, conf);
+			cleanWorkspaceFiles(1, fname);
+			liberador(2, msj, fname);
+			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
 		log_trace(logw, "CHILD [%d]: Finaliza Almacenamiento Final", wp);
-		liberador(4, msj, fname, exe_fname, data_fname);
+		cleanWorkspaceFiles(1, fname);
+		liberador(2, msj, fname);
 		break;
 	}
 
-	terminarEjecucion(sock_m, OK, conf);
+	terminarEjecucion(sock_m, OK, conf, exe_fname, data_fname);
 }
 
 void subrutinaServidor(int sock_w){

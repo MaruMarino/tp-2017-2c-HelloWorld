@@ -34,7 +34,6 @@ int aparearFiles(t_list *fnames, char *fout);
  * Retorna -1 en caso de error de escritura/lectura a un FILE
  */
 int realizarApareo(int nfiles, FILE *fs[nfiles]);
-//int realizarApareo(int nfiles, FILE **fs[]);
 
 /* Crea y ejecuta un comando que pipea' los datos del archivo data_fname al
  * programa ejecutable exe_fname y vuelca el resultado en un archivo out_fname.
@@ -69,7 +68,9 @@ off_t fsize(FILE *f);
 
 void cleanWorkspaceFiles(int nfiles, char *fst, ...);
 
-/* Envia al fd_m el cod_rta y llama exit() con ese mismo valor */
-void terminarEjecucion(int fd_m, int cod_rta, t_conf *conf);
+/* Envia al fd_m el cod_rta y llama exit() con ese mismo valor
+ * Ademas limpia del entorno los archivos de datos y de ejecucion pertinentes
+ */
+void terminarEjecucion(int fd_m, int cod_rta, t_conf *conf, char *exe, char *dat);
 
 #endif /* AUXILIARES_WORKER_H_ */

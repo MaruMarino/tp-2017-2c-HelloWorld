@@ -28,7 +28,8 @@ int establecerConexion(char *ip_dest, char *port_dest, t_log *log, int *control)
     *control = 0;
 
     if ((stat = getaddrinfo(ip_dest, port_dest, &hints, &destInfo)) < 0) {
-        //fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(stat));
+    	*control = 11;
+    	error_sockets(log, control, "");
         return -1;
     }
 
@@ -53,32 +54,37 @@ int makeListenSock(char *port_listen, t_log *log, int *control) {
     struct addrinfo hints, *serverInfo;
     setupHints(&hints, AI_PASSIVE);
     int BACKLOG = 20; //Cantidad de conexiones maximas
+    int yes = 1;
     *control = 0;
 
     if ((stat = getaddrinfo(NULL, port_listen, &hints, &serverInfo)) != 0) {
-        //fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(stat));
+    	*control = 11;
+    	error_sockets(log, control, port_listen);
         return -1;
     }
 
     if ((sock_listen = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol)) == -1) {
         *control = 1;
         error_sockets(log, control, "");
+        return -1;
     }
-    int yes = 1;
     if (setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
         *control = 10;
         error_sockets(log, control, "");
+        return -1;
     }
 
     if (bind(sock_listen, serverInfo->ai_addr, serverInfo->ai_addrlen) == -1) {
         *control = 4;
         error_sockets(log, control, "");
+        return -1;
     }
 
     //Listening socket
     if (listen(sock_listen, BACKLOG) != 0) {
         *control = 5;
         error_sockets(log, control, "");
+        return -1;
     }
 
     freeaddrinfo(serverInfo);
@@ -203,34 +209,38 @@ char *recibir(int socket_receptor, t_log *log, int *control) {
 void error_sockets(t_log *log, int *controlador, char *proceso) {
     switch (*controlador) {
         case 1:
-            escribir_error_log(log, "Kernel - Error creando socket");
+            escribir_error_log(log, "Error creando socket");
             break;
         case 2:
-            escribir_error_log(log, "Kernel - Error conectando socket");
+            escribir_error_log(log, "Error conectando socket");
             break;
         case 3:
-            escribir_error_log(log, "Kernel - Error creando socket server");
+            escribir_error_log(log, "Error creando socket server");
             break;
         case 4:
-            escribir_error_log(log, "Kernel - Error bindeando socket server");
+            escribir_error_log(log, "Error bindeando socket server");
             break;
         case 5:
-            escribir_error_log(log, "Kernel - Socket server, error escuchando");
+            escribir_error_log(log, "Socket server, error escuchando");
             break;
         case 6:
-            escribir_error_log(log, "Kernel - Error aceptando conexion");
+            escribir_error_log(log, "Error aceptando conexion");
             break;
         case 7:
-            escribir_log_error_compuesto(log, "Kernel - Error al enviar mensaje a: ", proceso);
+            escribir_log_error_compuesto(log, "Error al enviar mensaje a: ", proceso);
             break;
         case 8:
-            escribir_log_error_compuesto(log, "Kernel - Error, socket desconectado: ", proceso);
+            escribir_log_error_compuesto(log, "Error, socket desconectado: ", proceso);
             break;
         case 9:
-            escribir_log_error_compuesto(log, "Kernel - Error recibiendo mensaje de: ", proceso);
+            escribir_log_error_compuesto(log, "Error recibiendo mensaje de: ", proceso);
             break;
         case 10:
             escribir_error_log(log, "No se pudieron setear opciones a socket");
+            break;
+        case 11:
+            escribir_log_error_compuesto(log, "Fallo getaddrinfo() sobre puerto", proceso);
+            break;
     }
 }
 

@@ -40,9 +40,6 @@ void mostrarConfig(t_conf *conf){
 }
 
 void liberarConfig(t_conf *conf){
-	//todo : le sacamos el free del size_t y por eso moria
 	liberador(6, conf->ip_fs, conf->puerto_fs, conf->nombre_nodo, conf->puerto_worker,
 			  conf->ruta_databin, conf);
 }
-
-
