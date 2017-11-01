@@ -255,10 +255,8 @@ message *createMessage(header *head, void *data) {
 
 void *getMessage(int socket, header *head,int *status) {
 
-	if ((*status = recv(socket, head, sizeof(header), 0)) <= 0) {
-		*status = -1;
+	if ((*status = recv(socket, head, sizeof(header), 0)) <= 0)
         return NULL;
-    }
 
     void *buffer = malloc(head->sizeData);
     if(head->sizeData > 0){

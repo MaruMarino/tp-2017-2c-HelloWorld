@@ -33,7 +33,8 @@ size_t dsize;
 
 /* El unico proposito de este handler es llamar waitpid() pa matar zombies */
 void handleWorkerRet(int sig){
-	while(waitpid(-1, &sig, WNOHANG) != -1) ; // no-op
+	int r;
+	while((r = waitpid(-1, &sig, WNOHANG)) != -1 && r != 0) ; // no-op
 }
 
 int main(int argc, char *argv[]){
@@ -42,8 +43,8 @@ int main(int argc, char *argv[]){
 		puts("Cantidad invalida de argumentos");
 		return -1;
 	}
-	puts("Se crea archivo de log en /home/utnso/tp-2017-2c-HelloWorld/logs/worker_log");
-	logw = crear_archivo_log("Worker", true, "/home/utnso/tp-2017-2c-HelloWorld/logs/worker_log");
+	puts("Se crea archivo de log en /home/utnso/worker_log");
+	logw = crear_archivo_log("Worker", true, "/home/utnso/worker_log");
 
 	conf = cargarConfig(argv[1]);
 	mostrarConfig(conf);
@@ -107,7 +108,7 @@ int main(int argc, char *argv[]){
 			continue;
 		}
 
-		log_trace(logw, "Se procede a forkear el proceso..."); //todo: puede haber lios de concurrencia con el log comaprtido entre procesos
+		log_trace(logw, "Se procede a forkear el proceso...");
 		if ((mpid = fork()) == 0){ // soy proceso hijo
 			close(lis_fd);
 			if (masterQuery) // un Master quiere que le procese algo
