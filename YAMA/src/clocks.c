@@ -373,10 +373,10 @@ void enviar_reduccion_local(t_estado_master *estado_tr, int socket_)
 	t_master *master_ = find_master(socket_);
 	t_worker *wk = find_worker(estado_tr->nodo);
 	t_list *lista_auxiliar = list_create();
-	list_add(lista_auxiliar, "prueba2");
+	list_add(lista_auxiliar, "prueba");
 
 	red_l->nodo = wk->nodo;
-	red_l->temp_red_local = "prueba";
+	red_l->temp_red_local = "prueba2";
 	red_l->archivos_temp = lista_auxiliar;
 
 	size_t len;

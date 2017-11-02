@@ -123,6 +123,32 @@ void manejar_respuesta(int socket_)
 				//preguntar que necesita que le mande cuando no está lista la reduccion local
 				break;
 			case 6:;
+				t_estado_master *estado_tr2 = deserializar_estado_master(mensaje);
+				if(estado_tr2->estado == 2)
+				{
+						t_worker *wk = find_worker(estado_tr2->nodo);
+						t_redGlobal *red = malloc(sizeof(t_redGlobal));
+						red->encargado = 1;
+						red->temp_red_local = "prueba2";
+						red->nodo = wk->nodo;
+						red->red_global = "prueba5";
+
+						t_list *listita = list_create();
+
+						list_add(listita, red);
+						size_t len = 0;
+						char *red_ser = serializar_lista_redGlobal(listita, &len);
+
+						header head;
+						head.codigo = 3;
+						head.letra = 'Y';
+						head.sizeData = len;
+
+						int cont;
+
+						message *men = createMessage(&head, red_ser);
+						enviar_message(socket_,men,yama_log, &cont);
+				}
 				break;
 			case 7:;
 				break;

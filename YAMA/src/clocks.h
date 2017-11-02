@@ -11,5 +11,6 @@ void ejecutar_clock(t_list *archivo_bloques, int cant_bloques, int _socket);
 int _get_index_clock();
 void sumar_disponibilidad_base();
 void enviar_reduccion_local(estado_tr, socket_);
+t_worker *find_worker(char *nodo);
 
 #endif /* CLOCKS_H_ */
