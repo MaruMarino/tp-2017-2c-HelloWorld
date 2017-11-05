@@ -12,5 +12,6 @@ int _get_index_clock();
 void sumar_disponibilidad_base();
 void enviar_reduccion_local(estado_tr, socket_);
 t_worker *find_worker(char *nodo);
+t_master *find_master(int sockt);
 
 #endif /* CLOCKS_H_ */

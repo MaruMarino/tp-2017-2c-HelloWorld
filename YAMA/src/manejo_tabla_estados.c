@@ -37,22 +37,54 @@ char *generar_nombre_temporal(int job, char *nodo, int bloque)
 	return archivo_temporal;
 }
 
-void generar_estado(int master, int bloque, char *nodo)
+int calcular_cantidad(int master, char *nodo)
+{
+	int cant = 1;
+	int i;
+	int sz = list_size(tabla_estado);
+
+	for(i=0; i < sz; i++)
+	{
+		t_estado * est = list_get(tabla_estado, i);
+		if(!strcmp(est->nodo,nodo) && est->master == master && est->estado == TRANSFORMACION)
+		{
+			cant ++;
+		}
+	}
+	for(i=0; i < sz; i++)
+	{
+		t_estado * est = list_get(tabla_estado, i);
+		if(!strcmp(est->nodo,nodo) && est->master == master && est->estado == TRANSFORMACION)
+		{
+			est->cant_bloques_nodo = cant;
+		}
+	}
+
+	return cant;
+}
+
+t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bloque2, int bytes)
 {
 	t_estado *estado = malloc(sizeof (t_estado));
 	char *arch_temp = generar_nombre_temporal(estado->job, nodo, bloque);
 
 	estado->master = master;
-	estado->job = job_id ++; //poner un flag no siempre va, pero no se cuando, dudo
+	estado->job = master; //chequear
 	estado->etapa = TRANSFORMACION;
 	estado->bloque = bloque;
 	estado->nodo = strdup(nodo);
 	estado->archivo_temporal = strdup("");
 	string_append(&estado->archivo_temporal, arch_temp);
 	estado->estado = EN_PROCESO;
+	estado->cant_bloques_nodo = calcular_cantidad(master);
+	estado->copia_disponible = true;
+	estado->nodo_copia = nodo2;
+	estado->bloque_copia = bloque2;
+	estado->bytes = bytes;
 
 	list_add(tabla_estado, estado);
 	free(arch_temp);
+	return estado;
 }
 
 void cambiar_estado(int master, char *nodo, int bloque, e_estado nuevo_estado)

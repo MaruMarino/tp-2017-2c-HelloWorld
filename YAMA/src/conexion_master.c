@@ -119,8 +119,8 @@ void manejar_respuesta(int socket_)
 				if(estado_tr->estado == 2)
 				{
 					enviar_reduccion_local(estado_tr, socket_);
-				}else; //replanificar
-				//preguntar que necesita que le mande cuando no está lista la reduccion local
+				}else
+					replanificar(estado_tr, socket_);
 				break;
 			case 6:;
 				t_estado_master *estado_tr2 = deserializar_estado_master(mensaje);

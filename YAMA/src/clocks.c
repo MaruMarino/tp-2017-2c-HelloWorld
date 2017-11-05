@@ -16,12 +16,14 @@
 #include "estructuras.h"
 #include "conexion_master.h"
 #include "conexion_fs.h"
+#include "manejo_tabla_estados.h"
 #include "clocks.h"
 
 extern t_configuracion *config;
 extern t_list *workers;
 extern t_list *masters;
 extern t_log *yama_log;
+extern t_list *tabla_estado;
 
 void armar_workers(char *rta)
 {
@@ -217,10 +219,10 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 		worker->clock = false;
 		worker->carga_actual++;
 
-		//if(worker->disponibilidad > 0)
+		if(worker->disponibilidad > 0)
 			worker->disponibilidad--;
-		//else
-			//worker->disponibilidad = config->base;
+		else
+			worker->disponibilidad = config->base;
 		//if ((clock + 1) == w_size)
 			//next_index = 0;
 		//else
@@ -289,16 +291,62 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 	return worker;
 }
 
-void obtener_nodo_transformacion(t_list *archivo, t_list *transformaciones, int bloque)
+t_worker *worker_copia(t_list *archivo, int n_bloque, char *nodo)
 {
-	t_worker *worker = get_worker(archivo, bloque);
-	int ind = list_size(worker->bloques) - 1;
-	t_bloque *bloque_ = list_get(worker->bloques, ind);
+	t_worker *worker;
+	t_worker *worker = NULL;
+	int clock;
+
+	int l_size = list_size(archivo);
+
+	t_list *lista_aux = list_create();
+	int i;
+	for(i = 0; i < l_size; i++)
+	{
+		t_bloque *bl = list_get(archivo, i);
+
+		if(bl->n_bloque_archivo == n_bloque)
+			list_add(lista_aux, bl);
+	}
+
+	bool _nodo_bloque(t_worker *worker_aux)
+	{
+		t_bloque *bl1 = list_get(lista_aux, 0);
+		t_bloque *bl2 = list_get(lista_aux, 1);
+		int resultado_parcial = strcmp(bl1->nodo, worker_aux->nodo->nodo) || strcmp(bl2->nodo, worker_aux->nodo->nodo);
+		int otro_resultado = strcmp(worker_aux->nodo->nodo, nodo);
+
+		return (resultado_parcial && otro_resultado);
+	}
+
+	worker = list_find(workers,(void *) _nodo_bloque);
+
+	bool _bloque_archivo(t_bloque *bl2)
+	{
+		return !strcmp(bl2->nodo, worker->nodo->nodo);
+	}
+	t_bloque *bl = list_find(lista_aux, (void *)_bloque_archivo);
+
+	list_add(worker->bloques, bl);
+
+	return worker;
+}
+
+void obtener_nodo_transformacion(t_list *archivo, t_list *transformaciones, int bloque, int master)
+{
+	escribir_log(yama_log, "Armado de transformación");
+	t_worker *worker0 = get_worker(archivo, bloque);
+	t_worker *worker_copia = worker_copia(archivo, bloque, worker0->nodo->nodo);
+	int ind_cop = list_size(worker_copia->bloques);
+	t_bloque *b_cop = list_get(worker_copia->bloques, ind_cop);
+	int ind = list_size(worker0->bloques) - 1;
+	t_bloque *bloque_ = list_get(worker0->bloques, ind);
 	t_transformacion *transf = malloc(sizeof(t_transformacion));
 	transf->bloque = bloque_->n_bloque_archivo;
 	transf->bytes = bloque_->bytes;
-	transf->nodo = worker->nodo;
-	transf->temporal = "prueba" ;
+	transf->nodo = worker0->nodo;
+	t_estado *est = generar_estado(master, bloque_->n_bloque_archivo, worker0->nodo->nodo, worker_copia->nodo->nodo, b_cop->n_bloque_archivo, bloque_->bytes);
+	transf->temporal = est->archivo_temporal;
 
 	list_add(transformaciones, transf);
 }
@@ -310,10 +358,11 @@ void ejecutar_clock(t_list *archivo_bloques, int cant_bloques, int _socket)
 	calcular_disponibilidad();
 	posicionar_clock();
 
+	t_master *ms  = find_master(_socket);
 	t_list *transformaciones = list_create();
 	while(cant_bloques > 0)
 	{
-		obtener_nodo_transformacion(archivo_bloques, transformaciones, i);
+		obtener_nodo_transformacion(archivo_bloques, transformaciones, i, ms->master);
 
 		i++;
 		cant_bloques--;
@@ -367,16 +416,36 @@ t_worker *find_worker(char *nodo)
 	return wk;
 }
 
-void enviar_reduccion_local(t_estado_master *estado_tr, int socket_)
+char *generar_nombre_red_local(int mast, char* nod)
 {
+	char *nombre = strdup("/temp/m");
+	char *masterrr = string_itoa(mast);
+
+	string_append(&nombre, masterrr);
+	string_append(&nombre, nod);
+	free(masterrr);
+	return nombre;
+}
+
+void armar_reduccion_local(int sz, t_master *master_, t_estado *est, t_estado_master *estado_tr)
+{
+	escribir_log(yama_log, "Comenzando a armar reduccion local");
 	t_redLocal *red_l = malloc(sizeof(t_redLocal));
-	t_master *master_ = find_master(socket_);
+
+	int i;
 	t_worker *wk = find_worker(estado_tr->nodo);
 	t_list *lista_auxiliar = list_create();
-	list_add(lista_auxiliar, "prueba");
 
+	for(i=0; i < sz; i++)
+	{
+		t_estado * est2 = list_get(tabla_estado, i);
+		if(!strcmp(est2->nodo,estado_tr->nodo) && est2->master == master_->master && est2->estado == ESPERA_REDUCCION_LOCAL)
+		{
+			list_add(lista_auxiliar, est2->archivo_temporal);
+		}
+	}
 	red_l->nodo = wk->nodo;
-	red_l->temp_red_local = "prueba2";
+	red_l->temp_red_local = generar_nombre_red_local(master_->master, estado_tr->nodo);
 	red_l->archivos_temp = lista_auxiliar;
 
 	size_t len;
@@ -390,10 +459,90 @@ void enviar_reduccion_local(t_estado_master *estado_tr, int socket_)
 	head.sizeData = len;
 
 	message *mensaje = createMessage(&head, (void *)red_local_ser);
-	enviar_message(socket_, mensaje, yama_log, &control);
-	//cambiar_estado(master_->master,estado_tr->nodo, estado_tr->bloque)
+	enviar_message(master_->socket_, mensaje, yama_log, &control);
+	cambiar_estado(master_->master,estado_tr->nodo, estado_tr->bloque);
 	list_destroy(lista_auxiliar);
 	free(red_l);
 }
 
-//todo cuando se desconecte un master poner en null el socket
+
+void enviar_reduccion_local(t_estado_master *estado_tr, int socket_)
+{
+	t_master *master_ = find_master(socket_);
+	t_estado *est = get_estado(master_->master, estado_tr->nodo, estado_tr->bloque);
+	int i;
+	int sz = list_size(tabla_estado);
+	est->cant_bloques_nodo--;
+	est->etapa = ESPERA_REDUCCION_LOCAL;
+
+
+	for(i=0; i < sz; i++)
+	{
+		t_estado * est2 = list_get(tabla_estado, i);
+		if(!strcmp(est2->nodo,estado_tr->nodo) && est2->master == master_->master && est2->estado == TRANSFORMACION)
+		{
+			est2->cant_bloques_nodo = est->cant_bloques_nodo;
+		}
+	}
+
+	if(est->cant_bloques_nodo == 0)
+	{
+		armar_reduccion_local(sz, master_, est, estado_tr);
+	}
+	else
+		escribir_log(yama_log, "Esperando a que se terminen todas las transformaciones para el nodo");
+}
+
+void armar_transformacion_replanificada(t_estado *estado, int socket_)
+{
+	escribir_log(yama_log, "Generando transformacion replanificada");
+	t_transformacion *tr = malloc(sizeof(t_transformacion));
+	t_worker *wk = find_worker(estado->nodo_copia);
+	t_list *transformaciones = list_create();
+
+	tr->bloque = estado->bloque_copia;
+	tr->nodo = wk->nodo;
+	t_estado * est = generar_estado(estado->master, tr->bloque, wk->nodo->nodo, NULL, NULL);
+	est->copia_disponible = false;
+	tr->temporal = est->archivo_temporal;
+	tr->bytes = est->bytes;
+
+	list_add(transformaciones, tr);
+
+	header head;
+	head.codigo = 1;
+	head.letra = 'Y';
+	int control;
+
+	char *transformaciones_ser = serializar_lista_transformacion(transformaciones, &head.sizeData);
+
+	message *mensaje = createMessage(&head, transformaciones_ser);
+	enviar_message(socket_, mensaje, yama_log, &control);
+
+	free(transformaciones);
+}
+
+void replanificar(t_estado_master *estado_tr, int socket_)
+{
+	t_master *master_ = find_master(socket_);
+	t_estado *est = get_estado(master_->master, estado_tr->nodo, estado_tr->bloque);
+	int i;
+	int sz = list_size(tabla_estado);
+	est->cant_bloques_nodo--;
+	est->etapa = ERROR;
+
+	if(est->cant_bloques_nodo == 0)
+	{
+		armar_reduccion_local(sz, master_, est, estado_tr);
+	}
+
+	if(est->copia_disponible)
+	{
+		armar_transformacion_replanificada(est, socket_, estado_tr);
+	}
+	else
+		//enviar que no se puede planificar de vuelta.....
+
+	est->copia_disponible = false;
+
+}

@@ -32,6 +32,7 @@ typedef struct
 typedef enum
 {
 	TRANSFORMACION,
+	ESPERA_REDUCCION_LOCAL,
 	REDUCCION_LOCAL,
 	REDUCCION_GLOBAL,
 	ALMACENAMIENTO_FINAL,
@@ -54,6 +55,10 @@ typedef struct
 	char *archivo_temporal;
 	e_estado estado;
 	int cant_bloques_nodo;
+	bool copia_disponible;
+	char *nodo_copia;
+	int bloque_copia;
+	int bytes;
 }t_estado;
 
 typedef struct
