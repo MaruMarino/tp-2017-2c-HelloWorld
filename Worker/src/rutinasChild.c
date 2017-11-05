@@ -54,7 +54,7 @@ void subrutinaEjecutor(int sock_m) {
 		t_info_trans *info_t = deserializar_info_trans(msj);
 
 		if (crearArchivoBin(info_t->prog, info_t->size_prog, exe_fname) < 0 ||
-				crearArchivoData(info_t->bloque, (size_t) info_t->bytes_ocup, data_fname) < 0) {
+			crearArchivoData(info_t->bloque, (size_t) info_t->bytes_ocup, data_fname) < 0) {
 			log_error(logw, "No se pudieron crear los archivos de trabajo.");
 			liberador(4, msj, info_t->prog, info_t->file_out, info_t);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);

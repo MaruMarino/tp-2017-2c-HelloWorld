@@ -423,7 +423,7 @@ t_file *cargarFile(char *fname) {
 	t_file *file = malloc(sizeof *file);
 	file->fname = strdup(fname);
 
-	if ((f = fopen(fname, "w")) == NULL) {
+	if ((f = fopen(fname, "r")) == NULL) {
 		log_error(logw, "No se pudo abrir el archivo %s", fname);
 		liberador(2, file->fname, file);
 		return NULL;
@@ -450,10 +450,11 @@ t_file *cargarFile(char *fname) {
 }
 
 off_t fsize(FILE *f) {
-	off_t len;
-	if (fseek(f, 0, SEEK_END) < 0) return 0;
-	if ((len = ftell(f)) < 0) len = 0;
-	if (fseek(f, 0, SEEK_SET) < 0) return 0;
+	off_t len, off_init;
+	off_init = (f->_offset == -1)? 0 : (off_t) f->_offset;
+	if (fseek(f, 0, SEEK_END) != 0) return 0;
+	if ((len = ftell(f)) == -1) len = 0;
+	if (fseek(f, off_init, SEEK_SET) != 0) return 0;
 	return len;
 }
 
