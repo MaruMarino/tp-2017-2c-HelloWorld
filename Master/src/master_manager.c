@@ -112,7 +112,9 @@ void ejecutar_transformador(t_transformacion *transf)
 	//Conecto con Worker
 	char *port = string_itoa(transf->nodo->puerto);
 
-	printf("%s %s\n", transf->nodo->ip, port);//print prueba
+	//Imprimo informacion de la peticion
+	printf("Ip: %s Puerto: %s\n", transf->nodo->ip, port);//print prueba
+	printf("Archivo temporak: %s\n", transf->temporal);
 
 	socket_local = establecerConexion(transf->nodo->ip, port, log_Mas, &controlador);
 	free(port);
@@ -209,7 +211,7 @@ void ejecutar_transformador(t_transformacion *transf)
 		return;
 	}
 	else
-		escribir_log_compuesto(log_Mas, "Respuesta estado recibida de Worker: ",transf->nodo->nodo);
+		escribir_log_compuesto(log_Mas, "Respuesta estado transformacion recibida de Worker: ",transf->nodo->nodo);
 
 	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
 
@@ -283,6 +285,11 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 
 	//Conecto con Worker
 	char *port = string_itoa(reduccion_local->nodo->puerto);
+
+	//Imprimo informacion de la peticion
+	printf("Ip: %s Puerto: %s\n", reduccion_local->nodo->ip, port);//print prueba
+	printf("Archivo temporal: %s\n", reduccion_local->temp_red_local);
+
 	socket_local = establecerConexion(reduccion_local->nodo->ip, port, log_Mas, &controlador);
 	free(port);
 
@@ -357,12 +364,12 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 		return;
 	}
 	else
-		escribir_log_compuesto(log_Mas, "Transformacion enviada a Worker: ",reduccion_local->nodo->nodo);
+		escribir_log_compuesto(log_Mas, "Reduccion local enviada a Worker: ",reduccion_local->nodo->nodo);
 
 	//Recibo respuesta de Worker
 	char *buffer_rta = getMessage(socket_local, header, &controlador);
 
-	if(controlador > 0)
+	if(controlador < 0)
 	{
 		escribir_log_error_compuesto(log_Mas, "Fallo recibir mensaje de estado reduccion local de Worker: ", reduccion_local->nodo->nodo);
 		error_reduccion_local(reduccion_local);
@@ -382,7 +389,7 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
 
 	t_estado->estado = 2;
-	//t_estado->bloque = //;
+	//t_estado->bloque = reduccion_local
 	t_estado->nodo = reduccion_local->nodo->nodo;
 
 	header->letra = 'M';
@@ -401,7 +408,7 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 		return;
 	}
 	else
-		escribir_log_compuesto(log_Mas, "Proceso transformacion finalizada para Worker: ",reduccion_local->nodo->nodo);
+		escribir_log_compuesto(log_Mas, "Proceso reduccion local finalizada para Worker: ",reduccion_local->nodo->nodo);
 
 	quitar_reduccion_local();
 
@@ -455,6 +462,11 @@ void atender_reduccion_global(t_list *lista_global)
 
 	//Conecto con Worker
 	char *port = string_itoa(encargado->nodo->puerto);
+
+	//Imprimo informacion de la peticion
+	printf("Ip: %s Puerto: %s\n", encargado->nodo->ip, port);//print prueba
+	printf("Archivo temporal: %s\n", encargado->red_global);
+
 	socket_local = establecerConexion(encargado->nodo->ip, port, log_Mas, &controlador);
 	free(port);
 
@@ -559,7 +571,7 @@ void atender_reduccion_global(t_list *lista_global)
 		return;
 	}
 	else
-		escribir_log_compuesto(log_Mas, "Respuesta estado recibida de Worker: ",encargado->nodo->nodo);
+		escribir_log_compuesto(log_Mas, "Respuesta estado reduccion global recibida de Worker: ",encargado->nodo->nodo);
 
 	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
 
@@ -583,7 +595,7 @@ void atender_reduccion_global(t_list *lista_global)
 		return;
 	}
 	else
-		escribir_log_compuesto(log_Mas, "Proceso transformacion finalizada para Worker: ",encargado->nodo->nodo);
+		escribir_log_compuesto(log_Mas, "Proceso reduccion global finalizada para Worker: ",encargado->nodo->nodo);
 
 	quitar_reduccion_global();
 
@@ -591,6 +603,8 @@ void atender_reduccion_global(t_list *lista_global)
 	free(t_estado);
 	free(mensj_transf_est);
 	free(header);
+
+	mostrar_estadisticas();
 }
 
 void error_reduccion_global(t_redGlobal *reduccion_global)
@@ -717,7 +731,7 @@ void ejecutar_almacenamiento(t_almacenado *almacenado)
 		return;
 	}
 	else
-		escribir_log_compuesto(log_Mas, "Respuesta estado recibida de Worker: ", almacenado->nodo->nodo);
+		escribir_log_compuesto(log_Mas, "Respuesta estado almacenamiento recibida de Worker: ", almacenado->nodo->nodo);
 
 	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
 

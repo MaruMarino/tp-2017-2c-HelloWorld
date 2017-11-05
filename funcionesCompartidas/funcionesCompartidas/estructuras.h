@@ -24,6 +24,7 @@ typedef struct
 {
 	t_nodo *nodo;
 	t_list *archivos_temp;
+	int bloque;
 	char *temp_red_local;
 }t_redLocal;
 

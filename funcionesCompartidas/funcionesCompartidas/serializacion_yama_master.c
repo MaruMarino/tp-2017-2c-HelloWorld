@@ -165,6 +165,8 @@ char *serializar_redLocal(t_redLocal *red_local, size_t *len)
 	*len += len_nodo;
 	memcpy(redLocal_ser + *len, &len_temp_red_local, 4);
 	*len += 4;
+	memcpy(redLocal_ser + *len, &red_local->bloque, 4);
+	*len += 4;
 	memcpy(redLocal_ser + *len, red_local->temp_red_local, len_temp_red_local);
 	*len += len_temp_red_local;
 
@@ -213,6 +215,8 @@ t_redLocal *deserializar_redLocal (char *red_local_ser)
 	memcpy(nodo_ser, red_local_ser + len, len_nodo);
 	red_local_des->nodo = deserializar_nodo(nodo_ser, &len_nodo);
 	len += len_nodo;
+	memcpy(&red_local_des->bloque, red_local_ser + len, 4);
+	len += 4;
 	memcpy(&len_local, red_local_ser + len, 4);
 	red_local_des->temp_red_local = malloc(len_local);
 	len += 4;
