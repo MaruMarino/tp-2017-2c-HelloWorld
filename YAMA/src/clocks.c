@@ -197,7 +197,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 	{
 		t_bloque *bl1 = list_get(lista_aux, 0);
 		t_bloque *bl2 = list_get(lista_aux, 1);
-		int resultado_parcial = strcmp(bl1->nodo, worker_aux->nodo->nodo) || strcmp(bl2->nodo, worker_aux->nodo->nodo);
+		int resultado_parcial = (!strcmp(bl1->nodo, worker_aux->nodo->nodo)) || (!strcmp(bl2->nodo, worker_aux->nodo->nodo));
 		int otro_resultado = worker_aux->clock == true;
 
 		return (resultado_parcial && otro_resultado);
@@ -265,7 +265,8 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 			{
 				return bl->n_bloque_archivo == n_bloque;
 			}
-			if (list_any_satisfy(worker2->bloques, _bloque) && worker2->disponibilidad > 0)
+			bool any = list_any_satisfy(worker2->bloques,(void *) _bloque);
+			if ( any && worker2->disponibilidad > 0)
 			{
 				encontrado = 1;
 				worker2->disponibilidad --;
@@ -273,7 +274,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 			}
 			else
 			{
-				next_index = (clock + 1) % w_size;
+				next_index = (next_index + 1) % w_size;
 				cant ++;
 				if(cant == w_size)
 					vuelta_completa = 1;
@@ -293,9 +294,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 
 t_worker *worker_copia(t_list *archivo, int n_bloque, char *nodo)
 {
-	t_worker *worker;
 	t_worker *worker = NULL;
-	int clock;
 
 	int l_size = list_size(archivo);
 
@@ -313,7 +312,7 @@ t_worker *worker_copia(t_list *archivo, int n_bloque, char *nodo)
 	{
 		t_bloque *bl1 = list_get(lista_aux, 0);
 		t_bloque *bl2 = list_get(lista_aux, 1);
-		int resultado_parcial = strcmp(bl1->nodo, worker_aux->nodo->nodo) || strcmp(bl2->nodo, worker_aux->nodo->nodo);
+		int resultado_parcial = (!strcmp(bl1->nodo, worker_aux->nodo->nodo)) || (!strcmp(bl2->nodo, worker_aux->nodo->nodo));
 		int otro_resultado = strcmp(worker_aux->nodo->nodo, nodo);
 
 		return (resultado_parcial && otro_resultado);
@@ -336,16 +335,16 @@ void obtener_nodo_transformacion(t_list *archivo, t_list *transformaciones, int 
 {
 	escribir_log(yama_log, "Armado de transformación");
 	t_worker *worker0 = get_worker(archivo, bloque);
-	t_worker *worker_copia = worker_copia(archivo, bloque, worker0->nodo->nodo);
-	int ind_cop = list_size(worker_copia->bloques);
-	t_bloque *b_cop = list_get(worker_copia->bloques, ind_cop);
+	t_worker *worker_cop = worker_copia(archivo, bloque, worker0->nodo->nodo);
+	int ind_cop = list_size(worker_cop->bloques) - 1;
+	t_bloque *b_cop = list_get(worker_cop->bloques, ind_cop);
 	int ind = list_size(worker0->bloques) - 1;
 	t_bloque *bloque_ = list_get(worker0->bloques, ind);
 	t_transformacion *transf = malloc(sizeof(t_transformacion));
-	transf->bloque = bloque_->n_bloque_archivo;
+	transf->bloque = bloque_->n_bloque;
 	transf->bytes = bloque_->bytes;
 	transf->nodo = worker0->nodo;
-	t_estado *est = generar_estado(master, bloque_->n_bloque_archivo, worker0->nodo->nodo, worker_copia->nodo->nodo, b_cop->n_bloque_archivo, bloque_->bytes);
+	t_estado *est = generar_estado(master, bloque_->n_bloque, worker0->nodo->nodo, worker_cop->nodo->nodo, b_cop->n_bloque, bloque_->bytes);
 	transf->temporal = est->archivo_temporal;
 
 	list_add(transformaciones, transf);
@@ -418,7 +417,7 @@ t_worker *find_worker(char *nodo)
 
 char *generar_nombre_red_local(int mast, char* nod)
 {
-	char *nombre = strdup("/temp/m");
+	char *nombre = strdup("/tmp/rl_m");
 	char *masterrr = string_itoa(mast);
 
 	string_append(&nombre, masterrr);
@@ -439,7 +438,7 @@ void armar_reduccion_local(int sz, t_master *master_, t_estado *est, t_estado_ma
 	for(i=0; i < sz; i++)
 	{
 		t_estado * est2 = list_get(tabla_estado, i);
-		if(!strcmp(est2->nodo,estado_tr->nodo) && est2->master == master_->master && est2->estado == ESPERA_REDUCCION_LOCAL)
+		if(!strcmp(est2->nodo,estado_tr->nodo) && est2->master == master_->master && est2->etapa == ESPERA_REDUCCION_LOCAL)
 		{
 			list_add(lista_auxiliar, est2->archivo_temporal);
 		}
@@ -447,6 +446,7 @@ void armar_reduccion_local(int sz, t_master *master_, t_estado *est, t_estado_ma
 	red_l->nodo = wk->nodo;
 	red_l->temp_red_local = generar_nombre_red_local(master_->master, estado_tr->nodo);
 	red_l->archivos_temp = lista_auxiliar;
+	red_l->bloque = estado_tr->bloque;
 
 	size_t len;
 	char *red_local_ser = serializar_redLocal(red_l, &len);
@@ -460,7 +460,7 @@ void armar_reduccion_local(int sz, t_master *master_, t_estado *est, t_estado_ma
 
 	message *mensaje = createMessage(&head, (void *)red_local_ser);
 	enviar_message(master_->socket_, mensaje, yama_log, &control);
-	cambiar_estado(master_->master,estado_tr->nodo, estado_tr->bloque);
+	cambiar_estado(master_->master,estado_tr->nodo, estado_tr->bloque,REDUCCION_LOCAL, red_l->temp_red_local);
 	list_destroy(lista_auxiliar);
 	free(red_l);
 }
@@ -502,7 +502,7 @@ void armar_transformacion_replanificada(t_estado *estado, int socket_)
 
 	tr->bloque = estado->bloque_copia;
 	tr->nodo = wk->nodo;
-	t_estado * est = generar_estado(estado->master, tr->bloque, wk->nodo->nodo, NULL, NULL);
+	t_estado * est = generar_estado(estado->master, tr->bloque, wk->nodo->nodo, NULL, 0, estado->bytes);
 	est->copia_disponible = false;
 	tr->temporal = est->archivo_temporal;
 	tr->bytes = est->bytes;
@@ -526,22 +526,31 @@ void replanificar(t_estado_master *estado_tr, int socket_)
 {
 	t_master *master_ = find_master(socket_);
 	t_estado *est = get_estado(master_->master, estado_tr->nodo, estado_tr->bloque);
-	int i;
 	int sz = list_size(tabla_estado);
 	est->cant_bloques_nodo--;
-	est->etapa = ERROR;
+	est->estado = ERROR;
 
-	if(est->cant_bloques_nodo == 0)
+	if(est->cant_bloques_nodo == 0 && est->etapa == ESPERA_REDUCCION_LOCAL && est->estado != ERROR)
 	{
 		armar_reduccion_local(sz, master_, est, estado_tr);
 	}
 
 	if(est->copia_disponible)
 	{
-		armar_transformacion_replanificada(est, socket_, estado_tr);
+		armar_transformacion_replanificada(est, socket_);
 	}
 	else
-		//enviar que no se puede planificar de vuelta.....
+	{
+		header head;
+		head.codigo = 6;
+		head.letra = 'Y';
+		head.sizeData = 1;
+		int control;
+
+
+		message *mensaje = createMessage(&head, "");
+		enviar_message(socket_, mensaje, yama_log, &control);
+	}
 
 	est->copia_disponible = false;
 

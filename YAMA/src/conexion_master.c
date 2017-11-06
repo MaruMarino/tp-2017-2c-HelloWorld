@@ -3,6 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <sys/socket.h>
+#include <unistd.h>
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/log.h>
 #include <funcionesCompartidas/mensaje.h>
@@ -62,6 +63,7 @@ void manejo_conexiones()
 			{
 				if (FD_ISSET(i, &read_fds))
 				{
+					printf("hola entre");
 					//Se detecta alguien nuevo llamando?
 					if (i == config->server_)
 					{
@@ -70,12 +72,11 @@ void manejo_conexiones()
 						int nuevo_socket = aceptar_conexion(config->server_, yama_log, &controlador);
 
 						//Controlo que no haya pasado nada raro y acepto al nuevo
-						if (controlador == 0)
-						{
-							int id_m = master_id++;
-							list_add(masters, &id_m);
-							//realizar_handshake_master(nuevo_socket);
-						}
+						if (controlador < 0)
+							continue;
+
+						int id_m = master_id++;
+						list_add(masters, &id_m);
 
 						//Cargo la nueva conexion a la lista y actualizo el maximo
 						FD_SET(nuevo_socket, &master);
@@ -87,7 +88,7 @@ void manejo_conexiones()
 					}
 					else
 					{
-						manejar_respuesta(i);
+						manejar_respuesta(i) ;
 					}
 				}
 			}
@@ -101,8 +102,19 @@ void manejar_respuesta(int socket_)
 	header head;
 	int status;
 	char *mensaje = (char *)getMessage(socket_, &head, &status);
+
+	if(status <= 0)
+	{
+		t_master *ms = find_master(socket_);
+		if(ms != NULL)
+			ms->socket_ = -1;
+
+		FD_CLR(socket_, &master);
+		close(socket_);
+	}
+
 	//char *header = get_header(mensaje);
-	if (head.letra == 'M')
+	if (head.letra == 'M' && status > 0)
 	{
 		//int codigo = get_codigo(mensaje);
 		//char *info = get_mensaje(mensaje);
@@ -122,16 +134,19 @@ void manejar_respuesta(int socket_)
 				}else
 					replanificar(estado_tr, socket_);
 				break;
-			case 6:;
+			case 6:; //Reduccion global
+				escribir_log(yama_log, "Chequear para empezar reduccion global");
 				t_estado_master *estado_tr2 = deserializar_estado_master(mensaje);
 				if(estado_tr2->estado == 2)
 				{
+						t_master *ms = find_master(socket_);
+						t_estado *est = get_estado(ms->master, estado_tr2->nodo, estado_tr2->bloque);
 						t_worker *wk = find_worker(estado_tr2->nodo);
 						t_redGlobal *red = malloc(sizeof(t_redGlobal));
 						red->encargado = 1;
-						red->temp_red_local = "prueba2";
+						red->temp_red_local = est->archivo_temporal;
 						red->nodo = wk->nodo;
-						red->red_global = "prueba5";
+						red->red_global = generar_nombre_red_global(ms->master, estado_tr2->nodo);
 
 						t_list *listita = list_create();
 
@@ -143,6 +158,9 @@ void manejar_respuesta(int socket_)
 						head.codigo = 3;
 						head.letra = 'Y';
 						head.sizeData = len;
+
+						t_estado *est33 = generar_estado(ms->master, estado_tr2->bloque, estado_tr2->nodo, 0, 0, 0);
+						est33->archivo_temporal = strdup(red->red_global);
 
 						int cont;
 
@@ -158,8 +176,9 @@ void manejar_respuesta(int socket_)
 				printf("default");
 				break;
 		}
-	} else log_error(yama_log, "Mensaje de emisor desconocido");
-	free(mensaje);
+		free(mensaje);
+	} else
+		log_error(yama_log, "Mensaje de emisor desconocido");
 }
 
 void realizar_handshake_master(int socket_)
@@ -206,4 +225,15 @@ void enviar_peticion_transformacion(int socket_)
 
 	//agregar frees
 	free(head);
+}
+
+char *generar_nombre_red_global(int mast, char* nod)
+{
+	char *nombre = strdup("/tmp/rg_m");
+	char *masterrr = string_itoa(mast);
+
+	string_append(&nombre, masterrr);
+	string_append(&nombre, nod);
+	free(masterrr);
+	return nombre;
 }

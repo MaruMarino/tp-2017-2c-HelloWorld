@@ -13,5 +13,6 @@ void sumar_disponibilidad_base();
 void enviar_reduccion_local(estado_tr, socket_);
 t_worker *find_worker(char *nodo);
 t_master *find_master(int sockt);
+void replanificar(t_estado_master *estado_tr, int socket_);
 
 #endif /* CLOCKS_H_ */

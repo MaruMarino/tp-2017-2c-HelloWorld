@@ -20,11 +20,11 @@ extern int job_id;
 
 char *generar_nombre_temporal(int job, char *nodo, int bloque)
 {
-	char *archivo_temporal = strdup("/temp/");
+	char *archivo_temporal = strdup("/tmp/tl_");
 	char *sjob = string_itoa(job);
 	char *sbloque = string_itoa(bloque);
 
-	string_append(&archivo_temporal, "j");
+	string_append(&archivo_temporal, "m");
 	string_append(&archivo_temporal, sjob);
 	string_append(&archivo_temporal, "n");
 	string_append(&archivo_temporal, nodo);
@@ -46,7 +46,7 @@ int calcular_cantidad(int master, char *nodo)
 	for(i=0; i < sz; i++)
 	{
 		t_estado * est = list_get(tabla_estado, i);
-		if(!strcmp(est->nodo,nodo) && est->master == master && est->estado == TRANSFORMACION)
+		if(!strcmp(est->nodo,nodo) && est->master == master && est->etapa == TRANSFORMACION)
 		{
 			cant ++;
 		}
@@ -54,7 +54,7 @@ int calcular_cantidad(int master, char *nodo)
 	for(i=0; i < sz; i++)
 	{
 		t_estado * est = list_get(tabla_estado, i);
-		if(!strcmp(est->nodo,nodo) && est->master == master && est->estado == TRANSFORMACION)
+		if(!strcmp(est->nodo,nodo) && est->master == master && est->etapa == TRANSFORMACION)
 		{
 			est->cant_bloques_nodo = cant;
 		}
@@ -66,7 +66,7 @@ int calcular_cantidad(int master, char *nodo)
 t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bloque2, int bytes)
 {
 	t_estado *estado = malloc(sizeof (t_estado));
-	char *arch_temp = generar_nombre_temporal(estado->job, nodo, bloque);
+	char *arch_temp = generar_nombre_temporal(master, nodo, bloque);
 
 	estado->master = master;
 	estado->job = master; //chequear
@@ -76,7 +76,7 @@ t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bl
 	estado->archivo_temporal = strdup("");
 	string_append(&estado->archivo_temporal, arch_temp);
 	estado->estado = EN_PROCESO;
-	estado->cant_bloques_nodo = calcular_cantidad(master);
+	estado->cant_bloques_nodo = calcular_cantidad(master, nodo);
 	estado->copia_disponible = true;
 	estado->nodo_copia = nodo2;
 	estado->bloque_copia = bloque2;
@@ -87,10 +87,11 @@ t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bl
 	return estado;
 }
 
-void cambiar_estado(int master, char *nodo, int bloque, e_estado nuevo_estado)
+void cambiar_estado(int master, char *nodo, int bloque, e_estado nuevo_estado, char *nom)
 {
 	t_estado *estado = get_estado(master, nodo, bloque);
 	estado->estado = nuevo_estado;
+	estado->archivo_temporal = nom;
 }
 
 t_estado *get_estado(int master, char *nodo, int bloque)
