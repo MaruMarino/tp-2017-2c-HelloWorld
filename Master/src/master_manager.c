@@ -50,9 +50,9 @@ void escuchar_peticiones()
 			case 2: ;
 				escribir_log(log_Mas, "Se recibio una peticion de reduccion local");
 				t_redLocal *reduccion_local = deserializar_redLocal(buffer);
-				pthread_t *hiloPrograma = malloc(sizeof(pthread_t));
-				pthread_create(hiloPrograma,NULL,(void*)atender_reduccion_local,reduccion_local);
-				list_add(hilos, hiloPrograma);
+				pthread_t hiloPrograma;// = malloc(sizeof(pthread_t));
+				pthread_create(&hiloPrograma,NULL,(void*)atender_reduccion_local,reduccion_local);
+				list_add(hilos, &hiloPrograma);
 				break;
 			case 3: ;
 				escribir_log(log_Mas, "Se recibio una peticion de reduccion global");
@@ -389,7 +389,7 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 	t_estado_master *t_estado = malloc(sizeof(t_estado_master));
 
 	t_estado->estado = 2;
-	//t_estado->bloque = reduccion_local
+	t_estado->bloque = reduccion_local->bloque;
 	t_estado->nodo = reduccion_local->nodo->nodo;
 
 	header->letra = 'M';
@@ -453,6 +453,8 @@ void atender_reduccion_global(t_list *lista_global)
 	int controlador = 0;
 	int socket_local;
 	header *header = malloc(sizeof(header));
+
+	agregar_reduccion_global();
 
 	//Busco al encargado de la reduccion Global
 	bool _buscar_encargado(t_redGlobal *aux){
@@ -797,12 +799,11 @@ void error_almacenamiento(t_almacenado *almacenado)
 
 void matar_hilos()
 {
-	void _destruir_elemento(pthread_t *el_hilo){
-		pthread_cancel(*el_hilo);
-		free(el_hilo);
+	void _destruir_elemento(pthread_t el_hilo){
+		pthread_cancel(el_hilo);
+		//free(el_hilo);
 	}
 
 	list_clean_and_destroy_elements(hilos, (void*) _destruir_elemento);
-
 	list_destroy(hilos);
 }
