@@ -6,6 +6,7 @@
  */
 
 #include "FS_interfaz_nodos.h"
+#include "estructurasfs.h"
 
 
 #include <funcionesCompartidas/funcionesNet.h>
@@ -16,6 +17,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <funcionesCompartidas/estructuras.h>
+#include <commons/collections/list.h>
 
 
 #define Mib 1048576
@@ -29,6 +32,15 @@ extern t_list *archivos;
 
 
 /* FUNCIONES ALMACENAR ARCHIVO */
+
+const char *getEstado(estado estado) {
+    switch (estado) {
+        case disponible:
+            return "disponible";
+        case no_disponible:
+            return "no_disponible";
+    }
+}
 
 int getBlockFree(t_bitarray *listBit) {
     int i;
@@ -75,6 +87,7 @@ void checkStateNodos() {
     for (i = 0; i < nodos->elements_count; ++i) {
         nodo_fetch = list_get(nodos, i);
         printf("name --> [%s]\n", nodo_fetch->nombre);
+        printf("stado --> %s\n", getEstado(nodo_fetch->estado));
         printf("socket --> [%d]\n", nodo_fetch->soket);
         printf("bloque free %d\n", cantBlockfree(nodo_fetch->bitmapNodo));
         printf("Espacio Total %d\n", nodo_fetch->espacio_total);
@@ -142,6 +155,7 @@ int exitProcess(NODO *TestNodo) {
             nodoFetch->soket = TestNodo->soket;
             nodoFetch->puerto = TestNodo->puerto;
             nodoFetch->ip = TestNodo->ip;
+            nodoFetch->estado = disponible;
             return 1;
         }
     }
@@ -164,15 +178,66 @@ void *contenido_archivo(char *pathlocal, int *filesize) {
     return buff;
 }
 
-int dividir_enviar_archivo(char *contenido, int fsize, char *tipo){
+int dividir_enviar_archivo(char *contenido, int fsize, char *tipo) {
 
 
-	if(!strcmp(tipo,"B") || !strcmp(tipo,"b")){
-		// dividir normal en
-	}
+    if (!strcmp(tipo, "B") || !strcmp(tipo, "b")) {
+        // dividir normal en
+    }
 }
 
 
+estado checkStateNodo(char *nameNodo) {
+    int i;
+    NODO *nodoFetch;
+    for (i = 0; i < nodos->elements_count; ++i) {
+        nodoFetch = list_get(nodos, i);
+        if (strcmp(nodoFetch->nombre, nameNodo) == 0) {
+            return nodoFetch->estado;
+        }
+    }
+    return no_disponible;
+}
+
+estado checkStateArchive(t_archivo *archivo) {
+    int i;
+    bloqueArchivo *fetchBloque;
+    for (i = 0; i < archivo->bloques->elements_count; ++i) {
+        fetchBloque = list_get(archivo->bloques, i);
+        if (!(checkStateNodo(fetchBloque->nodo0) == disponible || checkStateNodo(fetchBloque->nodo1) == disponible)) {
+            return no_disponible;
+        }
+    }
+    return disponible;
+}
+
+estado checkStateFileSystem() {
+    int i;
+    t_archivo *fetchArchivo;
+    estado fileStable = no_disponible;
+    for (i = 0; i < archivos->elements_count; ++i) {
+        fetchArchivo = list_get(archivos, i);
+        fetchArchivo->estado = (fileStable = checkStateArchive(fetchArchivo));
+    }
+    for (i = 0; i < archivos->elements_count; ++i) {
+        printf("------------------Archivo [%d] ----------------------\n", i);
+        fetchArchivo = list_get(archivos, i);
+        printf("estado %s\n", getEstado(fetchArchivo->estado));
+    }
+    return fileStable;
+}
+
+void disconnectedNodo(int socket) {
+    int i;
+    NODO *nodoFetch;
+    for (i = 0; i < nodos->elements_count; ++i) {
+        nodoFetch = list_get(nodos, i);
+        if (nodoFetch->soket == socket && nodoFetch->estado == disponible) {
+            nodoFetch->estado = no_disponible;
+        }
+    }
+    checkStateFileSystem();
+}
 
 /* todo: FUNCIONES LEER ARCHIVO */
 

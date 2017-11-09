@@ -136,6 +136,8 @@ int recuperar_nodos(void) {
 
         NODO *nodo_recuperado = malloc(sizeof(NODO));
 
+        nodo_recuperado->estado = no_disponible;
+
         nodo_recuperado->nombre = malloc(strlen(nombres_nodos[i]));
         strcpy(nodo_recuperado->nombre, nombres_nodos[i]);
 
@@ -266,7 +268,7 @@ int recuperar_metadata_un_arhcivo(char *fullpath) {
         nuevobloque->bloquenodo0 = atoi(copia0[1]);
 
         char **copia1 = config_get_array_value(info, key_bloque_copia1);
-        nuevobloque->nodo0 = strdup(copia1[0]);
+        nuevobloque->nodo1 = strdup(copia1[0]);
         nuevobloque->bloquenodo1 = atoi(copia1[1]);
 
         nuevobloque->bytesEnBloque = config_get_int_value(info, key_bloque_bytes);
