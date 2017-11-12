@@ -104,7 +104,7 @@ void conectar_fs()
 	else
 	{
 		escribir_log(yama_log, "Conectado a FS");
-		header *head;
+		header head;
 		header *head2 = malloc(sizeof(head2));
 		head2->codigo = 0;
 		head2->letra = 'Y';
@@ -112,12 +112,12 @@ void conectar_fs()
 
 		void *mensaje = createMessage(head2, "");
 		enviar_message(config->socket_fs, mensaje, yama_log, &control);
-		char *rta = getMessage(config->socket_fs, head, &control);
-		if (head->codigo == 0)
+		char *rta = getMessage(config->socket_fs, &head, &control);
+		if (head.codigo == 0)
 		{
 			escribir_log(yama_log, "YAMA rechazado por FileSystem :(");
 			//que hago?
-		}else if(head->codigo == 2)
+		}else if(head.codigo == 2)
 		{
 			escribir_log(yama_log, "Conectado a File System :D");
 			armar_workers(rta);

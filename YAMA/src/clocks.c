@@ -405,7 +405,6 @@ t_master *find_master(int sockt)
 
 t_worker *find_worker(char *nodo)
 {
-	int l_size = list_size(workers);
 	int i = 0;
 	int encontrado = 0;
 	t_worker * wk;
@@ -603,11 +602,28 @@ char * generar_nombre_red_global(int mast, char* nod)
 
 void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_master *estado_tr)
 {
-	escribir_log(yama_log, "Comenzando a armar reduccion global");
-	t_redGlobal *red_g = malloc(sizeof(t_redGlobal));
+	escribir_log(yama_log, "Comenzando a armar reducción global");
 
 	int i;
 	t_list *lista_auxiliar = list_create();
+
+	for(i=0; i < sz; i++)
+	{
+		t_estado * est2 = list_get(tabla_estado, i);
+		if(est2->master == master_->master
+			&& est2->etapa == REDUCCION_LOCAL && est2->estado == FINALIZADO_OK)
+		{
+			t_redGlobal *red_g = malloc(sizeof(t_redGlobal));
+			red_g->encargado = 0;
+			t_worker *wkk = find_worker(est2->nodo);
+			red_g->nodo = wkk->nodo;
+			red_g->temp_red_local = est2->archivo_temporal;
+			red_g->red_global = strdup("");
+
+			list_add(lista_auxiliar, red_g);
+		}
+	}
+
 	int menor_carga = get_menor_carga(workers);
 
 	bool _menor_carga_(t_worker * wr)
@@ -617,22 +633,14 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 
 	t_worker *wk = list_find(workers, (void *)_menor_carga_);
 
-	for(i=0; i < sz; i++)
+	bool _worker_encargado(t_redGlobal *rg)
 	{
-		t_estado * est2 = list_get(tabla_estado, i);
-		if(est2->master == master_->master
-			&& est2->etapa == REDUCCION_LOCAL && est2->estado == FINALIZADO_OK)
-		{
-			list_add(lista_auxiliar, est2->archivo_temporal);
-		}
+		return (!strcmp(rg->nodo->nodo, wk->nodo->nodo));
 	}
-	red_g->nodo = wk->nodo;
-	red_g->red_global = generar_nombre_red_global(master_->master, estado_tr->nodo);
-	red_g->encargado = 1;
-	//creo que se debería mandar una lista
 
+	t_redGlobal *red_g = list_find(lista_auxiliar, (void *)_worker_encargado);
 	size_t len;
-	char *red_local_ser = serializar_redGlobal(red_g, &len);
+	char *red_global_ser = serializar_lista_redGlobal(lista_auxiliar, &len);
 
 	int control;
 
@@ -641,7 +649,7 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 	head.letra = 'Y';
 	head.sizeData = len;
 
-	message *mensaje = createMessage(&head, (void *)red_local_ser);
+	message *mensaje = createMessage(&head, (void *)red_global_ser);
 	enviar_message(master_->socket_, mensaje, yama_log, &control);
 	t_estado *estt = generar_estado(master_->master,-10,wk->nodo->nodo,NULL,-10,-10);
 	free(estt->archivo_temporal);

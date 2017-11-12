@@ -16,7 +16,7 @@
 #include "manejo_tabla_estados.h"
 
 extern t_list *tabla_estado;
-extern int job_id;
+//extern int job_id;
 
 char *generar_nombre_temporal(int job, char *nodo, int bloque)
 {

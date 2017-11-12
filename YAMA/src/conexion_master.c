@@ -48,12 +48,12 @@ void manejo_conexiones()
 		read_fds = master;
 
 		int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, NULL);
-		escribir_log(yama_log, "Actividad detectad<a en administrador de conexiones");
+		escribir_log(yama_log, "Actividad detectada en administrador de conexiones");
 
 		if (selectResult == -1)
 		{
-			break;
 			escribir_error_log(yama_log, "Error en el administrador de conexiones");
+			break;
 		}
 		else
 		{
@@ -63,7 +63,6 @@ void manejo_conexiones()
 			{
 				if (FD_ISSET(i, &read_fds))
 				{
-					printf("hola entre");
 					//Se detecta alguien nuevo llamando?
 					if (i == config->server_)
 					{
@@ -141,33 +140,6 @@ void manejar_respuesta(int socket_)
 				if(estado_tr2->estado == FINALIZADO_OK)
 				{
 					reduccion_global(socket_, estado_tr2);
-					/*t_master *ms = find_master(socket_);
-					t_estado *est = get_estado(ms->master, estado_tr2->nodo, estado_tr2->bloque);
-					t_worker *wk = find_worker(estado_tr2->nodo);
-					t_redGlobal *red = malloc(sizeof(t_redGlobal));
-					red->encargado = 1;
-					red->temp_red_local = est->archivo_temporal;
-					red->nodo = wk->nodo;
-					red->red_global = generar_nombre_red_global(ms->master, estado_tr2->nodo);
-
-					t_list *listita = list_create();
-
-					list_add(listita, red);
-					size_t len = 0;
-					char *red_ser = serializar_lista_redGlobal(listita, &len);
-
-					header head;
-					head.codigo = 3;
-					head.letra = 'Y';
-					head.sizeData = len;
-
-					t_estado *est33 = generar_estado(ms->master, estado_tr2->bloque, estado_tr2->nodo, 0, 0, 0);
-					est33->archivo_temporal = strdup(red->red_global);
-
-					int cont;
-
-					message *men = createMessage(&head, red_ser);
-					enviar_message(socket_,men,yama_log, &cont);*/
 				}
 				else
 				{
