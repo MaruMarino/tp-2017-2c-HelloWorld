@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <pthread.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -20,24 +21,28 @@ t_configuracion *config;
 t_list *tabla_estado; //formado por t_estado
 t_list *masters; //formado por t_master, o usar diccionario?
 t_list *workers; //formado por t_worker
-int master_id = 0;
-int job_id = 0;
+int master_id = 1;
+int job_id = 1;
+char *path;
 
 void leer_configuracion();
 void liberar_memoria();
 void inicializar_variables();
 void conectar_fs();
 void crear_socket_servidor();
+void reconfiguracion();
 
 
 int main(int argc, char **argv)
 {
 	yama_log = crear_archivo_log("YAMA",true,"/home/utnso/conf/master_log");
 
-	char *path = argv[1];
+	path = argv[1];
 	inicializar_variables();
-	leer_configuracion(path);
+	leer_configuracion();
 	//free(path);
+
+	signal(SIGUSR1, reconfiguracion);
 
 	conectar_fs();
 	crear_socket_servidor();
@@ -72,7 +77,7 @@ void liberar_memoria()
 	list_destroy(workers);
 }
 
-void leer_configuracion(char *path)
+void leer_configuracion()
 {
 	escribir_log(yama_log, "Leyendo configuracion");
 
@@ -129,4 +134,12 @@ void crear_socket_servidor()
 {
 	int control = 0;
 	config->server_ = makeListenSock(config->yama_puerto, yama_log, &control);
+}
+
+void reconfiguracion(int signal_)
+{
+	if (signal_ == SIGUSR1)
+	{
+		leer_configuracion();
+	}
 }

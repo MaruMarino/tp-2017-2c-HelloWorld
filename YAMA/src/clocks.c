@@ -37,6 +37,7 @@ void armar_workers(char *rta)
 		worker->disponibilidad = config->base;
 		worker->clock = false;
 		worker->nodo = nodo;
+		worker->carga_historica = 0;
 
 		list_add(workers, worker);
 	}
@@ -105,8 +106,8 @@ int get_menor_carga(t_list *lista_auxiliar)
 	{
 		t_worker *worker = list_get(lista_auxiliar, i);
 
-		if(worker->carga_actual < menor_carga)
-			menor_carga = worker->carga_actual;
+		if(worker->carga_historica < menor_carga)
+			menor_carga = worker->carga_historica;
 
 		i++;
 		size--;
@@ -117,6 +118,7 @@ int get_menor_carga(t_list *lista_auxiliar)
 
 void posicionar_clock()
 {
+	escribir_log(yama_log, "Comenzando posicionamiento de clock");
 	int mayor_disponibilidad = get_mayor_disponibilidad();
 
 	t_list *lista_auxiliar = list_create();
@@ -141,6 +143,8 @@ void posicionar_clock()
 
 	t_worker *worker_ = list_find(workers, (void *)_menor_carga);
 	worker_->clock = true;
+
+	escribir_log_compuesto(yama_log, "Se posicionó el clock en el Worker asociado al: ", worker_->nodo->nodo);
 
 	list_destroy(lista_auxiliar);
 }
@@ -176,6 +180,7 @@ void sumar_disponibilidad_base()
 
 t_worker *get_worker(t_list *archivo, int n_bloque)
 {
+	escribir_log(yama_log, "Buscando Worker para trabajar");
 	t_worker *worker = NULL;
 	int clock;
 
@@ -218,6 +223,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 		list_add(worker->bloques, bl);
 		worker->clock = false;
 		worker->carga_actual++;
+		worker->carga_historica++;
 
 		if(worker->disponibilidad > 0)
 			worker->disponibilidad--;
@@ -271,6 +277,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 				encontrado = 1;
 				worker2->disponibilidad --;
 				worker2->carga_actual++;
+				worker2->carga_historica++;
 			}
 			else
 			{
@@ -438,7 +445,8 @@ void armar_reduccion_local(int sz, t_master *master_, t_estado *est, t_estado_ma
 	for(i=0; i < sz; i++)
 	{
 		t_estado * est2 = list_get(tabla_estado, i);
-		if(!strcmp(est2->nodo,estado_tr->nodo) && est2->master == master_->master && est2->etapa == ESPERA_REDUCCION_LOCAL)
+		if(!strcmp(est2->nodo,estado_tr->nodo) && est2->master == master_->master
+				&& est2->etapa == TRANSFORMACION && est2->estado == FINALIZADO_OK/*&& est2->etapa == ESPERA_REDUCCION_LOCAL*/)
 		{
 			list_add(lista_auxiliar, est2->archivo_temporal);
 		}
@@ -465,7 +473,6 @@ void armar_reduccion_local(int sz, t_master *master_, t_estado *est, t_estado_ma
 	free(red_l);
 }
 
-
 void enviar_reduccion_local(t_estado_master *estado_tr, int socket_)
 {
 	t_master *master_ = find_master(socket_);
@@ -473,13 +480,14 @@ void enviar_reduccion_local(t_estado_master *estado_tr, int socket_)
 	int i;
 	int sz = list_size(tabla_estado);
 	est->cant_bloques_nodo--;
-	est->etapa = ESPERA_REDUCCION_LOCAL;
-
+	//est->etapa = ESPERA_REDUCCION_LOCAL;
+	est->estado = FINALIZADO_OK;
 
 	for(i=0; i < sz; i++)
 	{
 		t_estado * est2 = list_get(tabla_estado, i);
-		if(!strcmp(est2->nodo,estado_tr->nodo) && est2->master == master_->master && est2->estado == TRANSFORMACION)
+		if(!strcmp(est2->nodo,estado_tr->nodo) && est2->master == master_->master
+				&& est2->etapa == TRANSFORMACION && est2->estado == EN_PROCESO)
 		{
 			est2->cant_bloques_nodo = est->cant_bloques_nodo;
 		}
@@ -530,7 +538,7 @@ void replanificar(t_estado_master *estado_tr, int socket_)
 	est->cant_bloques_nodo--;
 	est->estado = ERROR;
 
-	if(est->cant_bloques_nodo == 0 && est->etapa == ESPERA_REDUCCION_LOCAL && est->estado != ERROR)
+	if(est->cant_bloques_nodo == 0 && est->etapa == TRANSFORMACION && est->estado != ERROR)
 	{
 		armar_reduccion_local(sz, master_, est, estado_tr);
 	}
@@ -541,17 +549,104 @@ void replanificar(t_estado_master *estado_tr, int socket_)
 	}
 	else
 	{
-		header head;
-		head.codigo = 6;
-		head.letra = 'Y';
-		head.sizeData = 1;
-		int control;
-
-
-		message *mensaje = createMessage(&head, "");
-		enviar_message(socket_, mensaje, yama_log, &control);
+		escribir_error_log(yama_log, "No hay copia disponible para replanificar, lo 100to");
+		matar_master(socket_);
 	}
 
 	est->copia_disponible = false;
 
+}
+
+void reduccion_global(int socket_, t_estado_master *estado_tr)
+{
+	t_master *master_ = find_master(socket_);
+	t_estado *est = get_estado(master_->master, estado_tr->nodo, estado_tr->bloque);
+	int i;
+	bool reducir;
+	int sz = list_size(tabla_estado);
+	est->estado = FINALIZADO_OK;
+
+
+	for(i=0; i < sz; i++)
+	{
+		t_estado * est2 = list_get(tabla_estado, i);
+		bool transformacion_finalizada = (est2->etapa == TRANSFORMACION && est2->estado != EN_PROCESO);
+		bool reduccion_finalizada = (est2->etapa = REDUCCION_LOCAL && est2->estado == FINALIZADO_OK);
+		if((est2->master == master_->master && (transformacion_finalizada || reduccion_finalizada))
+			|| est2->master != master_->master)
+		reducir = true;
+		else
+		{
+			reducir = false;
+			break;
+		}
+	}
+
+	if(reducir)
+		armar_reduccion_global(sz, master_, est, estado_tr);
+	else
+		escribir_log(yama_log, "Todavía no se puede comenzar con la Reducción Global");
+
+
+}
+
+char * generar_nombre_red_global(int mast, char* nod)
+{
+	char *nombre = strdup("/tmp/rg_m");
+	char *masterrr = string_itoa(mast);
+
+	string_append(&nombre, masterrr);
+	string_append(&nombre, nod);
+	free(masterrr);
+	return nombre;
+}
+
+void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_master *estado_tr)
+{
+	escribir_log(yama_log, "Comenzando a armar reduccion global");
+	t_redGlobal *red_g = malloc(sizeof(t_redGlobal));
+
+	int i;
+	t_list *lista_auxiliar = list_create();
+	int menor_carga = get_menor_carga(workers);
+
+	bool _menor_carga_(t_worker * wr)
+	{
+		return wr->carga_historica == menor_carga;
+	}
+
+	t_worker *wk = list_find(workers, (void *)_menor_carga_);
+
+	for(i=0; i < sz; i++)
+	{
+		t_estado * est2 = list_get(tabla_estado, i);
+		if(est2->master == master_->master
+			&& est2->etapa == REDUCCION_LOCAL && est2->estado == FINALIZADO_OK)
+		{
+			list_add(lista_auxiliar, est2->archivo_temporal);
+		}
+	}
+	red_g->nodo = wk->nodo;
+	red_g->red_global = generar_nombre_red_global(master_->master, estado_tr->nodo);
+	red_g->encargado = 1;
+	//creo que se debería mandar una lista
+
+	size_t len;
+	char *red_local_ser = serializar_redGlobal(red_g, &len);
+
+	int control;
+
+	header head;
+	head.codigo = 3;
+	head.letra = 'Y';
+	head.sizeData = len;
+
+	message *mensaje = createMessage(&head, (void *)red_local_ser);
+	enviar_message(master_->socket_, mensaje, yama_log, &control);
+	t_estado *estt = generar_estado(master_->master,-10,wk->nodo->nodo,NULL,-10,-10);
+	free(estt->archivo_temporal);
+	estt->archivo_temporal = red_g->red_global;
+	//cambiar_estado(master_->master,estado_tr->nodo, estado_tr->bloque, REDUCCION_GLOBAL, red_g->red_global);
+	list_destroy(lista_auxiliar);
+	free(red_g);
 }

@@ -74,6 +74,7 @@ typedef struct
 	t_nodo *nodo;
 	int disponibilidad;
 	int carga_actual;
+	int carga_historica;
 	bool clock;
 	t_list *bloques;
 }t_worker;
