@@ -87,19 +87,19 @@ t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bl
 	return estado;
 }
 
-void cambiar_estado(int master, char *nodo, int bloque, e_estado nuevo_estado, char *nom)
+/*void cambiar_estado(int master, char *nodo, int bloque, e_estado nuevo_estado, char *nom)
 {
 	t_estado *estado = get_estado(master, nodo, bloque);
 	estado->estado = nuevo_estado;
 	estado->archivo_temporal = nom;
-}
+}*/
 
-t_estado *get_estado(int master, char *nodo, int bloque)
+t_estado *get_estado(int master, char *nodo, int bloque, e_etapa et)
 {
 	bool find_estado(t_estado *estado)
 	{
 		return (estado->master == master && estado->bloque == bloque
-				&& !(strcmp(estado->nodo, nodo)));
+				&& (!strcmp(estado->nodo, nodo)) && estado->etapa == et);
 	}
 
 	return (t_estado *)list_find(tabla_estado, (void *)find_estado);

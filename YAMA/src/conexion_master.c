@@ -106,7 +106,7 @@ void manejar_respuesta(int socket_)
 	{
 		t_master *ms = find_master(socket_);
 		if(ms != NULL)
-			ms->socket_ = -1;
+			ms->socket_ += 1000;
 
 		FD_CLR(socket_, &master);
 		close(socket_);
@@ -147,19 +147,34 @@ void manejar_respuesta(int socket_)
 					matar_master(socket_);
 				}
 				break;
-			case 7:;
+			case 8: //Respuesta almacenamiento final
+				escribir_log(yama_log, "Se recibió el estado de almacenamiento final");
+				t_estado_master *estado_tr8 = deserializar_estado_master(mensaje);
+				t_master * ms2 = find_master(socket_);
+				t_estado *est55 = get_estado(ms2->master, estado_tr8->nodo, -10, ALMACENAMIENTO_FINAL);
+				if(estado_tr8->estado == FINALIZADO_OK)
+					est55->estado = FINALIZADO_OK;
+				else
+					est55->estado = ERROR;
+
+				matar_master(socket_);
+
 				break;
-			case 8: //Almacenamiento Final
+			case 7: //Almacenamiento Final
 				escribir_log(yama_log, "Se recibió el estado de una Reducción Global");
 				t_estado_master *estado_tr3 = deserializar_estado_master(mensaje);
 				if(estado_tr3->estado == FINALIZADO_OK)
 				{
 					t_master * ms = find_master(socket_);
-					t_estado *est = get_estado(ms->master, estado_tr3->nodo, -10);
+					t_estado *est = get_estado(ms->master, estado_tr3->nodo, -10, REDUCCION_GLOBAL);
 					t_worker *wk = find_worker(estado_tr3->nodo);
 					t_almacenado *alma = malloc(sizeof(t_almacenado));
 					alma->nodo = wk->nodo;
 					alma->red_global = est->archivo_temporal;
+
+					t_estado *esttt = generar_estado(ms->master,-10,alma->nodo->nodo,NULL,-10,-10);
+					esttt->archivo_temporal = est->archivo_temporal;
+					esttt->etapa = ALMACENAMIENTO_FINAL;
 
 					size_t len;
 					int control;
@@ -173,8 +188,7 @@ void manejar_respuesta(int socket_)
 					message *mens = createMessage(&head, alm_ser);
 					enviar_message(socket_, mens, yama_log, &control);
 
-					free(mensaje);
-
+					free(mens);
 				}
 				else
 				{

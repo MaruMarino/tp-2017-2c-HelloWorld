@@ -467,7 +467,9 @@ void armar_reduccion_local(int sz, t_master *master_, t_estado *est, t_estado_ma
 
 	message *mensaje = createMessage(&head, (void *)red_local_ser);
 	enviar_message(master_->socket_, mensaje, yama_log, &control);
-	cambiar_estado(master_->master,estado_tr->nodo, estado_tr->bloque,REDUCCION_LOCAL, red_l->temp_red_local);
+	t_estado *es_rl = generar_estado(master_->master, -10, estado_tr->nodo, NULL, -10, -10);
+	es_rl->archivo_temporal = red_l->temp_red_local;
+	es_rl->etapa = REDUCCION_LOCAL;
 	list_destroy(lista_auxiliar);
 	free(red_l);
 }
@@ -475,7 +477,7 @@ void armar_reduccion_local(int sz, t_master *master_, t_estado *est, t_estado_ma
 void enviar_reduccion_local(t_estado_master *estado_tr, int socket_)
 {
 	t_master *master_ = find_master(socket_);
-	t_estado *est = get_estado(master_->master, estado_tr->nodo, estado_tr->bloque);
+	t_estado *est = get_estado(master_->master, estado_tr->nodo, estado_tr->bloque, TRANSFORMACION);
 	int i;
 	int sz = list_size(tabla_estado);
 	est->cant_bloques_nodo--;
@@ -531,8 +533,9 @@ void armar_transformacion_replanificada(t_estado *estado, int socket_)
 
 void replanificar(t_estado_master *estado_tr, int socket_)
 {
+	escribir_log(yama_log, "Chequeando replanificación");
 	t_master *master_ = find_master(socket_);
-	t_estado *est = get_estado(master_->master, estado_tr->nodo, estado_tr->bloque);
+	t_estado *est = get_estado(master_->master, estado_tr->nodo, estado_tr->bloque, TRANSFORMACION);
 	int sz = list_size(tabla_estado);
 	est->cant_bloques_nodo--;
 	est->estado = ERROR;
@@ -559,7 +562,7 @@ void replanificar(t_estado_master *estado_tr, int socket_)
 void reduccion_global(int socket_, t_estado_master *estado_tr)
 {
 	t_master *master_ = find_master(socket_);
-	t_estado *est = get_estado(master_->master, estado_tr->nodo, estado_tr->bloque);
+	t_estado *est = get_estado(master_->master, estado_tr->nodo, -10, REDUCCION_LOCAL);
 	int i;
 	bool reducir;
 	int sz = list_size(tabla_estado);
@@ -570,7 +573,7 @@ void reduccion_global(int socket_, t_estado_master *estado_tr)
 	{
 		t_estado * est2 = list_get(tabla_estado, i);
 		bool transformacion_finalizada = (est2->etapa == TRANSFORMACION && est2->estado != EN_PROCESO);
-		bool reduccion_finalizada = (est2->etapa = REDUCCION_LOCAL && est2->estado == FINALIZADO_OK);
+		bool reduccion_finalizada = (est2->etapa == REDUCCION_LOCAL && est2->estado == FINALIZADO_OK);
 		if((est2->master == master_->master && (transformacion_finalizada || reduccion_finalizada))
 			|| est2->master != master_->master)
 		reducir = true;
@@ -639,6 +642,9 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 	}
 
 	t_redGlobal *red_g = list_find(lista_auxiliar, (void *)_worker_encargado);
+	red_g->encargado = 1;
+	free(red_g->red_global);
+	red_g->red_global = generar_nombre_red_global(master_->master, red_g->nodo->nodo);
 	size_t len;
 	char *red_global_ser = serializar_lista_redGlobal(lista_auxiliar, &len);
 
@@ -654,6 +660,7 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 	t_estado *estt = generar_estado(master_->master,-10,wk->nodo->nodo,NULL,-10,-10);
 	free(estt->archivo_temporal);
 	estt->archivo_temporal = red_g->red_global;
+	estt->etapa = REDUCCION_GLOBAL;
 	//cambiar_estado(master_->master,estado_tr->nodo, estado_tr->bloque, REDUCCION_GLOBAL, red_g->red_global);
 	list_destroy(lista_auxiliar);
 	free(red_g);
