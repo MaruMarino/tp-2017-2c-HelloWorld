@@ -19,9 +19,13 @@ int exitProcess(NODO *nameNodo);
 
 void checkStateNodos();
 
-void *contenido_archivo(char *pathlocal,int *fsize);
+estado checkStateFileSystem();
+
+void *contenido_archivo(char *pathlocal, int *fsize);
 
 int dividir_enviar_archivo(char *contenido, int fsize, char *tipo); // tipo B-binrio T-texto
+
+void disconnectedNodo(int socket);
 /*todo Funciones para realizar Leer Archivo*/
 
 #endif /* FS_INTERFAZ_NODOS_H_ */

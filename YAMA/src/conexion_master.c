@@ -48,12 +48,12 @@ void manejo_conexiones()
 		read_fds = master;
 
 		int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, NULL);
-		escribir_log(yama_log, "Actividad detectad<a en administrador de conexiones");
+		escribir_log(yama_log, "Actividad detectada en administrador de conexiones");
 
 		if (selectResult == -1)
 		{
-			break;
 			escribir_error_log(yama_log, "Error en el administrador de conexiones");
+			break;
 		}
 		else
 		{
@@ -63,7 +63,6 @@ void manejo_conexiones()
 			{
 				if (FD_ISSET(i, &read_fds))
 				{
-					printf("hola entre");
 					//Se detecta alguien nuevo llamando?
 					if (i == config->server_)
 					{
@@ -107,7 +106,7 @@ void manejar_respuesta(int socket_)
 	{
 		t_master *ms = find_master(socket_);
 		if(ms != NULL)
-			ms->socket_ = -1;
+			ms->socket_ += 1000;
 
 		FD_CLR(socket_, &master);
 		close(socket_);
@@ -128,49 +127,75 @@ void manejar_respuesta(int socket_)
 			case 5:; //reduccion local
 				escribir_log(yama_log,"Se recibió el estado de una transformacion");
 				t_estado_master *estado_tr = deserializar_estado_master(mensaje);
-				if(estado_tr->estado == 2)
+				if(estado_tr->estado == FINALIZADO_OK)
 				{
 					enviar_reduccion_local(estado_tr, socket_);
 				}else
 					replanificar(estado_tr, socket_);
 				break;
 			case 6:; //Reduccion global
+				escribir_log(yama_log, "Se recibió estado de una reducción local");
 				escribir_log(yama_log, "Chequear para empezar reduccion global");
 				t_estado_master *estado_tr2 = deserializar_estado_master(mensaje);
-				if(estado_tr2->estado == 2)
+				if(estado_tr2->estado == FINALIZADO_OK)
 				{
-						t_master *ms = find_master(socket_);
-						t_estado *est = get_estado(ms->master, estado_tr2->nodo, estado_tr2->bloque);
-						t_worker *wk = find_worker(estado_tr2->nodo);
-						t_redGlobal *red = malloc(sizeof(t_redGlobal));
-						red->encargado = 1;
-						red->temp_red_local = est->archivo_temporal;
-						red->nodo = wk->nodo;
-						red->red_global = generar_nombre_red_global(ms->master, estado_tr2->nodo);
-
-						t_list *listita = list_create();
-
-						list_add(listita, red);
-						size_t len = 0;
-						char *red_ser = serializar_lista_redGlobal(listita, &len);
-
-						header head;
-						head.codigo = 3;
-						head.letra = 'Y';
-						head.sizeData = len;
-
-						t_estado *est33 = generar_estado(ms->master, estado_tr2->bloque, estado_tr2->nodo, 0, 0, 0);
-						est33->archivo_temporal = strdup(red->red_global);
-
-						int cont;
-
-						message *men = createMessage(&head, red_ser);
-						enviar_message(socket_,men,yama_log, &cont);
+					reduccion_global(socket_, estado_tr2);
+				}
+				else
+				{
+					escribir_error_log(yama_log, "Error en la reducción local, no se puede replanificar :(");
+					matar_master(socket_);
 				}
 				break;
-			case 7:;
+			case 8: //Respuesta almacenamiento final
+				escribir_log(yama_log, "Se recibió el estado de almacenamiento final");
+				t_estado_master *estado_tr8 = deserializar_estado_master(mensaje);
+				t_master * ms2 = find_master(socket_);
+				t_estado *est55 = get_estado(ms2->master, estado_tr8->nodo, -10, ALMACENAMIENTO_FINAL);
+				if(estado_tr8->estado == FINALIZADO_OK)
+					est55->estado = FINALIZADO_OK;
+				else
+					est55->estado = ERROR;
+
+				matar_master(socket_);
+
 				break;
-			case 8:;
+			case 7: //Almacenamiento Final
+				escribir_log(yama_log, "Se recibió el estado de una Reducción Global");
+				t_estado_master *estado_tr3 = deserializar_estado_master(mensaje);
+				if(estado_tr3->estado == FINALIZADO_OK)
+				{
+					t_master * ms = find_master(socket_);
+					t_estado *est = get_estado(ms->master, estado_tr3->nodo, -10, REDUCCION_GLOBAL);
+					t_worker *wk = find_worker(estado_tr3->nodo);
+					t_almacenado *alma = malloc(sizeof(t_almacenado));
+					alma->nodo = wk->nodo;
+					alma->red_global = est->archivo_temporal;
+
+					t_estado *esttt = generar_estado(ms->master,-10,alma->nodo->nodo,NULL,-10,-10);
+					esttt->archivo_temporal = est->archivo_temporal;
+					esttt->etapa = ALMACENAMIENTO_FINAL;
+
+					size_t len;
+					int control;
+					char *alm_ser = serializar_almacenado(alma, &len);
+
+					header head;
+					head.codigo = 4;
+					head.letra = 'Y';
+					head.sizeData = len;
+
+					message *mens = createMessage(&head, alm_ser);
+					enviar_message(socket_, mens, yama_log, &control);
+
+					free(mens);
+				}
+				else
+				{
+					escribir_error_log(yama_log, "Error en la reducción global, bai");
+					matar_master(socket_);
+				}
+				;
 				break;
 			default:
 				printf("default");
@@ -227,13 +252,15 @@ void enviar_peticion_transformacion(int socket_)
 	free(head);
 }
 
-char *generar_nombre_red_global(int mast, char* nod)
+void matar_master(int socket_)
 {
-	char *nombre = strdup("/tmp/rg_m");
-	char *masterrr = string_itoa(mast);
+	header head;
+	head.codigo = 6;
+	head.letra = 'Y';
+	head.sizeData = 1;
+	int control;
 
-	string_append(&nombre, masterrr);
-	string_append(&nombre, nod);
-	free(masterrr);
-	return nombre;
+
+	message *mensaje = createMessage(&head, "");
+	enviar_message(socket_, mensaje, yama_log, &control);
 }

@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <funcionesCompartidas/funcionesNet.h>
+#include <funcionesCompartidas/serializacion.h>
 #include <funcionesCompartidas/log.h>
 #include <funcionesCompartidas/mensaje.h>
 #include <commons/config.h>
@@ -66,7 +67,7 @@ void solicitar_informacion_archivo(char *info, int _socket)
 			i++;
 		}
 
-		list_iterate(archivo_bloques, _convertir_bloques);
+		list_iterate(archivo_bloques,(void *)_convertir_bloques);
 		ejecutar_clock(bloques_auxiliar,i,_socket);
 	}
 

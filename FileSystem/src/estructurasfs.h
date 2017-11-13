@@ -32,7 +32,7 @@ typedef int Function ();
 
 typedef struct {
 	char *name;
-	Function *func;
+	int (*func)(char *);
 	char *doc;
 	char *sintax;
 } comando;
@@ -44,6 +44,7 @@ typedef struct{
 	int soket;
 	int espacio_total;
 	int espacio_libre;
+	estado estado;
 	t_bitarray *bitmapNodo;
 }NODO;
 
