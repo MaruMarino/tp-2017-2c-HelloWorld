@@ -45,7 +45,7 @@ int main(int argc, char *argv[]){
 	}
 	puts("Se crea archivo de log en /home/utnso/worker_log");
 	logw = crear_archivo_log("Worker", true, "/home/utnso/worker_log");
-
+	logw->detail = LOG_LEVEL_TRACE;
 	conf = cargarConfig(argv[1]);
 	mostrarConfig(conf);
 

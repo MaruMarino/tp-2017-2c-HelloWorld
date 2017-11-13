@@ -224,8 +224,8 @@ int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname) {
 
 	return 0;
 }
-
-int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns){
+//todo: que pasho
+int conectarYCargar(int nquant, t_list *nodos, int ***fds, char ***lns){
 	log_trace(logw, "Se conecta a cada nodo y cargan las primeras lineas a aparear");
 
 	int i, ctl;
@@ -238,33 +238,34 @@ int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns){
 	for (i = 0; i < nquant; ++i){
 		n = list_get(nodos, i);
 
-		if ((*fds[i] = establecerConexion(n->ip, n->port, logw, &ctl)) == -1){
+		*fds[i] = malloc(sizeof ***fds);
+		if ((**fds[i] = establecerConexion(n->ip, n->port, logw, &ctl)) == -1){
 			log_error(logw, "No se pudo conectar con Nodo en %s:%s", n->ip, n->port);
-			cerrarSockets(i - 1, *fds);
+			cerrarSockets(i - 1, **fds);
 			return -1;
 		}
 
-		if (realizarHandshake(*fds[i], 'W') < 0){
+		if (realizarHandshake(**fds[i], 'W') < 0){
 			log_error(logw, "No se pudo conectar con Nodo en %s:%s", n->ip, n->port);
-			cerrarSockets(i, *fds);
+			cerrarSockets(i, **fds);
 			return -1;
 		}
 
 		// Enviar el filename que debe abrir el Worker Servidor
 		msj = serializar_FName(n->fname, &head.sizeData);
 		req = createMessage(&head, msj);
-		if (enviar_message(*fds[i], req, logw, &ctl) < 0){
+		if (enviar_message(**fds[i], req, logw, &ctl) < 0){
 			log_error(logw, "Fallo envio de mensaje a Nodo en %s:%s", n->ip, n->port);
-			cerrarSockets(i, *fds);
+			cerrarSockets(i, **fds);
 			liberador(2, msj, req);
 			return -1;
 		}
 		liberador(2, msj, req);
 
-		msj = getMessage(*fds[i], &head, &ctl);
+		msj = getMessage(**fds[i], &head, &ctl);
 		if (ctl == -1 || ctl == 0){
 			log_error(logw, "Fallo obtencion mensaje del Nodo en %s:%s", n->ip, n->port);
-			cerrarSockets(i, *fds);
+			cerrarSockets(i, **fds);
 			liberarBuffers(i, *lns);
 			free(msj);
 			return -1;
@@ -283,7 +284,7 @@ int apareoGlobal(t_list *nodos, char *fname){
 
 	FILE *fout;
 	char **lines, *msj;
-	int i, ctl, min, nquant, remaining, *fds;
+	int i, ctl, min, nquant, remaining, **fds;
 	remaining = nquant = list_size(nodos);
 	header head = {.letra = 'W', .codigo = FILE_REQ, .sizeData = 0};
 	message *req = createMessage(&head, NULL);
@@ -294,17 +295,63 @@ int apareoGlobal(t_list *nodos, char *fname){
 	if ((fout = fopen(fname, "w")) == NULL){
 		perror("Fallo fopen()");
 		log_error(logw, "No se pudo abrir el archivo de output %s", fname);
-		liberador(2, lines, fds);
+		//liberador(2, lines, fds);
 		return -1;
 	}
 
 	// Preparamos las primeras lineas a comparar
 	if (conectarYCargar(nquant, nodos, &fds, &lines) == -1){
 		log_error(logw, "Fallo conexion y carga de textos a aparear");
-		liberador(2, lines, fds);
+		//liberador(2, lines, fds);
 		return -1;
 	}
-
+//	log_trace(logw, "Se conecta a cada nodo y cargan las primeras lineas a aparear");
+//
+//	message *req2;
+//	header head2 = {.letra = 'W', .codigo = FILE_REQ};
+//	t_info_nodo *n;
+//
+//	// Formalizar conexion con cada Nodo y crear su FILE correspondiente
+//	for (i = 0; i < nquant; ++i){
+//		n = list_get(nodos, i);
+//
+//		if ((*fds[i] = establecerConexion(n->ip, n->port, logw, &ctl)) == -1){
+//			log_error(logw, "No se pudo conectar con Nodo en %s:%s", n->ip, n->port);
+//			cerrarSockets(i - 1, *fds);
+//			return -1;
+//		}
+//
+//		if (realizarHandshake(*fds[i], 'W') < 0){
+//			log_error(logw, "No se pudo conectar con Nodo en %s:%s", n->ip, n->port);
+//			cerrarSockets(i, *fds);
+//			return -1;
+//		}
+//
+//		// Enviar el filename que debe abrir el Worker Servidor
+//		msj = serializar_FName(n->fname, &head2.sizeData);
+//		req2 = createMessage(&head2, msj);
+//		if (enviar_message(*fds[i], req2, logw, &ctl) < 0){
+//			log_error(logw, "Fallo envio de mensaje a Nodo en %s:%s", n->ip, n->port);
+//			cerrarSockets(i, *fds);
+//			liberador(3, msj, req2->buffer, req2);
+//			return -1;
+//		}
+//		liberador(3, msj, req2->buffer, req2);
+//
+//		msj = getMessage(*fds[i], &head2, &ctl);
+//		if (ctl == -1 || ctl == 0){
+//			log_error(logw, "Fallo obtencion mensaje del Nodo en %s:%s", n->ip, n->port);
+//			cerrarSockets(i, *fds);
+//			liberarBuffers(i, lines);
+//			free(msj);
+//			return -1;
+//		}
+//
+//		lines[i] = deserializar_stream(msj, &head2.sizeData);
+//		free(msj);
+//	}
+//
+//// HSDHASHDSHADHSADHSAHDSHADH
 	while (remaining){
 
 		// Obtenemos posicion del menor string
@@ -323,44 +370,44 @@ int apareoGlobal(t_list *nodos, char *fname){
 		if (fputs(lines[min], fout) < 0){
 			log_error(logw, "Fallo escribir linea %s en %s", lines[min], fout);
 			liberarBuffers(nquant, lines);
-			cerrarSockets(nquant, fds);
-			liberador(2, lines, fds);
+			cerrarSockets(nquant, *fds);
+			//liberador(2, lines, fds);
 			fclose(fout);
 			return -1;
 		}
 
 		// Pedimos la proxima linea al Nodo ganador
-		if (enviar_message(fds[min], req, logw, &ctl) == -1){
-			log_error(logw, "Fallo pedido siguiente linea a Nodo en %d", fds[min]);
+		if (enviar_message(*fds[min], req, logw, &ctl) == -1){
+			log_error(logw, "Fallo pedido siguiente linea a Nodo en %d", *fds[min]);
 			liberarBuffers(nquant, lines);
-			cerrarSockets(nquant, fds);
-			liberador(2, lines, fds);
+			cerrarSockets(nquant, *fds);
+			//liberador(2, lines, fds);
 			fclose(fout);
 			return -1;
 		}
 
 		// Obtenemos la proxima linea del Nodo ganador
-		msj = getMessage(fds[min], &head, &ctl);
+		msj = getMessage(*fds[min], &head, &ctl);
 		if (ctl == -1){
-			log_error(logw, "Fallo obtencion mensaje de Nodo en %d", fds[min]);
+			log_error(logw, "Fallo obtencion mensaje de Nodo en %d", *fds[min]);
 			liberarBuffers(nquant, lines);
-			cerrarSockets(nquant, fds);
-			liberador(2, lines, fds);
+			cerrarSockets(nquant, *fds);
+			//liberador(2, lines, fds);
 			fclose(fout);
 			return -1;
 
 		} else if (head.codigo == APAR_ERR || head.codigo == APAR_INV){
-			log_error(logw, "Nodo en %d fallo al leer su linea", fds[min]);
+			log_error(logw, "Nodo en %d fallo al leer su linea", *fds[min]);
 			liberarBuffers(nquant, lines);
-			cerrarSockets(nquant, fds);
-			liberador(2, lines, fds);
+			cerrarSockets(nquant, *fds);
+			//liberador(2, lines, fds);
 			fclose(fout);
 			return -1;
 
 		} else if (head.codigo == APAR_EOF){
-			log_trace(logw, "Se recibio EOF para Nodo en %d", fds[min]);
-			close(fds[min]);
-			fds[min] = 0;
+			log_trace(logw, "Se recibio EOF para Nodo en %d", *fds[min]);
+			close(*fds[min]);
+			*fds[min] = 0;
 			lines[min] = NULL;
 			remaining--;
 			continue;
@@ -517,6 +564,7 @@ static void cerrarSockets(int nfds, int *fds) {
 }
 
 static void liberarBuffers(int n, char **buff) {
+	return;
 	for (; n > 0; n--)
 		free(buff[n]);
 }
