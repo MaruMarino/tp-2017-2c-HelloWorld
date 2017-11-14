@@ -59,7 +59,7 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname);
  * Estos punteros son los parametros de retorno que interesan.
  * Ademas retorna -1 si ocurre algun fallo; retorna 0 en salida exitosa.
  */
-int conectarYCargar(int nquant, t_list *nodos, int ***fds, char ***lns);
+int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns);
 
 /* A partir de un path genera un t_file* con los datos pertinentes */
 t_file *cargarFile(char *fname);

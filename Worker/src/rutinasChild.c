@@ -143,7 +143,6 @@ void subrutinaEjecutor(int sock_m) {
 		}
 
 		log_trace(logw, "CHILD [%d]: Finaliza Almacenamiento Final", wp);
-		cleanWorkspaceFiles(1, fname);
 		liberador(2, msj, fname);
 		break;
 	}
