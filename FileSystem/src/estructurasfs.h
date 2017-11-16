@@ -66,6 +66,7 @@ typedef struct{
  */
 typedef struct{
 
+	char *nombre; // nombre del archivo
 	int tamanio; // tamaño total del archivo
 	int index_padre; // indice del directorio padre
 	estado estado; // disponible - no disponble

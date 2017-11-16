@@ -50,7 +50,7 @@ static char *nombres_archivos(char *);
 //static int indice_padre_archivo(char *);
 
 
-// Funciones de recuperacion de estructuras administrativas de un estado anterior //
+//todo: Funciones de recuperacion de estructuras administrativas de un estado anterior //
 
 int recuperar_estructuras_administrativas(void) {
 
@@ -249,7 +249,9 @@ int recuperar_metadata_un_arhcivo(char *fullpath) {
 
     archi->tamanio = config_get_int_value(info, "TAMANIO");
     archi->tipo = strdup(config_get_string_value(info, "TIPO"));
-    //archi->index_padre = todo:obtener indice del padre
+    char **pathnombre = sacar_archivo(fullpath);
+    archi->index_padre = existe_ruta_directorios(pathnombre[0]);
+    archi->nombre = strdup(pathnombre[1]);
     archi->cantbloques = ((config_keys_amount(info) - 2) / 3);
     archi->estado = no_disponible;
 
@@ -284,28 +286,33 @@ int recuperar_metadata_un_arhcivo(char *fullpath) {
         i++;
     }
 
+    liberar_char_array(pathnombre);
     list_add(archivos, archi);
     config_destroy(info);
     return 1;
 }
-// Funciones de creacion de estructuras administrativas en un inicio limpio //
+//todo: Funciones de creacion de estructuras administrativas en un inicio limpio //
 
 int iniciar_arbol_directorios(void) {
 
-    int i;
-    for (i = 0; i < 100; i++) {
-        directorios[i].index = i;
-        memset(directorios[i].nombre, 0, 255);
-        directorios[i].padre = -1;
-    }
-    char *path_armado = completar_path_metadata("directorios.dat");
+	int i;
+	for (i = 0; i < 100; i++) {
+		directorios[i].index = i;
+		memset(directorios[i].nombre, 0, 255);
+		directorios[i].padre = -9; // Flag de Entrada Directorio Vacía
+	}
+	//Directorio Padre, seria la "/"
+	memcpy(directorios[0].nombre,configuracion->dir_estructuras, strlen(configuracion->dir_estructuras));
+	directorios[0].padre = -1; // Dir Root no tiene padre
 
-    FILE *filedir = fopen(path_armado, "w+");
-    fwrite(directorios, sizeof(t_directory), 100, filedir);
-    fclose(filedir);
+	char *path_armado = completar_path_metadata("directorios.dat");
 
-    free(path_armado);
-    return 1;
+	FILE *filedir = fopen(path_armado, "w");
+	fwrite(directorios, sizeof(t_directory), 100, filedir);
+	fclose(filedir);
+
+	free(path_armado);
+	return 1;
 
 }
 
@@ -338,6 +345,7 @@ int iniciar_nodos(void) {
 
         free(total);
         free(libre);
+        // todo: pensar cómo no leakear esta memoria
         //free(espacio_total);
         //free(espacio_libre);
     }
@@ -399,6 +407,7 @@ int iniciar_bitmaps_nodos(void) {
 
 void crear_subdirectorios(void) {
 
+
     char *path_armado = completar_path_metadata("archivos");
     mkdir(path_armado, 0775);
     free(path_armado);
@@ -408,9 +417,61 @@ void crear_subdirectorios(void) {
     free(path_armado);
 
 }
-// Funciones para agregar/sacar/modificar elementos de las diferentes estructuras ya creadas //
+//todo: Funciones para manipular/operar/etc elementos de las diferentes estructuras ya creadas
 
-// Funciones Auxiliares
+int existe_dir_en_padre(char *nombre,int padre){
+	int i;
+	for(i=0;i<100;i++){
+		if( !strcmp(directorios[i].nombre,nombre) && directorios[i].padre == padre){
+			return i;
+		}
+	}
+	return -9;
+}
+int existe_ruta_directorios(char *path){
+
+	int padre= 0;
+	if(!string_contains(path,"/")){
+		padre = existe_dir_en_padre(path,padre);
+	}else{
+		char **dirs = string_split(path,"/");
+		int i =0;
+		while(dirs[i] != NULL ){
+			padre = existe_dir_en_padre(dirs[i],padre);
+			i++;
+		}
+		liberar_char_array(dirs);
+	}
+	return padre;
+}
+bool existe_archivo(char *nombre,int padre){
+
+	bool res;
+	int _buscador(t_archivo *self){
+
+		return (!strcmp(self->nombre,nombre) && self->index_padre == padre);
+	}
+	t_archivo *arch = list_find(archivos,(void *)_buscador);
+
+	res = (arch == NULL)? false : true;
+	return res;
+}
+
+int agregar_directorio(char *nombre,int padre){
+
+	int i;
+	int indice = -1;
+	for(i=0;i<100;i++){
+		if(directorios[i].padre == -9){ indice = i; break;}
+	}
+	if (indice!= -1){
+		memcpy(directorios[indice].nombre,nombre,strlen(nombre));
+		directorios[indice].padre = padre;
+	}
+	return indice;
+}
+
+//todo: Funciones Auxiliares
 
 static char *completar_path_metadata(char *archivo) {
 
@@ -546,4 +607,41 @@ void liberar_char_array(char **miarray) {
         i++;
     }
     free(miarray);
+}
+
+char **sacar_archivo(char *fullpath1){
+
+	char **path = malloc(sizeof(char *) *3);
+	path[2] = NULL;
+	int i=0,ii = 0,j=0;
+	char *fullpath = strdup(fullpath1);
+
+
+	if(!string_contains(fullpath,"/")){
+		path[1] = strdup(fullpath);
+		path[0] = strdup("/");
+		free(fullpath);
+		return path;
+	}
+
+	path[0]= strdup("");
+	path[1]= strdup("");
+	char **split = string_split(fullpath, "/");
+
+	while(split[ii] != NULL) ii++;
+	i= ii-2;
+
+	string_append(&path[0],"/");
+	while(j <= i){
+		string_append(&path[0],split[j]);
+		string_append(&path[0],"/");
+		j++;
+	}
+
+	string_append(&path[1],split[ii-1]);
+
+	liberar_char_array(split);
+	free(fullpath);
+
+	return path;
 }

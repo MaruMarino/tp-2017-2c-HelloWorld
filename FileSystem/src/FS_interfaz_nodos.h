@@ -13,7 +13,7 @@
 
 /* Funciones para realizar Almacenar Archivo*/
 
-int setBlock(void *buffer, size_t size_buffer);
+int setBlock(void *, size_t size_buffer,t_list *ba);
 
 int exitProcess(NODO *nameNodo);
 
@@ -21,9 +21,12 @@ void checkStateNodos();
 
 estado checkStateFileSystem();
 
-void *contenido_archivo(char *pathlocal, int *fsize);
 
-int dividir_enviar_archivo(char *contenido, int fsize, char *tipo); // tipo B-binrio T-texto
+t_list *escribir_desde_archivo(char *local_path,char file_type,int filesize); // tipo B/b-binario T/t-texto
+
+int get_file_size(char *);
+
+bool hay_lugar_para_archivo(int size);
 
 void disconnectedNodo(int socket);
 /*todo Funciones para realizar Leer Archivo*/

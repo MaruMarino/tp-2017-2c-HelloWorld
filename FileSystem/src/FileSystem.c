@@ -106,6 +106,7 @@ void inicializaciones(void) {
 	configuracion->espacio_total = 0;
 	nodos = list_create();
 	archivos = list_create();
+	//directorios = malloc(sizeof(t_directory)*100);
 }
 
 void liberar_memoria(void) {

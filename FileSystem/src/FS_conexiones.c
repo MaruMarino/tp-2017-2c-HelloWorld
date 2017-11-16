@@ -510,21 +510,29 @@ void atender_mensaje_YAMA(int codigo, void *mensaje) {
         case 5: {
             t_list *listi = list_create();
             bloqueArchivo b;
-            b.nodo0 = strdup("nodo_1");
-            b.nodo1 = strdup("nodo_2");
+            b.nodo0 = strdup("NODO1");
+            b.nodo1 = strdup("NODO2");
             b.bloquenodo0 = 0;
             b.bloquenodo1 = 0;
             b.bytesEnBloque = 1048576;
-/*
+
 		bloqueArchivo bc;
-		bc.nodo0 = strdup("nodo_1");
-		bc.nodo1 = strdup("nodo_2");
-		bc.bloquenodo0 = 4;
-		bc.bloquenodo1 = 5;
+		bc.nodo0 = strdup("NODO1");
+		bc.nodo1 = strdup("NODO2");
+		bc.bloquenodo0 = 1;
+		bc.bloquenodo1 = 1;
 		bc.bytesEnBloque= 1048576;
-*/
+
+		bloqueArchivo bcd;
+		bcd.nodo0 = strdup("NODO3");
+		bcd.nodo1 = strdup("NODO3");
+		bcd.bloquenodo0 = 0;
+		bcd.bloquenodo1 = 1;
+		bcd.bytesEnBloque= 1048576;
+
             list_add(listi, &b);
-            //	list_add(listi,&bc);
+            list_add(listi,&bc);
+           // list_add(listi,&bcd);
             size_t j;
             char *hola = dserializar_list_bloque_archivo(listi, &j);
             header h;
