@@ -74,8 +74,10 @@ void manejo_conexiones()
 						if (controlador < 0)
 							continue;
 
-						int id_m = master_id++;
-						list_add(masters, &id_m);
+						t_master *master_ = malloc(sizeof(t_master));
+						master_->master = master_id++;
+						master_->socket_ = nuevo_socket;
+						list_add(masters, master_);
 
 						//Cargo la nueva conexion a la lista y actualizo el maximo
 						FD_SET(nuevo_socket, &master);

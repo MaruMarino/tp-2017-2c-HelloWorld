@@ -642,12 +642,24 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 	}
 
 	t_redGlobal *red_g = list_find(lista_auxiliar, (void *)_worker_encargado);
-	red_g->encargado = 1;
-	free(red_g->red_global);
-	red_g->red_global = generar_nombre_red_global(master_->master, red_g->nodo->nodo);
+	if (red_g != NULL)
+	{
+		red_g->encargado = 1;
+		free(red_g->red_global);
+		red_g->red_global = generar_nombre_red_global(master_->master, red_g->nodo->nodo);
+	}else
+	{
+		t_redGlobal *red_g2 = malloc(sizeof(t_redGlobal));
+		red_g2->encargado = 1;
+		red_g2->nodo = wk->nodo;
+		red_g2->temp_red_local = strdup("");
+		red_g2->red_global =generar_nombre_red_global(master_->master, red_g2->nodo->nodo) ;
+
+		list_add(lista_auxiliar, red_g);
+	}
+
 	size_t len;
 	char *red_global_ser = serializar_lista_redGlobal(lista_auxiliar, &len);
-
 	int control;
 
 	header head;

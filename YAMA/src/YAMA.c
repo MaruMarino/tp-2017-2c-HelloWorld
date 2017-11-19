@@ -28,7 +28,7 @@ char *path;
 void leer_configuracion();
 void liberar_memoria();
 void inicializar_variables();
-void conectar_fs();
+int conectar_fs();
 void crear_socket_servidor();
 void reconfiguracion();
 
@@ -44,7 +44,9 @@ int main(int argc, char **argv)
 
 	signal(SIGUSR1, reconfiguracion);
 
-	conectar_fs();
+	int cont = conectar_fs();
+	if(!cont)
+		return EXIT_FAILURE;
 	crear_socket_servidor();
 	manejo_conexiones();
 
@@ -93,9 +95,10 @@ void leer_configuracion()
 	config_destroy(configuracion);
 }
 
-void conectar_fs()
+int conectar_fs()
 {
 	int control = 0;
+	int cont;
 	config->socket_fs = establecerConexion(config->fs_ip, config->fs_puerto, yama_log, &control);
 	if(control<0)
 	{
@@ -116,14 +119,17 @@ void conectar_fs()
 		if (head.codigo == 0)
 		{
 			escribir_log(yama_log, "YAMA rechazado por FileSystem :(");
-			//que hago?
+			cont = 0;
+
 		}else if(head.codigo == 2)
 		{
 			escribir_log(yama_log, "Conectado a File System :D");
 			armar_workers(rta);
+			cont = 1;
 		}else
 		{
 			escribir_error_log(yama_log, "No comprendo el mensaje recibido");
+			cont = 0;
 		}
 		free(rta);
 		free(head2);
