@@ -6,15 +6,12 @@
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/mensaje.h>
 #include <funcionesCompartidas/log.h>
-
-#include <unistd.h>
-#include <funcionesCompartidas/estructuras.h>
-
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/log.h>
 #include "master_manager.h"
+#include "func_estadisticas.h"
 #include "estructuras.h"
 
 pthread_mutex_t mutex_estadistica;
@@ -42,6 +39,7 @@ int main(int argc, char **argv)
 
 	leer_configuracion();
 	conectar_yama();
+	mostrar_estadisticas();
 
 	liberar_memoria();
 	return EXIT_SUCCESS;
@@ -58,6 +56,7 @@ void inicializar_variables()
 	estadistica->fin_reduc_global = malloc(sizeof(time_t));
 	estadistica->inicio_alm = malloc(sizeof(time_t));
 	estadistica->fin_alm = malloc(sizeof(time_t));
+	estadistica->finalizacion = malloc(sizeof(time_t));
 	estadistica->fallo_almacenamiento = 0;
 	estadistica->fallo_reduc_global = 0;
 	estadistica->fallo_reduc_local = 0;
@@ -160,5 +159,6 @@ void liberar_memoria()
 	free(estadistica->fin_reduc_global);
 	free(estadistica->inicio_alm);
 	free(estadistica->fin_alm);
+	free(estadistica->finalizacion);
 	free(estadistica);
 }

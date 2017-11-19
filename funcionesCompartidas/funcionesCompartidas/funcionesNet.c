@@ -276,12 +276,18 @@ char *getMessageIntr(int socket, header *head, int *status){
 
 	if ((*status = recvall_intr(socket, (char **) &head, &len, 0)) == -1)
         return NULL;
+	else if (*status == 0)
+		return NULL;
 
     buffer = malloc(head->sizeData);
     if ((*status = recvall_intr(socket, &buffer, &head->sizeData, 0)) == -1){
     	free(buffer);
     	return NULL;
+    } else if (*status == 0){
+    	free(buffer);
+    	return NULL;
     }
+
 
     return buffer;
 }
@@ -298,6 +304,9 @@ int recvall_intr(int sock, char **buffer, size_t *len, int flags){
 			if (errno != EINTR){
 				perror("No se pudo recvall'ear el paquete. error");
 				break;
+			} else {
+				if(!status)
+					return 0;
 			}
 		}
 

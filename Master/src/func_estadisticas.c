@@ -81,6 +81,7 @@ void quitar_transformacion()
 
 	estadistica->transf_ejecutando --;
 	*estadistica->fin_trans = time(NULL);
+	*estadistica->finalizacion = time(NULL);
 
 	pthread_mutex_unlock(&mutex_estadistica);
 }
@@ -91,6 +92,7 @@ void quitar_reduccion_local()
 
 	estadistica->reduc_ejecutando --;
 	*estadistica->fin_reduc_local = time(NULL);
+	*estadistica->finalizacion = time(NULL);
 
 	pthread_mutex_unlock(&mutex_estadistica);
 }
@@ -100,6 +102,7 @@ void quitar_reduccion_global()
 	pthread_mutex_lock(&mutex_estadistica);
 
 	*estadistica->fin_reduc_global = time(NULL);
+	*estadistica->finalizacion = time(NULL);
 
 	pthread_mutex_unlock(&mutex_estadistica);
 }
@@ -109,6 +112,7 @@ void quitar_almacenamiento()
 	pthread_mutex_lock(&mutex_estadistica);
 
 	*estadistica->fin_alm = time(NULL);
+	*estadistica->finalizacion = time(NULL);
 
 	pthread_mutex_unlock(&mutex_estadistica);
 }
@@ -119,6 +123,7 @@ void agregar_fallo_transf()
 
 	estadistica->transf_ejecutando --;
 	*estadistica->fin_trans = time(NULL);
+	*estadistica->finalizacion = time(NULL);
 	estadistica->fallo_transf ++;
 
 	pthread_mutex_unlock(&mutex_estadistica);
@@ -130,6 +135,7 @@ void agregar_fallo_reducc_local()
 
 	estadistica->reduc_ejecutando --;
 	*estadistica->fin_reduc_local = time(NULL);
+	*estadistica->finalizacion = time(NULL);
 	estadistica->fallo_reduc_local ++;
 
 	pthread_mutex_unlock(&mutex_estadistica);
@@ -140,6 +146,7 @@ void agregar_fallo_reducc_global()
 	pthread_mutex_lock(&mutex_estadistica);
 
 	*estadistica->fin_reduc_global = time(NULL);
+	*estadistica->finalizacion = time(NULL);
 	estadistica->fallo_reduc_global ++;
 
 	pthread_mutex_unlock(&mutex_estadistica);
@@ -150,6 +157,7 @@ void agregar_fallo_almac()
 	pthread_mutex_lock(&mutex_estadistica);
 
 	*estadistica->fin_alm = time(NULL);
+	*estadistica->finalizacion = time(NULL);
 	estadistica->fallo_almacenamiento ++;
 
 	pthread_mutex_unlock(&mutex_estadistica);
@@ -159,7 +167,7 @@ void mostrar_estadisticas()
 {
 	printf("Ejecucion finalizada\n");
 
-	int tiempo_total_job = *estadistica->fin_alm - *estadistica->inicio_trans;
+	int tiempo_total_job = *estadistica->finalizacion - *estadistica->inicio_trans;
 	imprimir_tiempo("Tiempo total de job:", tiempo_total_job);
 
 	printf("\n");

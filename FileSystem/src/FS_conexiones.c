@@ -30,6 +30,7 @@
 extern yamafs_config *configuracion;
 extern t_list *nodos;
 extern t_log *logi;
+extern t_list *archivos;
 fd_set master;
 fd_set read_fds;
 int fdmax;
@@ -324,11 +325,12 @@ void manejo_conexiones() {
 }
 
 int direccionar(int socket_rec) {
-    printf("socket number[%d]", socket_rec);
     int status;
     header *header_mensaje = malloc(sizeof(header));
     char *mensaje = getMessage(socket_rec, header_mensaje, &status);
-
+    puts("--------mensaje de alquien-----------");
+    write(1,mensaje,header_mensaje->sizeData);
+    puts("-------------------");
     if (status == -1) {
         //	perror("Error recibiendo");
     } else if (status == 0) {
@@ -498,33 +500,35 @@ void atender_mensaje_YAMA(int codigo, void *mensaje) {
         case 2:
             break;
         case 5: {
+        	/*
             t_list *listi = list_create();
             bloqueArchivo b;
-            b.nodo0 = strdup("NODO1");
-            b.nodo1 = strdup("NODO2");
+            b.nodo0 = strdup("NODO_1");
+            b.nodo1 = strdup("NODO_2");
             b.bloquenodo0 = 0;
             b.bloquenodo1 = 0;
             b.bytesEnBloque = 1048576;
 
             bloqueArchivo bc;
-            bc.nodo0 = strdup("NODO1");
-            bc.nodo1 = strdup("NODO2");
+            bc.nodo0 = strdup("NODO_1");
+            bc.nodo1 = strdup("NODO_2");
             bc.bloquenodo0 = 1;
             bc.bloquenodo1 = 1;
             bc.bytesEnBloque = 1048576;
 
             bloqueArchivo bcd;
-            bcd.nodo0 = strdup("NODO3");
-            bcd.nodo1 = strdup("NODO3");
+            bcd.nodo0 = strdup("NODO_3");
+            bcd.nodo1 = strdup("NODO_3");
             bcd.bloquenodo0 = 0;
             bcd.bloquenodo1 = 1;
             bcd.bytesEnBloque = 1048576;
 
             list_add(listi, &b);
             list_add(listi, &bc);
-            // list_add(listi,&bcd);
-            size_t j;
-            char *hola = dserializar_list_bloque_archivo(listi, &j);
+            list_add(listi,&bcd);*/
+            t_archivo *ElArchivo = list_get(archivos,0);
+        	size_t j;
+            char *hola = dserializar_list_bloque_archivo(ElArchivo->bloques, &j);
             header h;
             h.codigo = 3;
             h.letra = 'F';

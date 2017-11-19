@@ -37,6 +37,7 @@ typedef struct
 	time_t *fin_reduc_global;
 	time_t *inicio_alm;
 	time_t *fin_alm;
+	time_t *finalizacion;
 }t_estadistica;
 
 #endif /* ESTRUCTURAS_H_ */

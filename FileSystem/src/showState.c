@@ -1,7 +1,4 @@
-//
-// Created by elmigue on 19/11/17.
-//
-
+#include <funcionesCompartidas/estructuras.h>
 #include <commons/collections/list.h>
 #include "showState.h"
 #include "estructurasfs.h"
@@ -15,7 +12,7 @@ extern t_list *archivos;
 
 int cantBlockfree(t_bitarray *listBit) {
     int i, cant = 0;
-    for (i = 0; i < listBit->size; ++i) {
+    for (i = 0; i < (int) listBit->size; ++i) {
         if (!bitarray_test_bit(listBit, i)) {
             cant++;
         }
@@ -29,6 +26,8 @@ const char *getEstado(estado estado) {
             return "disponible";
         case no_disponible:
             return "no_disponible";
+        default:
+        	return "";
     }
 }
 
@@ -56,13 +55,20 @@ void checkFileSystem(){
 
 void checkArchivos(){
     puts("___________ Estado file System ____________");
-    int i;
+    int i,j;
     t_archivo * archFetch;
+    bloqueArchivo *bloqueFetch;
     for (i = 0; i < archivos->elements_count ;i++) {
         archFetch = list_get(archivos, i);
         printf("Nombre --> %s\n", archFetch->nombre);
         printf("Estado --> %s\n", getEstado(archFetch->estado));
         printf("Tipo --> %s\n", archFetch->tipo);
+        for(j=0;j< archFetch->bloques->elements_count;j++){
+        	bloqueFetch = list_get(archFetch->bloques,j);
+        	printf("NODO 0 --> %s\n", bloqueFetch->nodo0);
+        	printf("NODO 1 --> %s\n", bloqueFetch->nodo1);
+        	printf("Bytes --> %d\n", archFetch->tamanio);
+        }
     }
     puts("____________________________________________");
 }
