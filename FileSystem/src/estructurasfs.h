@@ -12,8 +12,8 @@
 #include <commons/bitarray.h>
 
 typedef enum {
-	disponible,
-	no_disponible,
+	disponible = 1,
+	no_disponible = 0,
 }estado;
 
 

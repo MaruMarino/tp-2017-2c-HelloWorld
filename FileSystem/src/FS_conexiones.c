@@ -24,7 +24,6 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
-
 #include "estructurasfs.h"
 #include "FS_administracion.h"
 
@@ -299,12 +298,10 @@ void manejo_conexiones() {
                         //Gestiono la conexion entrante
                         int nuevo_socket = aceptar_conexion(configuracion->serverfs, logi, &control);
                         //Controlo que no haya pasado nada raro y acepto al nuevo
-
                         int exitoso = realizar_handshake(nuevo_socket);
                         if (exitoso == 1) {
                             //Cargo la nueva conexion a la lista y actualizo el maximo
                             FD_SET(nuevo_socket, &master);
-
                             if (nuevo_socket > fdmax) {
                                 fdmax = nuevo_socket;
                             }
@@ -356,142 +353,135 @@ int direccionar(int socket_rec) {
 
 int realizar_handshake(int nuevo_socket) {
 
-    int retornar, estado;
+    int retornar, control;
     header *identificacion = malloc(sizeof(header));
     header *respuesta = malloc(sizeof(header));
     memset(respuesta, 0, sizeof(header));
-    message *mensajeEnviar;
-    char *buff = getMessage(nuevo_socket, identificacion, &estado);
+    message *mensajeEnviar = NULL;
+    void *bufferRequest = getMessage(nuevo_socket, identificacion, &control);
+    void *bufferResponse = NULL;
 
-    if (identificacion->letra == 'Y') {
+    switch (identificacion->letra) {
+        case 'Y': {
+            if (configuracion->estado_estable) {
 
-        if (configuracion->estado_estable) {
+                log_info(logi, "Se conecto YAMA");
+                size_t leng = 0;
+                respuesta->codigo = 2;
+                respuesta->letra = 'F';
+                char *buff = dserializar_lista_nodos(nodos, &leng);
+                respuesta->sizeData = leng;
 
-            log_info(logi, "Se conecto YAMA");
+                mensajeEnviar = createMessage(respuesta, buff);
 
-            size_t leng = 0;
-            respuesta->codigo = 2;
-            respuesta->letra = 'F';
-            char *buff = dserializar_lista_nodos(nodos, &leng);
-            respuesta->sizeData = leng;
-
-            mensajeEnviar = createMessage(respuesta, buff);
-
-            send(nuevo_socket, mensajeEnviar->buffer, mensajeEnviar->sizeBuffer, 0);
-            yamasock = nuevo_socket;
-            retornar = 1;
-            //todo
-            //free(mensajeEnviar->buffer);
-            //free(mensajeEnviar);
-
-        } else {
-
-            log_info(logi, "Estado No estable - rechazar YAMA");
-            respuesta->codigo = 0;
-            respuesta->letra = 'F';
-            respuesta->sizeData = 0;
-            mensajeEnviar = createMessage(respuesta, "");
-
-            send(nuevo_socket, mensajeEnviar->buffer, mensajeEnviar->sizeBuffer, 0);
-            retornar = 0;
-
-            free(mensajeEnviar->buffer);
-            free(mensajeEnviar);
-        }
-
-    } else if (identificacion->letra == 'W') {
-
-        if (configuracion->estado_estable) {
-
-            log_info(logi, "Se conecto un WORKER");
-
-            respuesta->codigo = 0;
-            respuesta->letra = 'F';
-            respuesta->sizeData = 0;
-            mensajeEnviar = createMessage(respuesta, "");
-
-            send(nuevo_socket, mensajeEnviar->buffer, mensajeEnviar->sizeBuffer, 0);
-            retornar = 1;
-            free(mensajeEnviar->buffer);
-            free(mensajeEnviar);
-
-        } else {
-
-            log_info(logi, "Estado No estable - rechazar WORKER");
-            respuesta->codigo = 1;
-            respuesta->letra = 'F';
-            respuesta->sizeData = 0;
-            mensajeEnviar = createMessage(respuesta, "");
-
-            send(nuevo_socket, mensajeEnviar->buffer, mensajeEnviar->sizeBuffer, 0);
-            retornar = 0;
-
-            free(mensajeEnviar->buffer);
-            free(mensajeEnviar);
-        }
-
-    } else if (identificacion->letra == 'D') {
-
-        //checkStateNodos();
-        log_info(logi, "Se conectó DATA_NODE");
-
-        size_t leng;
-        t_nodo *nodo_conectado = deserializar_nodo(buff, &leng);
-        respuesta->codigo = 0;
-        respuesta->letra = 'F';
-        respuesta->sizeData = sizeof(int);
-        int resuesta = 0;
-        NODO *nuevo_nodo = malloc(sizeof(NODO));
-
-        nuevo_nodo->soket = nuevo_socket;
-        nuevo_nodo->puerto = nodo_conectado->puerto;
-        nuevo_nodo->ip = strdup(nodo_conectado->ip);
-        nuevo_nodo->nombre = strdup(nodo_conectado->nodo);
-
-        char *buffer = malloc(sizeof(int));
-        if (configuracion->inicio_limpio == 1) {
-
-            nuevo_nodo->espacio_total = nodo_conectado->sizeDatabin;
-            nuevo_nodo->espacio_libre = nodo_conectado->sizeDatabin;
-            nuevo_nodo->estado = disponible;
-
-            configuracion->espacio_total += nuevo_nodo->espacio_total;
-            configuracion->espacio_libre += nuevo_nodo->espacio_total;
-
-            list_add(nodos, nuevo_nodo);
-            resuesta = 1;
-            retornar = 1;
-        } else {
-            if (exitProcess(nuevo_nodo)) {
-                if (checkStateFileSystem() == disponible) {
-                    configuracion->estado_estable = 1;
-                } else {
-                    configuracion->estado_estable = 0;
-                }
-                puts("----------------------");
-                printf("numero estable --> %d",configuracion->estado_estable);
-                puts("----------------------");
-                checkStateNodos();
-                resuesta = 1;
+                send(nuevo_socket, mensajeEnviar->buffer, mensajeEnviar->sizeBuffer, 0);
+                yamasock = nuevo_socket;
                 retornar = 1;
+                //todo
+                //free(mensajeEnviar->buffer);
+                //free(mensajeEnviar);
+
+            } else {
+
+                log_info(logi, "Estado No estable - rechazar YAMA");
+                respuesta->codigo = 0;
+                respuesta->letra = 'F';
+                respuesta->sizeData = 0;
+                mensajeEnviar = createMessage(respuesta, "");
+
+                send(nuevo_socket, mensajeEnviar->buffer, mensajeEnviar->sizeBuffer, 0);
+                retornar = 0;
+                /*
+                free(mensajeEnviar->buffer);
+                free(mensajeEnviar);*/
             }
+
+            break;
         }
-        memcpy(buffer, &resuesta, sizeof(int));
-        mensajeEnviar = createMessage(respuesta, buffer);
+        case 'W': {
+            if (configuracion->estado_estable) {
 
-        enviar_message(nuevo_socket, mensajeEnviar, logi, &resuesta);
+                log_info(logi, "Se conecto un WORKER");
 
-        free(nodo_conectado->ip);
-        free(nodo_conectado->nodo);
-        free(nodo_conectado);
-        free(mensajeEnviar->buffer);
-        free(mensajeEnviar);
-        free(buff);
+                respuesta->codigo = 0;
+                respuesta->letra = 'F';
+                respuesta->sizeData = 0;
+                mensajeEnviar = createMessage(respuesta, "");
 
+                send(nuevo_socket, mensajeEnviar->buffer, mensajeEnviar->sizeBuffer, 0);
+                retornar = 1;
+                /*
+                free(mensajeEnviar->buffer);
+                free(mensajeEnviar);*/
+
+            } else {
+
+                log_info(logi, "Estado No estable - rechazar WORKER");
+                respuesta->codigo = 1;
+                respuesta->letra = 'F';
+                respuesta->sizeData = 0;
+                mensajeEnviar = createMessage(respuesta, "");
+
+                send(nuevo_socket, mensajeEnviar->buffer, mensajeEnviar->sizeBuffer, 0);
+                retornar = 0;
+                /*
+                free(mensajeEnviar->buffer);
+                free(mensajeEnviar);*/
+            }
+            break;
+        }
+        case 'D': {
+            log_info(logi, "Se conectó DATA_NODE");
+            size_t leng;
+            t_nodo *nodo_conectado = deserializar_nodo(bufferRequest, &leng);
+            int acceptNodo = 1;
+            retornar = 1;
+            estado stateFile;
+            bufferResponse = malloc(sizeof(int));
+            respuesta->codigo = 0;
+            respuesta->letra = 'F';
+            respuesta->sizeData = sizeof(int);
+            NODO *nuevo_nodo = malloc(sizeof(NODO));
+            nuevo_nodo->soket = nuevo_socket;
+            nuevo_nodo->puerto = nodo_conectado->puerto;
+            nuevo_nodo->ip = strdup(nodo_conectado->ip);
+            nuevo_nodo->nombre = strdup(nodo_conectado->nodo);
+            if (configuracion->inicio_limpio) {
+                nuevo_nodo->espacio_total = nodo_conectado->sizeDatabin;
+                nuevo_nodo->espacio_libre = nodo_conectado->sizeDatabin;
+                nuevo_nodo->estado = disponible;
+                configuracion->espacio_total += nuevo_nodo->espacio_total;
+                configuracion->espacio_libre += nuevo_nodo->espacio_total;
+                list_add(nodos, nuevo_nodo);
+            } else {
+                if (searchNodoInList(nuevo_nodo)) {
+                    stateFile = checkStateFileSystem();
+                    if (!configuracion->estado_estable) {
+                        configuracion->estado_estable = stateFile;
+                    }
+                } else {
+                    retornar = 0;
+                    acceptNodo = 0;
+                }
+            }
+            memcpy(bufferResponse, &acceptNodo, sizeof(int));
+            mensajeEnviar = createMessage(respuesta, bufferResponse);
+            enviar_message(nuevo_socket, mensajeEnviar, logi, &control);
+            free(nodo_conectado->ip);
+            free(nodo_conectado->nodo);
+            free(nodo_conectado);
+            break;
+        }
+        default: {
+            retornar = 0;
+            break;
+        }
     }
 
-    free(identificacion);
-    free(respuesta);
+    free(mensajeEnviar->buffer);
+    free(mensajeEnviar);
+    free(bufferRequest);
+    free(bufferResponse);
     log_info(logi, "HANDSHAKE");
     return retornar;
 }
@@ -516,23 +506,23 @@ void atender_mensaje_YAMA(int codigo, void *mensaje) {
             b.bloquenodo1 = 0;
             b.bytesEnBloque = 1048576;
 
-		bloqueArchivo bc;
-		bc.nodo0 = strdup("NODO1");
-		bc.nodo1 = strdup("NODO2");
-		bc.bloquenodo0 = 1;
-		bc.bloquenodo1 = 1;
-		bc.bytesEnBloque= 1048576;
+            bloqueArchivo bc;
+            bc.nodo0 = strdup("NODO1");
+            bc.nodo1 = strdup("NODO2");
+            bc.bloquenodo0 = 1;
+            bc.bloquenodo1 = 1;
+            bc.bytesEnBloque = 1048576;
 
-		bloqueArchivo bcd;
-		bcd.nodo0 = strdup("NODO3");
-		bcd.nodo1 = strdup("NODO3");
-		bcd.bloquenodo0 = 0;
-		bcd.bloquenodo1 = 1;
-		bcd.bytesEnBloque= 1048576;
+            bloqueArchivo bcd;
+            bcd.nodo0 = strdup("NODO3");
+            bcd.nodo1 = strdup("NODO3");
+            bcd.bloquenodo0 = 0;
+            bcd.bloquenodo1 = 1;
+            bcd.bytesEnBloque = 1048576;
 
             list_add(listi, &b);
-            list_add(listi,&bc);
-           // list_add(listi,&bcd);
+            list_add(listi, &bc);
+            // list_add(listi,&bcd);
             size_t j;
             char *hola = dserializar_list_bloque_archivo(listi, &j);
             header h;

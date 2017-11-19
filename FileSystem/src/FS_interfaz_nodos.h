@@ -13,16 +13,13 @@
 
 /* Funciones para realizar Almacenar Archivo*/
 
-int setBlock(void *, size_t size_buffer,t_list *ba);
+int setBlock(void *, size_t size_buffer, t_list *ba);
 
-int exitProcess(NODO *nameNodo);
-
-void checkStateNodos();
+int searchNodoInList(NODO *nameNodo);
 
 estado checkStateFileSystem();
 
-
-t_list *escribir_desde_archivo(char *local_path,char file_type,int filesize); // tipo B/b-binario T/t-texto
+t_list *escribir_desde_archivo(char *local_path, char file_type, int filesize); // tipo B/b-binario T/t-texto
 
 int get_file_size(char *);
 
