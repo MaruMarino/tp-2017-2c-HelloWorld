@@ -182,6 +182,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 {
 	escribir_log(yama_log, "Buscando Worker para trabajar");
 	t_worker *worker = NULL;
+	t_worker * worker2;
 	int clock;
 
 	int l_size = list_size(archivo);
@@ -265,13 +266,23 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 		int cant = 0;
 		while(!encontrado && !vuelta_completa)
 		{
-			t_worker * worker2 = list_get(workers, next_index);
+			worker2 = list_get(workers, next_index);
+
+			t_list *lista43 = list_create();
+			for(i = 0; i < l_size; i++)
+			{
+				t_bloque *bl = list_get(archivo, i);
+
+				if(bl->n_bloque_archivo == n_bloque)
+					list_add(lista43, bl);
+			}
 
 			bool _bloque(t_bloque *bl)
 			{
-				return bl->n_bloque_archivo == n_bloque;
+				return bl->n_bloque_archivo == n_bloque && (!strcmp(bl->nodo,worker2->nodo->nodo));
 			}
-			bool any = list_any_satisfy(worker2->bloques,(void *) _bloque);
+			bool any = list_any_satisfy(lista43,(void *) _bloque);
+
 			if ( any && worker2->disponibilidad > 0)
 			{
 				encontrado = 1;
@@ -292,6 +303,8 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 			sumar_disponibilidad_base();
 			return get_worker(archivo, n_bloque);
 		}
+		if(encontrado)
+			return worker2;
 	}
 
 	list_destroy(lista_aux);
@@ -319,7 +332,7 @@ t_worker *worker_copia(t_list *archivo, int n_bloque, char *nodo)
 	{
 		t_bloque *bl1 = list_get(lista_aux, 0);
 		t_bloque *bl2 = list_get(lista_aux, 1);
-		int resultado_parcial = (!strcmp(bl1->nodo, worker_aux->nodo->nodo)) || (!strcmp(bl2->nodo, worker_aux->nodo->nodo));
+		int resultado_parcial = (!(strcmp(bl1->nodo, worker_aux->nodo->nodo))) || (!(strcmp(bl2->nodo, worker_aux->nodo->nodo)));
 		int otro_resultado = strcmp(worker_aux->nodo->nodo, nodo);
 
 		return (resultado_parcial && otro_resultado);
@@ -329,7 +342,7 @@ t_worker *worker_copia(t_list *archivo, int n_bloque, char *nodo)
 
 	bool _bloque_archivo(t_bloque *bl2)
 	{
-		return !strcmp(bl2->nodo, worker->nodo->nodo);
+		return (!strcmp(bl2->nodo, worker->nodo->nodo));
 	}
 	t_bloque *bl = list_find(lista_aux, (void *)_bloque_archivo);
 
@@ -606,10 +619,11 @@ char * generar_nombre_red_global(int mast, char* nod)
 void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_master *estado_tr)
 {
 	escribir_log(yama_log, "Comenzando a armar reducción global");
-
+	int en_worker_trabajado = 0;
 	int i;
 	t_list *lista_auxiliar = list_create();
 
+	t_redGlobal *red_g2;
 	for(i=0; i < sz; i++)
 	{
 		t_estado * est2 = list_get(tabla_estado, i);
@@ -647,15 +661,16 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 		red_g->encargado = 1;
 		free(red_g->red_global);
 		red_g->red_global = generar_nombre_red_global(master_->master, red_g->nodo->nodo);
+		en_worker_trabajado = 1;
 	}else
 	{
-		t_redGlobal *red_g2 = malloc(sizeof(t_redGlobal));
+		red_g2 = malloc(sizeof(t_redGlobal));
 		red_g2->encargado = 1;
 		red_g2->nodo = wk->nodo;
 		red_g2->temp_red_local = strdup("");
 		red_g2->red_global =generar_nombre_red_global(master_->master, red_g2->nodo->nodo) ;
 
-		list_add(lista_auxiliar, red_g);
+		list_add(lista_auxiliar, red_g2);
 	}
 
 	size_t len;
@@ -671,7 +686,10 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 	enviar_message(master_->socket_, mensaje, yama_log, &control);
 	t_estado *estt = generar_estado(master_->master,-10,wk->nodo->nodo,NULL,-10,-10);
 	free(estt->archivo_temporal);
-	estt->archivo_temporal = red_g->red_global;
+	if(en_worker_trabajado)
+		estt->archivo_temporal = red_g->red_global;
+	else
+		estt->archivo_temporal = red_g2->red_global;
 	estt->etapa = REDUCCION_GLOBAL;
 	//cambiar_estado(master_->master,estado_tr->nodo, estado_tr->bloque, REDUCCION_GLOBAL, red_g->red_global);
 	list_destroy(lista_auxiliar);

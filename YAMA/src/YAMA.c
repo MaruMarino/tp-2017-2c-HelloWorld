@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 	signal(SIGUSR1, reconfiguracion);
 
 	int cont = conectar_fs();
-	if(!cont)
+	if(cont == 0)
 		return EXIT_FAILURE;
 	crear_socket_servidor();
 	manejo_conexiones();
@@ -134,6 +134,7 @@ int conectar_fs()
 		free(rta);
 		free(head2);
 	}
+	return cont;
 }
 
 void crear_socket_servidor()
