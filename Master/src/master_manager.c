@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <funcionesCompartidas/serializacion_yama_master.h>
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/estructuras.h>
@@ -18,6 +19,7 @@
 extern t_configuracion *config;
 extern t_log *log_Mas;
 extern t_list *hilos;
+//BUSCADOR	extern pthread_mutex_t sem_yama;
 
 void matar_hilos();
 void error_almacenamiento(t_almacenado *almacenado);
@@ -71,6 +73,7 @@ void escuchar_peticiones()
 				break;
 			default:
 				puts("No se reconocio el mensaje recibido");
+				flag_continuar = 0;
 				break;
 		}
 		free(buffer);
@@ -93,6 +96,7 @@ void atender_tranformacion(t_list *list_transf)
 
 		t_transformacion *transf = list_get(list_transf,i);
 
+		//ejecutar_transformador(transf);
 		pthread_create(&hiloPrograma,&attr,(void*)ejecutar_transformador,transf);
 
 		list_add(hilos, &hiloPrograma);
@@ -100,6 +104,7 @@ void atender_tranformacion(t_list *list_transf)
 
 	pthread_attr_destroy(&attr);
 
+	/*
 	void eliminar(t_transformacion *self)
 	{
 		free(self->nodo->ip);
@@ -110,6 +115,7 @@ void atender_tranformacion(t_list *list_transf)
 	}
 
 	list_destroy_and_destroy_elements(list_transf, (void*)eliminar);
+	*/
 }
 
 void ejecutar_transformador(t_transformacion *transf)
@@ -125,7 +131,7 @@ void ejecutar_transformador(t_transformacion *transf)
 
 	//Imprimo informacion de la peticion
 	printf("Ip: %s Puerto: %s\n", transf->nodo->ip, port);//print prueba
-	printf("Archivo temporak: %s\n", transf->temporal);
+	printf("Archivo temporal: %s\n", transf->temporal);
 
 	socket_local = establecerConexion(transf->nodo->ip, port, log_Mas, &controlador);
 	free(port);
@@ -238,7 +244,10 @@ void ejecutar_transformador(t_transformacion *transf)
 	char *estado_a_enviar = serializar_estado_master(t_estado, &header_.sizeData);
 
 	message *mensj_transf_est = createMessage(&header_, estado_a_enviar);
+
+	//BUSCADOR	pthread_mutex_lock(&sem_yama);
 	enviar_message(config->socket_yama, mensj_transf_est, log_Mas, &controlador);
+	//BUSCADOR	pthread_mutex_unlock(&sem_yama);
 
 	free(estado_a_enviar);
 
@@ -278,7 +287,10 @@ void error_transformacion(t_transformacion *transf)
 	header_d->sizeData = len_total;
 
 	message *mensj_error = createMessage(header_d, serializado);
+
+	//BUSCADOR	pthread_mutex_lock(&sem_yama);
 	enviar_message(config->socket_yama, mensj_error, log_Mas, &controlador);
+	//BUSCADOR	pthread_mutex_unlock(&sem_yama);
 
 	free(serializado);
 	//void *buffer = getMessage(config->socket_yama, header_d, &controlador);
@@ -418,7 +430,10 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 	char *estado_a_enviar = serializar_estado_master(t_estado, &header_.sizeData);
 
 	message *mensj_transf_est = createMessage(&header_, estado_a_enviar);
+
+	//BUSCADOR	pthread_mutex_lock(&sem_yama);
 	enviar_message(config->socket_yama, mensj_transf_est, log_Mas, &controlador);
+	//BUSCADOR	pthread_mutex_unlock(&sem_yama);
 
 	free(estado_a_enviar);
 
@@ -458,7 +473,10 @@ void error_reduccion_local(t_redLocal *reduccion_local)
 	header_d->sizeData = len_total;
 
 	message *mensj_error = createMessage(header_d, serializado);
+
+	//BUSCADOR	pthread_mutex_lock(&sem_yama);
 	enviar_message(config->socket_yama, mensj_error, log_Mas, &controlador);
+	//BUSCADOR	pthread_mutex_unlock(&sem_yama);
 
 	//void *buffer = getMessage(config->socket_yama, header_d, &controlador);
 
@@ -545,7 +563,11 @@ void atender_reduccion_global(t_list *lista_global)
 	redGlobal->size_prog = string_length(config->script_reduc);
 	redGlobal->nodos = list_create();
 
-	void _agregar_nodo(t_redGlobal *aux){
+	void _agregar_nodo(t_redGlobal *aux)
+	{
+		if(strlen(aux->temp_red_local) == 0)
+			return;
+
 		t_info_nodo *nodo = malloc(sizeof(t_info_nodo));
 
 		nodo->ip = aux->nodo->ip;

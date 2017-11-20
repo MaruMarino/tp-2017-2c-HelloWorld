@@ -15,6 +15,7 @@
 #include "estructuras.h"
 
 pthread_mutex_t mutex_estadistica;
+//BUSCADOR	pthread_mutex_t sem_yama;
 t_list *hilos;
 t_configuracion *config;
 t_estadistica *estadistica;
@@ -76,6 +77,7 @@ void inicializar_variables()
 	config->puerto = strdup("");
 
 	pthread_mutex_init(&mutex_estadistica,NULL);
+	//BUSCADOR	pthread_mutex_init(&sem_yama,NULL);
 }
 
 void leer_configuracion()
