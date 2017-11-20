@@ -51,9 +51,12 @@ NODO *getNodoMinusLoader(NODO *NodoExcluir, int *numBlock) {
     int i;
     for (i = 0; i < nodos->elements_count; i++) {
         nodoFetch = list_get(nodos, i);
+        if (NodoExcluir != NULL && NodoExcluir->soket == nodoFetch->soket) {
+            continue;
+        }
         if (nodoFetch->espacio_libre > maxLibreEspacio) {
             *numBlock = getBlockFree(nodoFetch->bitmapNodo);
-            if (!(NodoExcluir != NULL && NodoExcluir->soket == nodoFetch->soket) && *numBlock != -1) {
+            if (*numBlock != -1) {
                 maxLibreEspacio = nodoFetch->espacio_libre;
                 nodoMax = nodoFetch;
             }
@@ -154,7 +157,7 @@ estado checkStateFileSystem() {
     for (i = 0; i < archivos->elements_count; ++i) {
         fetchArchivo = list_get(archivos, i);
         fetchArchivo->estado = checkStateArchive(fetchArchivo);
-        if(fetchArchivo->estado == no_disponible){
+        if (fetchArchivo->estado == no_disponible) {
             fileStable = no_disponible;
         }
     }
@@ -243,11 +246,12 @@ bool hay_lugar_para_archivo(int filesize) {
 
     int blocks = (filesize % Mib != 0) ? (filesize / Mib + 1) : (filesize / Mib);
     int cantCopy;
-    NODO *nodoSend = NULL;
+    NODO *nodoSend;
     int nodoSendBlock;
     int b;
     for (b = 0; b < blocks; b++) {
         cantCopy = 0;
+        nodoSend = NULL;
         while (cantCopy < 2) {
             nodoSend = getNodoMinusLoader(nodoSend, &nodoSendBlock);
             if (nodoSend == NULL) return false;
