@@ -54,7 +54,7 @@ NODO *getNodoMinusLoader(NODO *NodoExcluir, int *numBlock) {
         if (NodoExcluir != NULL && NodoExcluir->soket == nodoFetch->soket) {
             continue;
         }
-        if (nodoFetch->espacio_libre > maxLibreEspacio) {
+        if (nodoFetch->estado == disponible && nodoFetch->espacio_libre > maxLibreEspacio) {
             *numBlock = getBlockFree(nodoFetch->bitmapNodo);
             if (*numBlock != -1) {
                 maxLibreEspacio = nodoFetch->espacio_libre;
