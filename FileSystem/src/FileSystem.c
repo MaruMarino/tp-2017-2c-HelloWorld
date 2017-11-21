@@ -26,11 +26,14 @@
 
 
 yamafs_config *configuracion;
+pthread_t hiloConexiones;
+int thread_conections;
 t_log *logi;
 // Estructuras Administrativas
 t_list *nodos;
 t_directory directorios[100];
 t_list *archivos;
+pthread_mutex_t mutex_socket;
 
 
 void leer_configuracion(char *);
@@ -62,10 +65,10 @@ int main(int argc, char **argv) {
 		log_info(logi, "Estructuras recuperadas");
 	}
 
-	pthread_t hiloConexiones;
+
 	pthread_t hiloConsola;
 
-	pthread_create(&hiloConexiones, NULL, (void *) manejo_conexiones, NULL);
+	thread_conections = pthread_create(&hiloConexiones, NULL, (void *) manejo_conexiones, NULL);
 	pthread_create(&hiloConsola, NULL, (void *) iniciar_consola_FS, NULL);
 
 	//if argv[2] --clean ->ignorar estado anterior
@@ -106,11 +109,12 @@ void inicializaciones(void) {
 	configuracion->espacio_total = 0;
 	nodos = list_create();
 	archivos = list_create();
-	//directorios = malloc(sizeof(t_directory)*100);
+	pthread_mutex_init(&mutex_socket,NULL);
 }
 
 void liberar_memoria(void) {
 
+	log_info(logi,"liberando memoria");
 	free(configuracion->dir_estructuras);
 	free(configuracion->ip);
 	free(configuracion);
@@ -137,6 +141,8 @@ void liberar_memoria(void) {
 		}
 
 		list_destroy_and_destroy_elements(self->bloques, (void *) _bloqueArchiv_destroyer);
+		free(self->nombre);
+		free(self->tipo);
 		free(self);
 
 	}

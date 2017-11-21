@@ -76,6 +76,11 @@ typedef struct{
 
 }t_archivo;
 
+typedef struct{
+	int soket;
+	int espacio_libre;
+}aux_nodo;
+
 
 
 #endif /* ESTRUCTURASFS_H_ */

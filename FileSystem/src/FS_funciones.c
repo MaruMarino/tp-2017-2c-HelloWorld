@@ -16,10 +16,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "showState.h"
 #include "FS_administracion.h"
 #include "estructurasfs.h"
 #include "FS_interfaz_nodos.h"
-#include "showState.h"
 
 extern comando commands[];
 extern yamafs_config *configuracion;
@@ -27,6 +27,7 @@ extern t_log *logi;
 extern t_list *archivos;
 extern t_directory directorios[100];
 extern t_list *nodos;
+
 
 #define cyan  "\x1B[36m"
 #define sin "\x1B[0m"
@@ -204,8 +205,8 @@ int fs_cpfrom(char *q) {
         t_archivo *arch = malloc(sizeof(t_archivo));
         arch->tipo = strdup(split_paths[3]);
         arch->bloques = ba;
-        arch->cantbloques = (sizearchi % Mib != 0) ? (sizearchi / Mib + 1) : (sizearchi / Mib);
-        arch->estado = no_disponible;
+        arch->cantbloques = list_size(ba);
+        arch->estado = disponible;
         arch->index_padre = padre;
         arch->nombre = strdup(nombre[1]);
         arch->tamanio = sizearchi;
@@ -233,6 +234,57 @@ int fs_cpblock(char *s) {
 }
 
 int fs_md5(char *t) {
+
+	char **split  = string_split(t," ");
+	int i=0;
+	while(split[i]!= NULL) i++;
+
+	if(i == 2){
+
+		char **dirName = sacar_archivo(split[1]);
+		int padre = existe_ruta_directorios(dirName[0]);
+		if(padre == -9){
+			liberar_char_array(split);
+			liberar_char_array(dirName);
+			printf("No existe ruta\n");
+			return 0;
+		}
+		bool existe = existe_archivo(dirName[1],padre);
+		if(!existe){
+			liberar_char_array(split);
+			liberar_char_array(dirName);
+			printf("No existe archivo\n");
+			return 0;
+		}
+		t_archivo *arhcivo = get_metadata_archivo(split[1]);
+		int temp = crear_archivo_temporal(arhcivo,"/tmp/auxiliar_md5");
+		if(temp == -1){
+			liberar_char_array(split);
+			liberar_char_array(dirName);
+			printf("El archivo no se encuentra disponible\n");
+			return 0;
+		}
+		char *linea = NULL;
+		char **md;
+		size_t len = 0;
+		system("md5sum /tmp/auxiliar_md5 > /tmp/auxiliar_md5_2");
+		FILE *f = fopen("/tmp/auxiliar_md5_2","r");
+        getline(&linea, &len, f);
+        md = string_split(linea," ");
+        printf("%s\n",md[0]);
+
+        liberar_char_array(split);
+		liberar_char_array(dirName);
+		liberar_char_array(md);
+		free(linea);
+		fclose(f);
+
+		system("rm /tmp/auxiliar_md5*");
+
+	}else{
+		printf("La cantidad de parámetros es incorrecta, ingrese '%s? md5%s' para más información\n", cyan, sin);
+	}
+
     printf("Ejecute md5 \n");
     return 0;
 }

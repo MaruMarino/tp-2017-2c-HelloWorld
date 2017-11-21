@@ -394,6 +394,7 @@ int iniciar_bitmaps_nodos(void) {
 
     void _mmap_bitmap(NODO *self) {
 
+    	free(self->bitmapNodo->bitarray);
         bitarray_destroy(self->bitmapNodo);
         recuperar_bitmap_nodo(self);
 
@@ -418,6 +419,44 @@ void crear_subdirectorios(void) {
 
 }
 //todo: Funciones para manipular/operar/etc elementos de las diferentes estructuras ya creadas
+
+t_archivo *get_metadata_archivo(char *path){
+
+	t_archivo *res = NULL;
+	char **dirNom = sacar_archivo(path);
+
+	int padre = existe_ruta_directorios(dirNom[0]);
+	if(padre  == -9) {
+		liberar_char_array(dirNom);
+		return res;
+	}
+
+	bool existe = existe_archivo(dirNom[1],padre);
+	if(!existe) {
+		liberar_char_array(dirNom);
+		return res;
+	}
+
+	int _get_archivo(t_archivo *self){
+
+		return ( !strcmp(self->nombre,dirNom[1]) && self->index_padre == padre);
+	}
+	res = list_find(archivos,(void *) _get_archivo);
+
+	liberar_char_array(dirNom);
+	return res;
+
+}
+
+NODO *get_NODO(char *nombre){
+
+	NODO *res = NULL;
+	int _buscar(NODO *self){
+		return (!strcmp(self->nombre,nombre));
+	}
+	res = list_find(nodos,(void *) _buscar);
+	return res;
+}
 
 int existe_dir_en_padre(char *nombre,int padre){
 	int i;
@@ -470,6 +509,9 @@ int agregar_directorio(char *nombre,int padre){
 	}
 	return indice;
 }
+
+
+
 
 //todo: Funciones Auxiliares
 
