@@ -26,7 +26,7 @@ void subrutinaEjecutor(int sock_m) {
 
 	header head;
 	char *msj, *exe_fname, *data_fname, *fname;
-	int status;
+	int status, beg, end;
 	int rta = FALLO;
 
 	// filenames temporarios para programa y buffer de datos
@@ -52,15 +52,16 @@ void subrutinaEjecutor(int sock_m) {
 		log_trace(logw, "CHILD [%d]: Ejecuta Transformacion", wp);
 
 		t_info_trans *info_t = deserializar_info_trans(msj);
+		beg = (int) info_t->bloque * maxline;
+		end = beg + maxline;
 
-		if (crearArchivoBin(info_t->prog, info_t->size_prog, exe_fname) < 0 ||
-			crearArchivoData(info_t->bloque, (size_t) info_t->bytes_ocup, data_fname) < 0) {
+		if (crearArchivoBin(info_t->prog, info_t->size_prog, exe_fname) < 0) {
 			log_error(logw, "No se pudieron crear los archivos de trabajo.");
 			liberador(4, msj, info_t->prog, info_t->file_out, info_t);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
-		if (makeCommandAndExecute(data_fname, exe_fname, info_t->file_out) < 0) {
+		if (makeCommandAndExecute(conf->ruta_databin, beg, end, exe_fname, info_t->file_out) < 0) {
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberador(4, msj, info_t->prog, info_t->file_out, info_t);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
@@ -82,14 +83,14 @@ void subrutinaEjecutor(int sock_m) {
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
-		if (aparearFiles(info_rl->files, data_fname) == -1) {
+		if ((end = aparearFiles(info_rl->files, data_fname)) == -1) {
 			log_error(logw, "No se pudo aparear los archivos temporales");
 			liberarFnames(info_rl->files);
 			liberador(4, msj, info_rl->file_out, info_rl->prog, info_rl);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
-		if (makeCommandAndExecute(data_fname, exe_fname, info_rl->file_out) < 0) {
+		if (makeCommandAndExecute(data_fname, 0, -1, exe_fname, info_rl->file_out) < 0) {
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberarFnames(info_rl->files);
 			liberador(4, msj, info_rl->file_out, info_rl->prog, info_rl);
@@ -112,14 +113,14 @@ void subrutinaEjecutor(int sock_m) {
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
-		if (apareoGlobal(info_rg->nodos, data_fname) == -1) {
+		if ((end = apareoGlobal(info_rg->nodos, data_fname)) == -1) {
 			log_error(logw, "Fallo apareamiento de archivos");
 			liberarInfoNodos(info_rg->nodos);
 			liberador(4, msj, info_rg->prog, info_rg->file_out, info_rg);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
-		if (makeCommandAndExecute(data_fname, exe_fname, info_rg->file_out) < 0) {
+		if (makeCommandAndExecute(data_fname, 0, -1, exe_fname, info_rg->file_out) < 0) {
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberarInfoNodos(info_rg->nodos);
 			liberador(4, msj, info_rg->prog, info_rg->file_out, info_rg);

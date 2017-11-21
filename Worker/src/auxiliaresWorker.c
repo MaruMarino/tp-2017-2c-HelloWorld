@@ -32,7 +32,6 @@ static void liberarApareo(int nfiles, FILE *fs[nfiles], char *ls[nfiles - 1]);
 static void cerrarSockets(int nfds, int *fds);
 
 extern t_log *logw;
-extern char *databin;
 
 char *crearComando(int nargs, char *fst, ...) {
 	log_trace(logw, "Se crea un comando de %d argumentos", nargs);
@@ -73,34 +72,6 @@ int crearArchivoBin(char *bin, size_t bin_sz, char *fname) {
 
 	// read-execute binary
 	if (chmod(fname, 0500) == -1) {
-		log_error(logw, "No se pudo dar permiso de ejecucion a %s", fname);
-		fclose(f);
-		return -1;
-	}
-
-	fclose(f);
-	return 0;
-}
-
-int crearArchivoData(size_t blk, size_t count, char *fname) {
-	log_trace(logw, "Se crea archivo de datos %s", fname);
-
-	FILE *f;
-	if ((f = fopen(fname, "w")) == NULL) {
-		perror("No se pudo abrir el archivo");
-		log_error(logw, "No se pudo abrir el archivo %s", fname);
-		return -1;
-	}
-
-	char *data = getDataBloque(databin, blk);
-	if ((fwrite(data, count, 1, f)) != 1) {
-		log_error(logw, "No se pudo escribir el programa en %s", fname);
-		fclose(f);
-		return -1;
-	}
-
-	// read-only data
-	if (chmod(fname, 0400) == -1) {
 		log_error(logw, "No se pudo dar permiso de ejecucion a %s", fname);
 		fclose(f);
 		return -1;
@@ -204,13 +175,24 @@ int realizarApareo(int nfiles, FILE *fs[nfiles]){
 	return apareadas;
 }
 
-int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname) {
+int makeCommandAndExecute(char *data_path, int at, int to, char *exe_fname, char *out_fname){
 	log_trace(logw, "CHILD [%d] crea y ejecuta su comando", getpid());
 
-	char *cmd = crearComando(7, "cat ", data_fname, "|", "./", exe_fname,
-			" | sort -dib > ", out_fname);
+	char *opt = strdup("");
+	char *beg, *end;
+	if (to < 0){ // data_path es un binfile
+		beg = string_itoa(at);
+		end = string_itoa(to);
+		string_append_with_format(&opt, "head -c %s %s | tail -c %s", end, data_path, beg);
+		liberador(2, beg, end);
+
+	} else // data_path es un textfile
+		string_append_with_format(&opt, "cat %s", data_path);
+
+	char *cmd = crearComando(5, opt, " | ./", exe_fname, " | sort -dib > ", out_fname);
 	if (!cmd) {
 		log_error(logw, "Fallo la creacion del comando a ejecutar.");
+		free(opt);
 		return -1;
 	}
 
@@ -218,10 +200,11 @@ int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname) {
 
 	if (system(cmd) != 0) { // ejecucion del comando via system()
 		log_error(logw, "Llamada a system() con comando %s fallo.", cmd);
-		free(cmd);
+		liberador(2, cmd, opt);
 		return -1;
 	}
 
+	liberador(2, cmd, opt);
 	return 0;
 }
 
@@ -283,7 +266,7 @@ int apareoGlobal(t_list *nodos, char *fname){
 
 	FILE *fout;
 	char **lines, *msj;
-	int i, ctl, min, nquant, remaining, *fds;
+	int i, ctl, min, nquant, remaining, *fds, lcount;
 	remaining = nquant = list_size(nodos);
 	header head = {.letra = 'W', .codigo = FILE_REQ, .sizeData = 0};
 	message *req = createMessage(&head, NULL);
@@ -305,6 +288,7 @@ int apareoGlobal(t_list *nodos, char *fname){
 		return -1;
 	}
 
+	lcount = nquant; // inicializa contador de lineas de archivos
 	while (remaining){
 
 		// Obtenemos posicion del menor string
@@ -369,10 +353,11 @@ int apareoGlobal(t_list *nodos, char *fname){
 		// Deserializamos la linea sobre el buffer de lineas
 		lines[min] = deserializar_stream(msj, &head.sizeData);
 		free(msj);
+		lcount++;
 	}
 
 	fclose(fout);
-	return 0;
+	return lcount;
 }
 
 int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname) {
@@ -411,9 +396,19 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname) {
 		return -1;
 	}
 
-	close(sock_fs);
+	free(msj);
+	msj = getMessage(sock_fs, &head, &ctl);
+	if (ctl == -1){
+		log_error(logw, "Fallo obtencion mensaje de FileSystem en %d", sock_fs);
+		liberador(5, file->data, file->fname, file, file_serial, msj);
+		close(sock_fs);
+		return -1;
+	}
+
+
 	liberador(5, file->data, file->fname, file, file_serial, msj);
-	return 0;
+	close(sock_fs);
+	return head.codigo;
 }
 
 t_file *cargarFile(char *fname) {
