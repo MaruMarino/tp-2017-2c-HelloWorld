@@ -92,12 +92,14 @@ int main(int argc, char *argv[]){
 			continue;
 		}
 		if ((msj = getMessageIntr(fd_proc, &head, &status)) == NULL){
+			if (head.codigo == 0) goto verif;
 			log_error(logw, "No se pudo recibir mensaje de %c", head.letra);
 			close(fd_proc);
 			continue;
 		}
 		free(msj); // no nos interesa el mensaje
 
+		verif:
 		if (verificarConexion(head, 'M', 0) == 0) // es un Master
 			masterQuery = true;
 		else if(verificarConexion(head, 'W', 0) == 0) // es un Worker

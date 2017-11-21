@@ -328,9 +328,6 @@ int direccionar(int socket_rec) {
     int status;
     header *header_mensaje = malloc(sizeof(header));
     char *mensaje = getMessage(socket_rec, header_mensaje, &status);
-    puts("--------mensaje de alquien-----------");
-    write(1,mensaje,header_mensaje->sizeData);
-    puts("-------------------");
     if (status == -1) {
         //	perror("Error recibiendo");
     } else if (status == 0) {
@@ -500,32 +497,6 @@ void atender_mensaje_YAMA(int codigo, void *mensaje) {
         case 2:
             break;
         case 5: {
-        	/*
-            t_list *listi = list_create();
-            bloqueArchivo b;
-            b.nodo0 = strdup("NODO_1");
-            b.nodo1 = strdup("NODO_2");
-            b.bloquenodo0 = 0;
-            b.bloquenodo1 = 0;
-            b.bytesEnBloque = 1048576;
-
-            bloqueArchivo bc;
-            bc.nodo0 = strdup("NODO_1");
-            bc.nodo1 = strdup("NODO_2");
-            bc.bloquenodo0 = 1;
-            bc.bloquenodo1 = 1;
-            bc.bytesEnBloque = 1048576;
-
-            bloqueArchivo bcd;
-            bcd.nodo0 = strdup("NODO_3");
-            bcd.nodo1 = strdup("NODO_3");
-            bcd.bloquenodo0 = 0;
-            bcd.bloquenodo1 = 1;
-            bcd.bytesEnBloque = 1048576;
-
-            list_add(listi, &b);
-            list_add(listi, &bc);
-            list_add(listi,&bcd);*/
             t_archivo *ElArchivo = list_get(archivos,0);
         	size_t j;
             char *hola = dserializar_list_bloque_archivo(ElArchivo->bloques, &j);
@@ -554,6 +525,24 @@ void atender_mensaje_NODO(int codigo, void *mensaje) {
             break;
 
     }
+}
+
+void atender_mensaje_WORKER(int codigo, void * mensaje, int socketWorker){
+	switch(codigo){
+		case 9: {
+			t_file *fileReduccionGlobal = deserializar_File(mensaje);
+			int resultSaveFile = 1;
+			header headResponse;
+			headResponse.codigo = 14;
+			headResponse.sizeData = sizeof(int);
+			headResponse.letra = 'Y';
+			message * response = createMessage(&headResponse,&resultSaveFile);
+			log_info(logi,"Enviando mensaje de confirmacion");
+			if(send(socketWorker,response->buffer, response->sizeBuffer, 0) == -1){
+				log_error(logi,"Error al enviar al worker save reduccionGlobal");
+			}
+		}
+	}
 }
 
 message *create_Message(header *head, void *data) {

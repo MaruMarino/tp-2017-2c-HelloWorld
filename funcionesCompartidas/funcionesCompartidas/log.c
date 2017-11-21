@@ -9,7 +9,7 @@
 
 t_log *crear_archivo_log(char *nombre_cabecera, int imprimir, char *file)
 {
-	t_log *log = log_create(file,nombre_cabecera,imprimir, LOG_LEVEL_INFO);
+	t_log *log = log_create(file,nombre_cabecera,imprimir, LOG_LEVEL_TRACE);
 	log_info(log, "Se crea el archivo de log");
 	return log;
 }
