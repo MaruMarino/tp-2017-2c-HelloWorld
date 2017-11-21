@@ -63,15 +63,16 @@ void checkArchivos(){
         printf("Nombre --> %s\n", archFetch->nombre);
         printf("Estado --> %s\n", getEstado(archFetch->estado));
         printf("Tipo --> %s\n", archFetch->tipo);
+        printf("Tamanio --> %d\n", archFetch->tamanio);
         for(j=0;j< archFetch->bloques->elements_count;j++){
         	bloqueFetch = list_get(archFetch->bloques,j);
-        	printf("----Bloque[%d] \n-----",j);
+											
         	printf("NODO 0 --> %s\n", bloqueFetch->nodo0);
-        	printf("numero bloque %d\n", bloqueFetch->bloquenodo0);
+																
         	printf("NODO 1 --> %s\n", bloqueFetch->nodo1);
-        	printf("numero bloque %d\n", bloqueFetch->bloquenodo1);
-        	printf("Bytes --> %d\n", archFetch->tamanio);
-        	puts("---------------");
+																
+        	printf("Bytes --> %d\n", bloqueFetch->bytesEnBloque);
+								 
         }
     }
     puts("____________________________________________");

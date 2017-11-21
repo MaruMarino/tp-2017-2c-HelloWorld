@@ -31,6 +31,7 @@ extern yamafs_config *configuracion;
 extern t_list *nodos;
 extern t_log *logi;
 extern t_list *archivos;
+extern pthread_mutex_t mutex_socket;
 fd_set master;
 fd_set read_fds;
 int fdmax;
@@ -326,27 +327,33 @@ void manejo_conexiones() {
 
 int direccionar(int socket_rec) {
     int status;
-    header *header_mensaje = malloc(sizeof(header));
-    char *mensaje = getMessage(socket_rec, header_mensaje, &status);
+    header header_mensaje ;
+    pthread_mutex_lock(&mutex_socket);
+    char *mensaje = getMessage(socket_rec, &header_mensaje, &status);
+    pthread_mutex_unlock(&mutex_socket);
+    puts("--------mensaje de alquien-----------");
+    write(1,mensaje,header_mensaje.sizeData);
+    puts("-------------------");
     if (status == -1) {
         //	perror("Error recibiendo");
     } else if (status == 0) {
         log_info(logi, "Se desconecto socket");
         disconnectedNodo(socket_rec);
-        return -1;
+
     } else {
-        if (header_mensaje->letra == 'Y') {
-            atender_mensaje_YAMA(header_mensaje->codigo, mensaje);
-        } else if (header_mensaje->letra == 'N') {
-            atender_mensaje_NODO(header_mensaje->codigo, mensaje);
-        } else if (header_mensaje->letra == 'W') {
-            atender_mensaje_NODO(header_mensaje->codigo, mensaje);
+        if (header_mensaje.letra == 'Y') {
+            atender_mensaje_YAMA(header_mensaje.codigo, mensaje);
+        } else if (header_mensaje.letra == 'N') {
+            atender_mensaje_NODO(header_mensaje.codigo, mensaje);
+        } else if (header_mensaje.letra == 'W') {
+            atender_mensaje_NODO(header_mensaje.codigo, mensaje);
         } else {
             // no entiendo emisor/mensaje
         }
     }
 
-    //free(mensaje);
+    if(mensaje) free(mensaje);
+
     return status;
 }
 
@@ -481,6 +488,8 @@ int realizar_handshake(int nuevo_socket) {
     free(mensajeEnviar);
     free(bufferRequest);
     free(bufferResponse);
+    free(respuesta);
+    free(identificacion);
     log_info(logi, "HANDSHAKE");
     return retornar;
 }
@@ -497,6 +506,7 @@ void atender_mensaje_YAMA(int codigo, void *mensaje) {
         case 2:
             break;
         case 5: {
+
             t_archivo *ElArchivo = list_get(archivos,0);
         	size_t j;
             char *hola = dserializar_list_bloque_archivo(ElArchivo->bloques, &j);
