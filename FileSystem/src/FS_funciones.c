@@ -9,6 +9,7 @@
 #include "FS_funciones.h"
 
 #include <commons/string.h>
+#include <pthread.h>
 #include <funcionesCompartidas/generales.h>
 #include <commons/log.h>
 #include <commons/collections/list.h>
@@ -27,6 +28,7 @@ extern t_log *logi;
 extern t_list *archivos;
 extern t_directory directorios[100];
 extern t_list *nodos;
+extern pthread_mutex_t mutex_socket;
 
 
 #define cyan  "\x1B[36m"
@@ -47,22 +49,38 @@ int fs_rename(char *i) {
 
 int fs_format(char *j) {
 
-    if (configuracion->inicio_limpio) {
-        if(nodos->elements_count < 2){
-            log_info(logi, "No se puede Formatiar se nesecita al menos 2 Nodo\n");
-        }else{
-            crear_subdirectorios();
-            iniciar_arbol_directorios();
-            iniciar_nodos();
-            iniciar_bitmaps_nodos();
+	char **split  = string_split(j," ");
+	int i = 0;
+	while(split[i]!= NULL) i++;
 
-            configuracion->estado_estable = 1;
-            configuracion->inicio_limpio = 0;
-        }
-    } else {
-        log_info(logi, "No se puede Formatiar debe iniciar FileSystem con parametro --clean\n");
-    }
-    return 0;
+	if(i == 1){
+		if (configuracion->inicio_limpio) {
+
+			if(nodos->elements_count < 2){
+
+				log_info(logi, "No se puede Formatear, se nesecitan al menos 2 Nodos");
+
+			}else if(!configuracion->estado_estable){
+
+				crear_subdirectorios();
+				iniciar_arbol_directorios();
+				iniciar_nodos();
+				iniciar_bitmaps_nodos();
+
+				configuracion->estado_estable = 1;
+			}else {
+
+				log_info(logi, "El File System ya fue fomateado \n");
+			}
+		}
+
+	}else{
+		printf("La cantidad de parámetros es incorrecta, ingrese '%s? format%s' para más información\n", cyan, sin);
+
+	}
+	liberar_char_array(split);
+
+	return 0;
 }
 
 int fs_mv(char *k) {
@@ -72,12 +90,14 @@ int fs_mv(char *k) {
 
 int fs_ayuda(char *pedido_ayuda) {
 
+
     printf("COMANDO | OBJETIVO | SINTAXIS\n");
 
     int var;
     for (var = 0; var < 14; ++var) {
         printf("%s%s%s |  %s  |  %s  \n", cyan, commands[var].name, sin, commands[var].doc, commands[var].sintax);
     }
+
     return 0;
 }
 
@@ -105,28 +125,78 @@ int fs_payuda(char *duda) {
 }
 
 int fs_cat(char *n) {
-    checkFileSystem();
-    checkStateNodos();
-    checkArchivos();
-    printf("Ejecute cat \n");
-    return 0;
+
+	char **split = string_split(n," ");
+	int i=0;
+	while(split[i]!=NULL) i++;
+
+	if(i== 2){
+
+		char **dirName = sacar_archivo(split[1]);
+		int padre = existe_ruta_directorios(dirName[0]);
+		if(padre == -9){
+			liberar_char_array(split);
+			liberar_char_array(dirName);
+			printf("No existe ruta\n");
+			return 0;
+		}
+		t_archivo *archivo = get_metadata_archivo_sinvalidar(dirName[1],padre);
+		if(archivo == NULL){
+			liberar_char_array(split);
+			liberar_char_array(dirName);
+			printf("No existe archivo\n");
+			return 0;
+		}
+		if(archivo->estado == no_disponible){
+			liberar_char_array(split);
+			liberar_char_array(dirName);
+			printf("Archivo no dispobible \n");
+			return 0;
+		}
+
+		bloqueArchivo *bq;
+		int bloques = archivo->cantbloques,alternar = 0;
+		char *buff;
+
+		pthread_mutex_lock(&mutex_socket);
+		for(i=0;i<bloques;i++){
+
+			bq = list_get(archivo->bloques,i);
+
+			buff = leer_bloque(bq,alternar);
+			printf("%s",buff);
+
+			free(buff);
+			alternar = (alternar == 0) ? 1 : 0;
+		}
+		pthread_mutex_unlock(&mutex_socket);
+		liberar_char_array(split);
+		liberar_char_array(dirName);
+
+	}else{
+
+		printf("La cantidad de parámetros es incorrecta, ingrese '%s? cat%s' para más información\n", cyan, sin);
+		liberar_char_array(split);
+	}
+
+	return 0;
 }
 
 int fs_mkdir(char *p) {
 
-    log_info(logi, "Ejecute mkdir con %s \n", p);
-    char **splt = string_split(p, " ");
-    int i = 0;
-    int padre;
-    while (splt[i] != NULL) i++;
+	log_info(logi, "Ejecute mkdir con %s \n", p);
+	char **splt = string_split(p, " ");
+	int i = 0;
+	int padre;
+	while (splt[i] != NULL) i++;
 
-    if (i == 2) {
+	if (i == 2) {
 
-        if (!string_contains(splt[1], "/")) {
-            padre = existe_ruta_directorios(splt[1]);
-            if (padre != -9 || padre == 0) {
-                liberar_char_array(splt);
-                printf("Ya existe directorio\n");
+		if (!string_contains(splt[1], "/")) {
+			padre = existe_ruta_directorios(splt[1]);
+			if (padre != -9 || padre == 0) {
+				liberar_char_array(splt);
+				printf("Ya existe directorio\n");
                 return 0;
             }
 
@@ -162,6 +232,7 @@ int fs_mkdir(char *p) {
 
     } else {
         printf("La cantidad de parámetros es incorrecta, ingrese '%s? mkdir%s' para más información\n", cyan, sin);
+		liberar_char_array(splt);
     }
 
     return 0;
@@ -217,6 +288,7 @@ int fs_cpfrom(char *q) {
 
     } else {
         printf("La cantidad de parámetros es incorrecta, ingrese '%s? cpfrom%s' para más información\n", cyan, sin);
+        liberar_char_array(split_paths);
     }
 
     log_info(logi, "Ejecute cpfrom \n");
@@ -283,6 +355,7 @@ int fs_md5(char *t) {
 
 	}else{
 		printf("La cantidad de parámetros es incorrecta, ingrese '%s? md5%s' para más información\n", cyan, sin);
+		liberar_char_array(split);
 	}
 
     printf("Ejecute md5 \n");

@@ -127,7 +127,7 @@ int searchNodoInList(NODO *TestNodo) {
         if (strcmp(nodoFetch->nombre, TestNodo->nombre) == 0) {
             nodoFetch->soket = TestNodo->soket;
             nodoFetch->puerto = TestNodo->puerto;
-            nodoFetch->ip = TestNodo->ip;
+            nodoFetch->ip = strdup(TestNodo->ip);
             nodoFetch->estado = disponible;
             return 1;
         }
@@ -152,10 +152,12 @@ estado checkStateArchive(t_archivo *archivo) {
     bloqueArchivo *fetchBloque;
     for (i = 0; i < archivo->bloques->elements_count; ++i) {
         fetchBloque = list_get(archivo->bloques, i);
-        if (!(checkStateNodo(fetchBloque->nodo0) == disponible || checkStateNodo(fetchBloque->nodo1) == disponible)) {
-            return no_disponible;
+        if ((checkStateNodo(fetchBloque->nodo0) == no_disponible && checkStateNodo(fetchBloque->nodo1) == no_disponible)) {
+            archivo->estado = no_disponible;
+        	return no_disponible;
         }
     }
+    archivo->estado = disponible;
     return disponible;
 }
 
@@ -289,6 +291,7 @@ t_list  *get_copia_nodos_activos(){
 
 bool hay_lugar_para_archivo(int filesize) {
 
+	//todo: en realidad esa no es la cantidad real de bloques para un archivo de texto
     int blocks = (filesize % Mib != 0) ? (filesize / Mib + 1) : (filesize / Mib);
     t_list *lista = get_copia_nodos_activos();
     int cantCopy;

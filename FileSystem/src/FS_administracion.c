@@ -448,6 +448,18 @@ t_archivo *get_metadata_archivo(char *path){
 
 }
 
+
+t_archivo *get_metadata_archivo_sinvalidar(char *nombre,int padre){
+
+	t_archivo *res = NULL;
+	int _get_archivo(t_archivo *self){
+
+		return ( !strcmp(self->nombre,nombre) && self->index_padre == padre);
+	}
+	res = list_find(archivos,(void *) _get_archivo);
+	return res;
+}
+
 NODO *get_NODO(char *nombre){
 
 	NODO *res = NULL;

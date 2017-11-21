@@ -27,7 +27,6 @@
 
 yamafs_config *configuracion;
 pthread_t hiloConexiones;
-int thread_conections;
 t_log *logi;
 // Estructuras Administrativas
 t_list *nodos;
@@ -68,7 +67,7 @@ int main(int argc, char **argv) {
 
 	pthread_t hiloConsola;
 
-	thread_conections = pthread_create(&hiloConexiones, NULL, (void *) manejo_conexiones, NULL);
+	pthread_create(&hiloConexiones, NULL, (void *) manejo_conexiones, NULL);
 	pthread_create(&hiloConsola, NULL, (void *) iniciar_consola_FS, NULL);
 
 	//if argv[2] --clean ->ignorar estado anterior
