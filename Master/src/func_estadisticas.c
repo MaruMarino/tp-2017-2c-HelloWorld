@@ -175,7 +175,9 @@ void mostrar_estadisticas()
 	printf("	Total procesados: %d\n", estadistica->transf_total);
 	printf("	Total procesados con error: %d\n", estadistica->fallo_transf);
 	printf("	Maximo ejecutados en paralelo: %d\n", estadistica->transf_paralelo);
-	int tiempo_prom_transf = (*estadistica->fin_trans - *estadistica->inicio_trans) / estadistica->transf_total;
+	int tiempo_prom_transf = 0;
+	if(estadistica->transf_total > 0)
+		tiempo_prom_transf = (*estadistica->fin_trans - *estadistica->inicio_trans) / estadistica->transf_total;
 	imprimir_tiempo("	Tiempo promedio procesamiento:", tiempo_prom_transf);
 
 	printf("\n");
@@ -183,21 +185,27 @@ void mostrar_estadisticas()
 	printf("	Total procesados: %d\n", estadistica->reduc_total);
 	printf("	Total procesados con error: %d\n", estadistica->fallo_reduc_local);
 	printf("	Maximo ejecutados en paralelo: %d\n", estadistica->reduc_paralelo);
-	int tiempo_prom_red = (*estadistica->fin_reduc_local - *estadistica->inicio_reduc_local) / estadistica->reduc_total;
+	int tiempo_prom_red = 0;
+	if(estadistica->reduc_total > 0)
+		tiempo_prom_red = (*estadistica->fin_reduc_local - *estadistica->inicio_reduc_local) / estadistica->reduc_total;
 	imprimir_tiempo("	Tiempo promedio procesamiento:", tiempo_prom_red);
 
 	printf("\n");
 	printf("Etapa reduccion global\n");
 	printf("	Total procesados: %d\n", estadistica->reduc_glo_total);
 	printf("	Total procesados con error: %d\n", estadistica->fallo_reduc_global);
-	int tiempo_prom_red_glo = (*estadistica->fin_reduc_global - *estadistica->inicio_reduc_global);
+	int tiempo_prom_red_glo = 0;
+	if(estadistica->reduc_glo_total > 0)
+		tiempo_prom_red_glo = (*estadistica->fin_reduc_global - *estadistica->inicio_reduc_global);
 	imprimir_tiempo("	Tiempo promedio procesamiento:", tiempo_prom_red_glo);
 
 	printf("\n");
 	printf("Etapa almacenamiento\n");
 	printf("	Total procesados: %d\n", estadistica->alm_total);
 	printf("	Total procesados con error: %d\n", estadistica->fallo_almacenamiento);
-	int tiempo_prom_alm = (*estadistica->fin_alm - *estadistica->inicio_alm);
+	int tiempo_prom_alm = 0;
+	if(estadistica->alm_total > 0)
+		tiempo_prom_alm = (*estadistica->fin_alm - *estadistica->inicio_alm);
 	imprimir_tiempo("	Tiempo promedio procesamiento:", tiempo_prom_alm);
 
 	printf("\n");

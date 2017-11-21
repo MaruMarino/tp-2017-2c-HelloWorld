@@ -147,6 +147,13 @@ void reconfiguracion(int signal_)
 {
 	if (signal_ == SIGUSR1)
 	{
-		leer_configuracion();
+		puts("empiezo!");
+		t_config *configuracion = config_create(path);
+
+		string_append(&config->algortimo_bal, config_get_string_value(configuracion, "ALGORITMO_BALANCEO"));
+		config->retardo_plan = config_get_int_value(configuracion, "RETARDO_PLANIFICACION");
+
+		config_destroy(configuracion);
+		puts("termino!");
 	}
 }

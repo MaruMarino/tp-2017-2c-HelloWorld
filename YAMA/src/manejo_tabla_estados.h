@@ -9,7 +9,7 @@
 #define MANEJO_TABLA_ESTADOS_H_
 
 char *generar_nombre_temporal(int job, char *nodo, int bloque);
-t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bloque2, int bytes);
+t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bloque2, int bytes, int bloqqq);
 void cambiar_estado(int master, char *nodo, int bloque, e_estado nuevo_estado, char *nombre);
 t_estado *get_estado(int master, char *nodo, int bloque, e_etapa etapa);
 

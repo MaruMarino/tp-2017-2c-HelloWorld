@@ -291,8 +291,6 @@ void error_transformacion(t_transformacion *transf)
 	//BUSCADOR	pthread_mutex_lock(&sem_yama);
 	enviar_message(config->socket_yama, mensj_error, log_Mas, &controlador);
 	//BUSCADOR	pthread_mutex_unlock(&sem_yama);
-
-	free(serializado);
 	//void *buffer = getMessage(config->socket_yama, header_d, &controlador);
 
 	agregar_fallo_transf();
@@ -704,6 +702,8 @@ void ejecutar_almacenamiento(t_almacenado *almacenado)
 	int controlador = 0;
 	int socket_local;
 	header header_;
+
+	agregar_almacenamiento();
 
 	//Conecto con Worker
 	char *port = string_itoa(almacenado->nodo->puerto);

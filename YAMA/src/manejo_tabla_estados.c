@@ -63,18 +63,17 @@ int calcular_cantidad(int master, char *nodo)
 	return cant;
 }
 
-t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bloque2, int bytes)
+t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bloque2, int bytes, int bloqqq)
 {
 	t_estado *estado = malloc(sizeof (t_estado));
-	char *arch_temp = generar_nombre_temporal(master, nodo, bloque);
+	char *arch_temp = generar_nombre_temporal(master, nodo, bloqqq);
 
 	estado->master = master;
 	estado->job = master; //chequear
 	estado->etapa = TRANSFORMACION;
 	estado->bloque = bloque;
 	estado->nodo = strdup(nodo);
-	estado->archivo_temporal = strdup("");
-	string_append(&estado->archivo_temporal, arch_temp);
+	estado->archivo_temporal = strdup(arch_temp);
 	estado->estado = EN_PROCESO;
 	estado->cant_bloques_nodo = calcular_cantidad(master, nodo);
 	estado->copia_disponible = true;

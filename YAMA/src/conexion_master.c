@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <errno.h>
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/log.h>
 #include <funcionesCompartidas/mensaje.h>
@@ -47,11 +48,13 @@ void manejo_conexiones()
 	{
 		read_fds = master;
 
+		selectX:;
 		int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, NULL);
 		escribir_log(yama_log, "Actividad detectada en administrador de conexiones");
 
 		if (selectResult == -1)
 		{
+			if (errno == EINTR) goto selectX;
 			escribir_error_log(yama_log, "Error en el administrador de conexiones");
 			break;
 		}
@@ -169,12 +172,12 @@ void manejar_respuesta(int socket_)
 				{
 					t_master * ms = find_master(socket_);
 					t_estado *est = get_estado(ms->master, estado_tr3->nodo, -10, REDUCCION_GLOBAL);
-					t_worker *wk = find_worker(estado_tr3->nodo);
+					t_worker *wk = find_worker(estado_tr3->nodo);est->estado = FINALIZADO_OK;
 					t_almacenado *alma = malloc(sizeof(t_almacenado));
 					alma->nodo = wk->nodo;
 					alma->red_global = est->archivo_temporal;
 
-					t_estado *esttt = generar_estado(ms->master,-10,alma->nodo->nodo,NULL,-10,-10);
+					t_estado *esttt = generar_estado(ms->master,-10,alma->nodo->nodo,NULL,-10,-10,-10);
 					esttt->archivo_temporal = est->archivo_temporal;
 					esttt->etapa = ALMACENAMIENTO_FINAL;
 
@@ -195,9 +198,9 @@ void manejar_respuesta(int socket_)
 				else
 				{
 					escribir_error_log(yama_log, "Error en la reducción global, bai");
+					//finalizado error
 					matar_master(socket_);
 				}
-				;
 				break;
 			default:
 				printf("default");
