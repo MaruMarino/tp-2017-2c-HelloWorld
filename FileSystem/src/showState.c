@@ -5,9 +5,8 @@
 #include "stdio.h"
 
 extern yamafs_config *configuracion;
-//extern t_directory directorios[100];
+extern t_directory directorios[100];
 extern t_list *nodos;
-//extern t_list *archivos;
 extern t_list *archivos;
 
 int cantBlockfree(t_bitarray *listBit) {
@@ -27,7 +26,7 @@ const char *getEstado(estado estado) {
         case no_disponible:
             return "no_disponible";
         default:
-        	return "";
+            return "";
     }
 }
 
@@ -47,33 +46,45 @@ void checkStateNodos() {
     puts("------------------------------------");
 }
 
-void checkFileSystem(){
+void checkFileSystem() {
     puts("**** Estado file System ****");
-    printf("%s \n",configuracion->estado_estable == 0 ? "No estable (T-T)" : " Estable ¯\\(^-^)/¯ ");
+    printf("%s \n", configuracion->estado_estable == 0 ? "No estable (T-T)" : " Estable ¯\\(^-^)/¯ ");
     puts("***********************");
 }
 
-void checkArchivos(){
+void checkArchivos() {
     puts("___________ Estado file System ____________");
-    int i,j;
-    t_archivo * archFetch;
+    int i, j;
+    t_archivo *archFetch;
     bloqueArchivo *bloqueFetch;
-    for (i = 0; i < archivos->elements_count ;i++) {
+    for (i = 0; i < archivos->elements_count; i++) {
         archFetch = list_get(archivos, i);
         printf("Nombre --> %s\n", archFetch->nombre);
         printf("Estado --> %s\n", getEstado(archFetch->estado));
         printf("Tipo --> %s\n", archFetch->tipo);
         printf("Tamanio --> %d\n", archFetch->tamanio);
-        for(j=0;j< archFetch->bloques->elements_count;j++){
-        	bloqueFetch = list_get(archFetch->bloques,j);
-											
-        	printf("NODO 0 --> %s\n", bloqueFetch->nodo0);
-																
-        	printf("NODO 1 --> %s\n", bloqueFetch->nodo1);
-																
-        	printf("Bytes --> %d\n", bloqueFetch->bytesEnBloque);
-								 
+        for (j = 0; j < archFetch->bloques->elements_count; j++) {
+            bloqueFetch = list_get(archFetch->bloques, j);
+
+            printf("NODO 0 --> %s\n", bloqueFetch->nodo0);
+
+            printf("NODO 1 --> %s\n", bloqueFetch->nodo1);
+
+            printf("Bytes --> %d\n", bloqueFetch->bytesEnBloque);
+
         }
     }
     puts("____________________________________________");
+}
+
+void checkdirectoris() {
+    puts("___________ Estado Directorios ____________");
+    int i;
+    for (i = 0; i < 4; i++) {
+        printf("Fila --> %d\n", i);
+        printf("nombre directorio --> %s\n", directorios[i].nombre);
+        printf("nombre indice --> %d\n", directorios[i].index);
+        printf("nombre padre --> %d\n", directorios[i].padre);
+    }
+    puts("__________________________________________");
 }

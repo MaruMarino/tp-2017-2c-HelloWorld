@@ -11,4 +11,6 @@ void checkFileSystem();
 
 void checkArchivos();
 
+void checkdirectoris();
+
 #endif //FILESYSTEM_SHOWSTATE_H

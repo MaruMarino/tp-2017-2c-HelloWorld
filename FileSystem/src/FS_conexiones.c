@@ -337,7 +337,7 @@ int direccionar(int socket_rec) {
 	} else if (status == 0) {
 		log_info(logi, "Se desconecto socket");
 		disconnectedNodo(socket_rec);
-
+		return -1;
 	} else {
 		if (header_mensaje.letra == 'Y') {
 			atender_mensaje_YAMA(header_mensaje.codigo, mensaje);

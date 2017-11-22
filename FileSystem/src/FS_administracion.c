@@ -295,24 +295,24 @@ int recuperar_metadata_un_arhcivo(char *fullpath) {
 
 int iniciar_arbol_directorios(void) {
 
-	int i;
-	for (i = 0; i < 100; i++) {
-		directorios[i].index = i;
-		memset(directorios[i].nombre, 0, 255);
-		directorios[i].padre = -9; // Flag de Entrada Directorio Vacía
-	}
-	//Directorio Padre, seria la "/"
-	memcpy(directorios[0].nombre,configuracion->dir_estructuras, strlen(configuracion->dir_estructuras));
-	directorios[0].padre = -1; // Dir Root no tiene padre
+    int i;
+    for (i = 0; i < 100; i++) {
+        directorios[i].index = i;
+        memset(directorios[i].nombre, 0, 255);
+        directorios[i].padre = -9; // Flag de Entrada Directorio Vacía
+    }
+    //Directorio Padre, seria la "/"
+    memcpy(directorios[0].nombre, configuracion->dir_estructuras, strlen(configuracion->dir_estructuras));
+    directorios[0].padre = -1; // Dir Root no tiene padre
 
-	char *path_armado = completar_path_metadata("directorios.dat");
+    char *path_armado = completar_path_metadata("directorios.dat");
 
-	FILE *filedir = fopen(path_armado, "w");
-	fwrite(directorios, sizeof(t_directory), 100, filedir);
-	fclose(filedir);
+    FILE *filedir = fopen(path_armado, "w");
+    fwrite(directorios, sizeof(t_directory), 100, filedir);
+    fclose(filedir);
 
-	free(path_armado);
-	return 1;
+    free(path_armado);
+    return 1;
 
 }
 
@@ -394,7 +394,7 @@ int iniciar_bitmaps_nodos(void) {
 
     void _mmap_bitmap(NODO *self) {
 
-    	free(self->bitmapNodo->bitarray);
+        free(self->bitmapNodo->bitarray);
         bitarray_destroy(self->bitmapNodo);
         recuperar_bitmap_nodo(self);
 
@@ -420,110 +420,155 @@ void crear_subdirectorios(void) {
 }
 //todo: Funciones para manipular/operar/etc elementos de las diferentes estructuras ya creadas
 
-t_archivo *get_metadata_archivo(char *path){
+t_archivo *get_metadata_archivo(char *path) {
 
-	t_archivo *res = NULL;
-	char **dirNom = sacar_archivo(path);
+    t_archivo *res = NULL;
+    char **dirNom = sacar_archivo(path);
 
-	int padre = existe_ruta_directorios(dirNom[0]);
-	if(padre  == -9) {
-		liberar_char_array(dirNom);
-		return res;
-	}
+    int padre = existe_ruta_directorios(dirNom[0]);
+    if (padre == -9) {
+        liberar_char_array(dirNom);
+        return res;
+    }
 
-	bool existe = existe_archivo(dirNom[1],padre);
-	if(!existe) {
-		liberar_char_array(dirNom);
-		return res;
-	}
+    bool existe = existe_archivo(dirNom[1], padre);
+    if (!existe) {
+        liberar_char_array(dirNom);
+        return res;
+    }
 
-	int _get_archivo(t_archivo *self){
+    int _get_archivo(t_archivo *self) {
 
-		return ( !strcmp(self->nombre,dirNom[1]) && self->index_padre == padre);
-	}
-	res = list_find(archivos,(void *) _get_archivo);
+        return (!strcmp(self->nombre, dirNom[1]) && self->index_padre == padre);
+    }
+    res = list_find(archivos, (void *) _get_archivo);
 
-	liberar_char_array(dirNom);
-	return res;
+    liberar_char_array(dirNom);
+    return res;
 
 }
 
 
-t_archivo *get_metadata_archivo_sinvalidar(char *nombre,int padre){
+t_archivo *get_metadata_archivo_sinvalidar(char *nombre, int padre) {
 
-	t_archivo *res = NULL;
-	int _get_archivo(t_archivo *self){
+    t_archivo *res = NULL;
+    int _get_archivo(t_archivo *self) {
 
-		return ( !strcmp(self->nombre,nombre) && self->index_padre == padre);
-	}
-	res = list_find(archivos,(void *) _get_archivo);
-	return res;
+        return (!strcmp(self->nombre, nombre) && self->index_padre == padre);
+    }
+    res = list_find(archivos, (void *) _get_archivo);
+    return res;
 }
 
-NODO *get_NODO(char *nombre){
+NODO *get_NODO(char *nombre) {
 
-	NODO *res = NULL;
-	int _buscar(NODO *self){
-		return (!strcmp(self->nombre,nombre));
-	}
-	res = list_find(nodos,(void *) _buscar);
-	return res;
+    NODO *res = NULL;
+    int _buscar(NODO *self) {
+        return (!strcmp(self->nombre, nombre));
+    }
+    res = list_find(nodos, (void *) _buscar);
+    return res;
 }
 
-int existe_dir_en_padre(char *nombre,int padre){
-	int i;
-	for(i=0;i<100;i++){
-		if( !strcmp(directorios[i].nombre,nombre) && directorios[i].padre == padre){
-			return i;
-		}
-	}
-	return -9;
-}
-int existe_ruta_directorios(char *path){
-
-	int padre= 0;
-	if(!string_contains(path,"/")){
-		padre = existe_dir_en_padre(path,padre);
-	}else{
-		char **dirs = string_split(path,"/");
-		int i =0;
-		while(dirs[i] != NULL ){
-			padre = existe_dir_en_padre(dirs[i],padre);
-			i++;
-		}
-		liberar_char_array(dirs);
-	}
-	return padre;
-}
-bool existe_archivo(char *nombre,int padre){
-
-	bool res;
-	int _buscador(t_archivo *self){
-
-		return (!strcmp(self->nombre,nombre) && self->index_padre == padre);
-	}
-	t_archivo *arch = list_find(archivos,(void *)_buscador);
-
-	res = (arch == NULL)? false : true;
-	return res;
+int existe_dir_en_padre(char *nombre, int padre) {
+    int i;
+    for (i = 0; i < 100; i++) {
+        if (!strcmp(directorios[i].nombre, nombre) && directorios[i].padre == padre) {
+            return i;
+        }
+    }
+    return -9;
 }
 
-int agregar_directorio(char *nombre,int padre){
+int existe_ruta_directorios(char *path) {
 
-	int i;
-	int indice = -1;
-	for(i=0;i<100;i++){
-		if(directorios[i].padre == -9){ indice = i; break;}
-	}
-	if (indice!= -1){
-		memcpy(directorios[indice].nombre,nombre,strlen(nombre));
-		directorios[indice].padre = padre;
-	}
-	return indice;
+    int padre = 0;
+    if (!string_contains(path, "/")) {
+        padre = existe_dir_en_padre(path, padre);
+    } else {
+        char **dirs = string_split(path, "/");
+        int i = 0;
+        while (dirs[i] != NULL) {
+            padre = existe_dir_en_padre(dirs[i], padre);
+            i++;
+        }
+        liberar_char_array(dirs);
+    }
+    return padre;
 }
 
+bool existe_archivo(char *nombre, int padre) {
 
+    bool res;
+    int _buscador(t_archivo *self) {
 
+        return (!strcmp(self->nombre, nombre) && self->index_padre == padre);
+    }
+    t_archivo *arch = list_find(archivos, (void *) _buscador);
+
+    res = (arch == NULL) ? false : true;
+    return res;
+}
+
+int agregar_directorio(char *nombre, int padre) {
+
+    int i;
+    int indice = -1;
+    for (i = 0; i < 100; i++) {
+        if (directorios[i].padre == -9) {
+            indice = i;
+            break;
+        }
+    }
+    if (indice != -1) {
+        memcpy(directorios[indice].nombre, nombre, strlen(nombre));
+        directorios[indice].padre = padre;
+    }
+    return indice;
+}
+
+int liberarBloqueNodo(char *nameNodo, unsigned int numBlock) {
+    int i;
+    NODO *fetchNodo;
+    for (i = 0; i < nodos->elements_count; ++i) {
+        fetchNodo = list_get(nodos, i);
+        if (strcmp(fetchNodo->nombre, nameNodo) == 0) {
+            bitarray_clean_bit(fetchNodo->bitmapNodo, (off_t) numBlock);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+bool containsDirOtherDir(int index) {
+    int i;
+    for (i = 0; i < 100; i++) {
+        if (directorios[i].padre != -9 && directorios[i].padre == index) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool directoryEmpty(int index) {
+    char indexString[14] = "";
+    sprintf(indexString, "archivos/%d", index);
+    char *pathReal = completar_path_metadata(indexString);
+    char *files = nombres_archivos(pathReal);
+    if (files == NULL) {
+        log_error(logi, "No se pudo abrir directorio a verificar");
+        return false;
+    }
+    if (strcmp(files, "NADA") != 0) {
+        log_error(logi, "El directorio contiene archivos");
+        return false;
+    }
+    if (containsDirOtherDir(index)) {
+        log_error(logi, "El directorio contiene otro directorios");
+        return false;
+    }
+    return true;
+}
 
 //todo: Funciones Auxiliares
 
@@ -663,39 +708,39 @@ void liberar_char_array(char **miarray) {
     free(miarray);
 }
 
-char **sacar_archivo(char *fullpath1){
+char **sacar_archivo(char *fullpath1) {
 
-	char **path = malloc(sizeof(char *) *3);
-	path[2] = NULL;
-	int i=0,ii = 0,j=0;
-	char *fullpath = strdup(fullpath1);
+    char **path = malloc(sizeof(char *) * 3);
+    path[2] = NULL;
+    int i = 0, ii = 0, j = 0;
+    char *fullpath = strdup(fullpath1);
 
 
-	if(!string_contains(fullpath,"/")){
-		path[1] = strdup(fullpath);
-		path[0] = strdup("/");
-		free(fullpath);
-		return path;
-	}
+    if (!string_contains(fullpath, "/")) {
+        path[1] = strdup(fullpath);
+        path[0] = strdup("/");
+        free(fullpath);
+        return path;
+    }
 
-	path[0]= strdup("");
-	path[1]= strdup("");
-	char **split = string_split(fullpath, "/");
+    path[0] = strdup("");
+    path[1] = strdup("");
+    char **split = string_split(fullpath, "/");
 
-	while(split[ii] != NULL) ii++;
-	i= ii-2;
+    while (split[ii] != NULL) ii++;
+    i = ii - 2;
 
-	string_append(&path[0],"/");
-	while(j <= i){
-		string_append(&path[0],split[j]);
-		string_append(&path[0],"/");
-		j++;
-	}
+    string_append(&path[0], "/");
+    while (j <= i) {
+        string_append(&path[0], split[j]);
+        string_append(&path[0], "/");
+        j++;
+    }
 
-	string_append(&path[1],split[ii-1]);
+    string_append(&path[1], split[ii - 1]);
 
-	liberar_char_array(split);
-	free(fullpath);
+    liberar_char_array(split);
+    free(fullpath);
 
-	return path;
+    return path;
 }
