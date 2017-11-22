@@ -21,7 +21,7 @@ extern t_log *yama_log;
 
 void solicitar_informacion_archivo(char *info, int _socket)
 {
-	size_t size_buffer = 0;
+	size_t size_buffer = strlen(info);
 	t_list *archivo_bloques;
 	int control;
 	header head;
@@ -69,6 +69,10 @@ void solicitar_informacion_archivo(char *info, int _socket)
 
 		list_iterate(archivo_bloques,(void *)_convertir_bloques);
 		ejecutar_clock(bloques_auxiliar,i,_socket);
+	}
+	else if(head.codigo == 4)
+	{
+		//enviar mensaje a master
 	}
 
 
