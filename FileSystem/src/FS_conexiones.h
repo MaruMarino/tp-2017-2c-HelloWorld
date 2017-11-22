@@ -13,5 +13,6 @@ int realizar_handshake(int nuevo_socket);
 int direccionar(int socket_rec);
 void atender_mensaje_YAMA(int codigo,void *mensaje);
 void atender_mensaje_NODO(int codigo,void *mensaje);
+void atender_mensaje_WORKER(int codigo, void * mensaje, int socketWorker);
 
 #endif /* FS_CONEXIONES_H_ */

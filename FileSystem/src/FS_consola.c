@@ -10,6 +10,7 @@
 #include <commons/string.h>
 #include <readline/history.h>
 #include <readline/readline.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,22 +28,23 @@
 #define cyan  "\x1B[36m"
 #define blanco  "\x1B[37m"
 
+extern pthread_t hiloConexiones;
 
 comando commands[] = {
 		{ "ayuda", fs_ayuda, "Mostrar menu de comandos", "ayuda"},
 		{ "?", fs_payuda, "Ayuda sobre un comando en particular","? [nombre_comando]" },
 		{ "format", fs_format, "Formatear Filesystem","format"},
 		{ "rm", fs_rm, "Eliminar Archivo/Directorio/Nodo/Bloque","rm [path_archivo] |rm​ ​-d​ [path_dir]|rm ​-b ​[path_archivo] [nro_bloque] [nro_copia]"},
-		{ "rename", fs_rename, "Renombrar un Archivo o Directorio","rename ​[path_original] [nombre_final]" },
-		{ "ls", fs_ls, "Listar archivos de un Directorio","ls [path_directorio]" },
-		{ "mv", fs_mv, "Mover un Archivo o Directorio","mv [path_original] [path_final]" },
-		{ "cat",fs_cat, "Mostrar contenido de un archivo como texto plano","cat ​[path_archivo]" },
-		{ "mkdir",fs_mkdir, "Crear directorio", "mkdir [path_dir]"},
+		{ "rename", fs_rename, "Renombrar un Archivo(Aa) o Directorio(Dd)","rename ​[path_original_yamafs] [nombre_final] [Aa/Dd]" },
+		{ "ls", fs_ls, "Listar archivos de un Directorio","ls [path_directorio_yamafs]" },
+		{ "mv", fs_mv, "Mover un Archivo o Directorio","mv [path_original_yamafs] [path_final_yamafs]" },
+		{ "cat",fs_cat, "Mostrar contenido de un archivo como texto plano","cat ​[path_archivo_yamafs]" },
+		{ "mkdir",fs_mkdir, "Crear directorio", "mkdir [path_dirrectorio_yamafs]"},
 		{ "cpfrom", fs_cpfrom, "Copiar un archivo local al yamafs","cpfrom​ [path_archivo_local] [directorio_yamafs] [tipo_archivo]" },
-		{ "cpto", fs_cpto, "Copiar un archivo del yamafs al local", "cpto [path_archivo_yamafs] [directorio_filesystem]"},
-		{ "cpblock", fs_cpblock, "Crear una copia de un bloque de un archivo en el nodo dado","cpblock ​[path_archivo] [nro_bloque id_nodo]" },
+		{ "cpto", fs_cpto, "Copiar un archivo del yamafs al local", "cpto [path_archivo_yamafs] [directorio_local]"},
+		{ "cpblock", fs_cpblock, "Crear una copia de un bloque de un archivo en el nodo dado","cpblock ​[path_archivo_yamafs] [nro_bloque] [id_nodo]" },
 		{ "md5", fs_md5, "Solicitar el MD5 de un archivo en yamafs","md5​ [path_archivo_yamafs]" },
-		{ "info", fs_info, "Mostrar informacion de un archivo","info ​[path_archivo]" },
+		{ "info", fs_info, "Mostrar informacion de un archivo","info ​[path_archivo_yamafs]" },
 		{ (char *)NULL, (Function *)NULL, (char *)NULL,(char *)NULL }
 };
 
@@ -60,6 +62,7 @@ void iniciar_consola_FS(){
 		if(!strncmp(linea,"exit",4)){
 			printf("Bai\n");
 			free(linea);
+			pthread_cancel(hiloConexiones);
 			break;
 
 		}else{

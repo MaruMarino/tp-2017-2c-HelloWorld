@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include "estructurasfs.h"
+#include <funcionesCompartidas/estructuras.h>
 
 /* Funciones para realizar Almacenar Archivo*/
 
@@ -25,7 +26,13 @@ int get_file_size(char *);
 
 bool hay_lugar_para_archivo(int size);
 
+t_list  *get_copia_nodos_activos();
+
 void disconnectedNodo(int socket);
 /*todo Funciones para realizar Leer Archivo*/
+
+void *leer_bloque(bloqueArchivo *bq,int copia); //si copia == 1 me fijo primero en la copia, else primero en el original
+
+int crear_archivo_temporal(t_archivo *archivo,char *nomre_temporal);
 
 #endif /* FS_INTERFAZ_NODOS_H_ */

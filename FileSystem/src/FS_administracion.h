@@ -58,4 +58,10 @@ char **sacar_archivo(char *fullpath);
 // Devuelve el indice en el que lo agregó
 int agregar_directorio(char *nombre,int padre);
 
+t_archivo *get_metadata_archivo(char *path);
+
+t_archivo *get_metadata_archivo_sinvalidar(char *path,int padre);
+
+NODO *get_NODO(char *nombre);
+
 #endif /* FS_ADMINISTRACION_H_ */

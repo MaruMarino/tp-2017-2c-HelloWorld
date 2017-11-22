@@ -304,11 +304,11 @@ int recvall_intr(int sock, char **buffer, size_t *len, int flags){
 			if (errno != EINTR){
 				perror("No se pudo recvall'ear el paquete. error");
 				break;
-			} else {
-				if(!status)
+
+			}
+		}else if(!status){
 					return 0;
 			}
-		}
 
 		total += (size_t) status;
 		left -= (size_t) status;
