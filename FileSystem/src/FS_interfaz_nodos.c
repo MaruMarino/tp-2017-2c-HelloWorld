@@ -250,6 +250,8 @@ t_list *escribir_desde_archivo(char *local_path, char file_type, int filesize) {
         if(linea) free(linea);
     }
 
+    actualizar_tabla_nodos();
+
     fclose(archi);
     return ba;
 }
@@ -345,15 +347,29 @@ void *leer_bloque(bloqueArchivo *bq, int copia){
 
 
 	if(copia == 1){
+
 		nod = get_NODO(bq->nodo1);
 		bloque = bq->bloquenodo1;
+
+		if(nod == NULL){
+			nod = get_NODO(bq->nodo0);
+			bloque = bq->bloquenodo0;
+		}
+
 		if(nod->estado == no_disponible){
 			bloque = bq->bloquenodo0;
 			nod = get_NODO(bq->nodo0);
 		}
+
 	}else{
 		nod = get_NODO(bq->nodo0);
 		bloque = bq->bloquenodo0;
+
+		if(nod == NULL){
+			nod = get_NODO(bq->nodo1);
+			bloque = bq->bloquenodo1;
+		}
+
 		if(nod->estado == no_disponible){
 			bloque = bq->bloquenodo1;
 			nod = get_NODO(bq->nodo1);
@@ -387,6 +403,7 @@ int crear_archivo_temporal(t_archivo *archivo,char *nombre_temporal){
 	bloqueArchivo *bq;
 
 	if(archivo->estado == no_disponible) return -1;
+
 	FILE *tmp = fopen(nombre_temporal,"w");
 	pthread_mutex_lock(&mutex_socket);
 	for(i=0;i<bloques;i++){

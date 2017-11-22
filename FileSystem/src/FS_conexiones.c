@@ -618,6 +618,7 @@ void atender_mensaje_WORKER(int codigo, void * mensaje, int socketWorker){
 			arch->tamanio = fileReduccionGlobal->fsize;
 
 			list_add(archivos,arch);
+			crear_metadata_archivo(arch);
 
 			unlink("/tmp/almacenado_final.txt");
 			log_info(logi,"Archivo Almacenado");

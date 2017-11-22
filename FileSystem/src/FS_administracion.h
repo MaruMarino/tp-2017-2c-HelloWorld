@@ -23,7 +23,7 @@ int recuperar_bitmap_nodo(NODO *);
 
 int recuperar_metadata_archivos(void);
 
-int recuperar_metadata_un_arhcivo(char *);
+int recuperar_metadata_un_arhcivo(char *,int);
 
 // Funciones de creacion de estructuras administrativas en un inicio limpio
 
@@ -68,5 +68,21 @@ NODO *get_NODO(char *nombre);
 int liberarBloqueNodo(char *nameNodo, unsigned int numBlock);
 
 bool directoryEmpty(int index);
+// Re-persiste el archivo
+void actualizar_arbol_directorios(void);
+// Re-Calcular tamaño FS
+void actualizar_FS_free(void);
+// Por las sincronizar bitmaps mapeados a memoria
+void sincronizar_bitmaps();
+// Re-persiste el archivo
+void actualizar_tabla_nodos(void);
+// Crear estructuras Fisicas en FS-local para un archivo// tambien para actulizar
+void crear_metadata_archivo(t_archivo *arch);
+//eliminar metadata de un archivo
+void eliminar_metadata_archivo(t_archivo *arch);
+// eliminar directorio de una, sin verificar si vacío, donde estaban sus archivos
+void eliminar_directorio(int index);
+
+
 
 #endif /* FS_ADMINISTRACION_H_ */

@@ -125,8 +125,8 @@ int recuperar_nodos(void) {
 
     t_config *config_nodos = config_create(path_armado);
 
-    configuracion->espacio_total = config_get_int_value(config_nodos, "TAMANIO");
-    configuracion->espacio_libre = config_get_int_value(config_nodos, "LIBRE");
+    configuracion->espacio_total = (config_get_int_value(config_nodos, "TAMANIO"))*Mib;
+    configuracion->espacio_libre = (config_get_int_value(config_nodos, "LIBRE"))*Mib;
     char **nombres_nodos = config_get_array_value(config_nodos, "NODOS");
 
     int i = 0;
@@ -142,11 +142,11 @@ int recuperar_nodos(void) {
         strcpy(nodo_recuperado->nombre, nombres_nodos[i]);
 
         key_aux = string_from_format("%sTotal", nombres_nodos[i]);
-        nodo_recuperado->espacio_total = config_get_int_value(config_nodos, key_aux);
+        nodo_recuperado->espacio_total = (config_get_int_value(config_nodos, key_aux))*Mib;
         free(key_aux);
 
         key_aux = string_from_format("%sLibre", nombres_nodos[i]);
-        nodo_recuperado->espacio_libre = config_get_int_value(config_nodos, key_aux);
+        nodo_recuperado->espacio_libre = (config_get_int_value(config_nodos, key_aux))*Mib;
         free(key_aux);
 
         list_add(nodos, nodo_recuperado);
@@ -221,7 +221,7 @@ int recuperar_metadata_archivos(void) {
             char *fullpath_archivo;
             while (aux_split_archs[c] != NULL) {
                 fullpath_archivo = string_from_format("%s/%s", fullpath, aux_split_archs[c]);
-                recuperar_metadata_un_arhcivo(fullpath_archivo);
+                recuperar_metadata_un_arhcivo(fullpath_archivo,atoi(aux_split[i]));
                 free(fullpath_archivo);
                 c++;
             }
@@ -242,7 +242,7 @@ int recuperar_metadata_archivos(void) {
     return 1;
 }
 
-int recuperar_metadata_un_arhcivo(char *fullpath) {
+int recuperar_metadata_un_arhcivo(char *fullpath, int padre) {
 
     t_archivo *archi = malloc(sizeof(t_archivo));
     t_config *info = config_create(fullpath);
@@ -250,35 +250,58 @@ int recuperar_metadata_un_arhcivo(char *fullpath) {
     archi->tamanio = config_get_int_value(info, "TAMANIO");
     archi->tipo = strdup(config_get_string_value(info, "TIPO"));
     char **pathnombre = sacar_archivo(fullpath);
-    archi->index_padre = existe_ruta_directorios(pathnombre[0]);
+    archi->index_padre = padre;
     archi->nombre = strdup(pathnombre[1]);
-    archi->cantbloques = ((config_keys_amount(info) - 2) / 3);
+
     archi->estado = no_disponible;
 
     archi->bloques = list_create();
     int i = 0;
+    int limite = config_keys_amount(info)-2;
+    int cantidad_leidas=0;
 
-    while (i < archi->cantbloques) {
+    char *key_bloque_copia0;
+    char *key_bloque_copia1;
+    char *key_bloque_bytes;
+
+    while (cantidad_leidas < limite) {
+
 
         bloqueArchivo *nuevobloque = malloc(sizeof(bloqueArchivo));
-        char *key_bloque_copia0 = string_from_format("BLOQUE%dCOPIA0", i);
-        char *key_bloque_copia1 = string_from_format("BLOQUE%dCOPIA1", i);
-        char *key_bloque_bytes = string_from_format("BLOQUE%dBYTES", i);
+        key_bloque_copia0 = string_from_format("BLOQUE%dCOPIA0", i);
+        key_bloque_copia1 = string_from_format("BLOQUE%dCOPIA1", i);
+        key_bloque_bytes = string_from_format("BLOQUE%dBYTES", i);
 
-        char **copia0 = config_get_array_value(info, key_bloque_copia0);
-        nuevobloque->nodo0 = strdup(copia0[0]);
-        nuevobloque->bloquenodo0 = atoi(copia0[1]);
+        if(config_has_property(info,key_bloque_copia0)){
+        	char **copia0 = config_get_array_value(info, key_bloque_copia0);
+        	nuevobloque->nodo0 = strdup(copia0[0]);
+        	nuevobloque->bloquenodo0 = atoi(copia0[1]);
+        	liberar_char_array(copia0);
+        	cantidad_leidas++;
+        }else{
+        	nuevobloque->nodo0 = strdup("");
+        	nuevobloque->bloquenodo0 = -1;
+        }
 
-        char **copia1 = config_get_array_value(info, key_bloque_copia1);
-        nuevobloque->nodo1 = strdup(copia1[0]);
-        nuevobloque->bloquenodo1 = atoi(copia1[1]);
+        if(config_has_property(info,key_bloque_copia1)){
+        	char **copia1 = config_get_array_value(info, key_bloque_copia1);
+        	nuevobloque->nodo1 = strdup(copia1[0]);
+        	nuevobloque->bloquenodo1 = atoi(copia1[1]);
+        	liberar_char_array(copia1);
+        	cantidad_leidas++;
+        }else{
+        	nuevobloque->nodo1 = strdup("");
+        	nuevobloque->bloquenodo1 = -1;
+        }
+
 
         nuevobloque->bytesEnBloque = config_get_int_value(info, key_bloque_bytes);
+        cantidad_leidas++;
 
         list_add(archi->bloques, nuevobloque);
 
-        liberar_char_array(copia0);
-        liberar_char_array(copia1);
+
+
         free(key_bloque_copia0);
         free(key_bloque_copia1);
         free(key_bloque_bytes);
@@ -323,47 +346,47 @@ int iniciar_nodos(void) {
     tabla_nodos->path = path_armado;
 
     t_dictionary *elementos = dictionary_create();
-    char *espacio_total = string_itoa(configuracion->espacio_total);
-    char *espacio_libre = string_itoa(configuracion->espacio_libre);
+    tabla_nodos->properties = elementos;
 
-    dictionary_put(elementos, "TAMANIO", espacio_total);
-    dictionary_put(elementos, "LIBRE", espacio_libre);
+    char *espacio_total = string_itoa((configuracion->espacio_total)/Mib);
+    char *espacio_libre = string_itoa((configuracion->espacio_libre)/Mib);
 
+    config_set_value(tabla_nodos,"TAMANIO",espacio_total);
+    config_set_value(tabla_nodos,"LIBRE",espacio_libre);
+
+    free(espacio_total);
+    free(espacio_libre);
 
     char *nomnodos = armar_string_nombres_nodos();
-    dictionary_put(elementos, "NODOS", nomnodos);
+    config_set_value(tabla_nodos, "NODOS", nomnodos);
 
     void _agregar_info_nodo(NODO *self) {
 
         char *total = string_from_format("%sTotal", self->nombre);
         char *libre = string_from_format("%sLibre", self->nombre);
-        espacio_total = string_itoa(self->espacio_total);
-        espacio_libre = string_itoa(self->espacio_libre);
+        espacio_total = string_itoa((self->espacio_total)/Mib);
+        espacio_libre = string_itoa((self->espacio_libre)/Mib);
 
-        dictionary_put(elementos, total, espacio_total);
-        dictionary_put(elementos, libre, espacio_libre);
+        config_set_value(tabla_nodos, total, espacio_total);
+        config_set_value(tabla_nodos, libre, espacio_libre);
 
         free(total);
         free(libre);
-        // todo: pensar cómo no leakear esta memoria
-        //free(espacio_total);
-        //free(espacio_libre);
+
+        free(espacio_total);
+        free(espacio_libre);
     }
 
     list_iterate(nodos, (void *) _agregar_info_nodo);
-    tabla_nodos->properties = elementos;
 
     config_save(tabla_nodos);
 
-    dictionary_destroy(tabla_nodos->properties);
-    free(espacio_total);
-    free(espacio_libre);
+    config_destroy(tabla_nodos);
     free(nomnodos);
-    free(tabla_nodos->path);
-    free(tabla_nodos);
 
     return 1;
 }
+
 
 int iniciar_bitmaps_nodos(void) {
 
@@ -408,12 +431,24 @@ int iniciar_bitmaps_nodos(void) {
 
 void crear_subdirectorios(void) {
 
+	struct stat info_dir;
+	char *syscmd;
 
-    char *path_armado = completar_path_metadata("archivos");
+	char *path_armado = completar_path_metadata("archivos");
+    if(stat(path_armado,&info_dir) == 0){
+    	syscmd = string_from_format("rm -r %s",path_armado);
+    	system(syscmd);
+    	free(syscmd);
+    }
     mkdir(path_armado, 0775);
     free(path_armado);
 
     path_armado = completar_path_metadata("bitmaps");
+    if(stat(path_armado,&info_dir) == 0){
+    	syscmd = string_from_format("rm -r %s",path_armado);
+    	system(syscmd);
+    	free(syscmd);
+    }
     mkdir(path_armado, 0775);
     free(path_armado);
 
@@ -551,23 +586,193 @@ bool containsDirOtherDir(int index) {
 }
 
 bool directoryEmpty(int index) {
-    char indexString[14] = "";
+
+	char indexString[14] = "";
     sprintf(indexString, "archivos/%d", index);
     char *pathReal = completar_path_metadata(indexString);
     char *files = nombres_archivos(pathReal);
     if (files == NULL) {
+    	free(pathReal);
+    	free(files);
         log_error(logi, "No se pudo abrir directorio a verificar");
         return false;
     }
     if (strcmp(files, "NADA") != 0) {
+    	free(pathReal);
+    	free(files);
         log_error(logi, "El directorio contiene archivos");
         return false;
     }
     if (containsDirOtherDir(index)) {
+    	free(pathReal);
+    	free(files);
         log_error(logi, "El directorio contiene otro directorios");
         return false;
     }
     return true;
+}
+void actualizar_arbol_directorios(void){
+
+	char *path_armado = completar_path_metadata("directorios.dat");
+
+	FILE *filedir = fopen(path_armado, "w");
+	fwrite(directorios, sizeof(t_directory), 100, filedir);
+	fclose(filedir);
+
+	free(path_armado);
+
+}
+void actualizar_FS_free(void){
+
+	int libre = 0;
+
+	void _sumar_totalesylibres_nodos(NODO *self){
+
+		if(self->estado == disponible){
+			libre += self->espacio_libre;
+
+
+		}
+	}
+	list_iterate(nodos,(void *) _sumar_totalesylibres_nodos);
+
+	configuracion->espacio_libre = libre;
+
+
+}
+
+void sincronizar_bitmaps(){
+
+	void _sincronizar(NODO* self){
+		msync(self->bitmapNodo->bitarray, self->bitmapNodo->size, MS_SYNC);
+	}
+	list_iterate(nodos,(void *) _sincronizar);
+
+
+
+
+
+}
+
+void actualizar_tabla_nodos(void){
+
+    char *path_armado = completar_path_metadata("nodos.bin");
+    t_config *tabla_nodos =config_create(path_armado);
+
+    actualizar_FS_free();
+    sincronizar_bitmaps();
+
+    char *espacio_total = string_itoa((configuracion->espacio_total)/Mib);
+    char *espacio_libre = string_itoa((configuracion->espacio_libre)/Mib);
+    config_set_value(tabla_nodos,"TAMANIO", espacio_total);
+    config_set_value(tabla_nodos,"LIBRE", espacio_libre);
+    free(espacio_libre);
+    free(espacio_total);
+
+    void _actualizar_info_nodo(NODO *self) {
+
+        char *total = string_from_format("%sTotal", self->nombre);
+        char *libre = string_from_format("%sLibre", self->nombre);
+        espacio_total = string_itoa((self->espacio_total)/Mib);
+        espacio_libre = string_itoa((self->espacio_libre)/Mib);
+
+        config_set_value(tabla_nodos,total, espacio_total);
+        config_set_value(tabla_nodos,libre, espacio_libre);
+
+        free(total);
+        free(libre);
+        free(espacio_total);
+        free(espacio_libre);
+    }
+
+    list_iterate(nodos, (void *) _actualizar_info_nodo);
+
+    config_save(tabla_nodos);
+
+    config_destroy(tabla_nodos);
+    free(path_armado);
+
+}
+
+// Crear estructuras Fisicas en FS-local para un archivo
+void crear_metadata_archivo(t_archivo *arch){
+
+	char *aux_path = string_from_format("archivos/%d",arch->index_padre);
+	char *path_armado = completar_path_metadata(aux_path);
+
+	struct stat info;
+	if(stat(path_armado,&info)!=0){
+		mkdir(path_armado,0775);
+	}
+	char *path_armado_conNombre = string_from_format("%s/%s",path_armado,arch->nombre);
+
+	t_config *metadata = malloc(sizeof(t_config));
+	metadata->path = path_armado_conNombre;
+	metadata->properties = dictionary_create();
+
+	char *aux = string_from_format("%d",arch->tamanio);
+	config_set_value(metadata,"TAMANIO",aux);
+	free(aux);
+
+	aux = strdup(arch->tipo);
+	config_set_value(metadata,"TIPO",aux);
+	free(aux);
+
+	char *key0,*key1,*key3,*copia0,*copia1,*bytesEnB;
+	int block_count = 0;
+
+	void _agregar_info_bloques(bloqueArchivo *self){
+
+		if(self->bloquenodo0 != -1){
+			key0= string_from_format("BLOQUE%dCOPIA0",block_count);
+			copia0 = string_from_format("[%s,%d]",self->nodo0,self->bloquenodo0);
+			config_set_value(metadata,key0,copia0);
+			free(key0);
+			free(copia0);
+		}
+		if(self->bloquenodo1 != -1){
+			key1= string_from_format("BLOQUE%dCOPIA1",block_count);
+			copia1 = string_from_format("[%s,%d]",self->nodo1,self->bloquenodo1);
+			config_set_value(metadata,key1,copia1);
+			free(key1);
+			free(copia1);
+		}
+		key3 = string_from_format("BLOQUE%dBYTES",block_count);
+		bytesEnB = string_from_format("%d",self->bytesEnBloque);
+		config_set_value(metadata,key3,bytesEnB);
+		free(key3);
+		free(bytesEnB);
+
+		block_count++;
+	}
+	list_iterate(arch->bloques,(void *)_agregar_info_bloques);
+
+	config_save(metadata);
+
+	config_destroy(metadata);
+	free(path_armado);
+	free(aux_path);
+}
+
+
+void eliminar_metadata_archivo(t_archivo *arch){
+
+	char *aux_path = string_from_format("archivos/%d",arch->index_padre);
+	char *path_armado = completar_path_metadata(aux_path);
+	char *path_armado_conNombre = string_from_format("%s/%s",path_armado,arch->nombre);
+
+	unlink(path_armado_conNombre);
+}
+
+void eliminar_directorio(int index){
+
+	char *aux_path = string_from_format("archivos/%d",index);
+	char *path_armado = completar_path_metadata(aux_path);
+
+	rmdir(path_armado);
+
+	free(aux_path);
+	free(path_armado);
 }
 
 //todo: Funciones Auxiliares
