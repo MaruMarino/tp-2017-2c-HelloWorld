@@ -277,7 +277,7 @@ char *serializar_FName(char *fn, size_t *len){
 	memcpy(fname_serial + *len, fn, fnlen);
 	*len += fnlen;
 
-	printf("Se serializaron %d bytes\n", *len);
+	//printf("Se serializaron %d bytes\n", *len);
 
 	return fname_serial;
 }
@@ -294,7 +294,7 @@ char *deserializar_FName(char *fname_serial){
 	memcpy(fn, fname_serial + off, fnlen);
 	off += fnlen;
 
-	printf("Se deserializaron %d bytes\n", off);
+	//printf("Se deserializaron %d bytes\n", off);
 
 	return fn;
 }
@@ -320,14 +320,14 @@ char *serializar_File(t_file *file, size_t *len){
 t_file *deserializar_File(char *file_serial){
 
 	size_t off = 0;
-	t_file *file = malloc(sizeof *file);
+	t_file *file = malloc(sizeof (t_file));
 
 	file->fname = deserializar_FName(file_serial);
-	memcpy(&off, file_serial, sizeof off);
+	off = sizeof(int) + strlen(file->fname)+1;
 	memcpy(&file->fsize, file_serial + off, sizeof(int));
 	off += sizeof(off_t);
 	file->data = malloc((size_t) file->fsize);
-	memcpy(file_serial + off, file->data, (size_t) file->fsize);
+	memcpy(file->data,file_serial + off, (size_t) file->fsize);
 	off += (size_t) file->fsize;
 
 	//printf("Se deserializaron %d bytes\n", off);

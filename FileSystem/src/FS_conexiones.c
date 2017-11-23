@@ -329,7 +329,7 @@ int direccionar(int socket_rec) {
 	int status;
 	header header_mensaje ;
 	pthread_mutex_lock(&mutex_socket);
-	char *mensaje = getMessage(socket_rec, &header_mensaje, &status);
+	char *mensaje = getMessageIntr(socket_rec, &header_mensaje, &status);
 	pthread_mutex_unlock(&mutex_socket);
 
 	if (status == -1) {
@@ -558,6 +558,7 @@ void atender_mensaje_YAMA(int codigo, void *mensaje) {
 			size_t j;
 
 			char *bloques_serializados = dserializar_list_bloque_archivo(ElArchivo->bloques, &j);
+			h.sizeData = j;
 
 			message *mensaje = create_Message(&h, bloques_serializados);
 			enviar_messageIntr(yamasock,mensaje,logi, &ctrl);

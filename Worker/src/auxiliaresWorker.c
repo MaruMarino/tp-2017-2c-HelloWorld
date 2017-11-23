@@ -180,10 +180,10 @@ int makeCommandAndExecute(char *data_path, int at, int to, char *exe_fname, char
 
 	char *opt = strdup("");
 	char *beg, *end;
-	if (to < 0){ // data_path es un binfile
+	if (to > 0){ // data_path es un bloque
 		beg = string_itoa(at);
 		end = string_itoa(to);
-		string_append_with_format(&opt, "head -c %s %s | tail -c %s", end, data_path, beg);
+		string_append_with_format(&opt, "head -c %s %s | tail -c %s", end, data_path, end);
 		liberador(2, beg, end);
 
 	} else // data_path es un textfile
@@ -389,7 +389,7 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname) {
 		return -1;
 	}
 
-	if (enviar_message(sock_fs, msj, logw, &ctl) == -1) {
+	if (enviar_messageIntr(sock_fs, msj, logw, &ctl) == -1) {
 		log_error(logw, "Fallo enviar message a FileSystem en %s:%s", fs_ip, fs_port);
 		liberador(5, file->data, file->fname, file, file_serial, msj);
 		close(sock_fs);

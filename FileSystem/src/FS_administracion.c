@@ -941,7 +941,14 @@ char **sacar_archivo(char *fullpath1) {
         string_append(&path[0], "/");
         j++;
     }
+    if(ii == 0){
+        path[1] = strdup("");
 
+        liberar_char_array(split);
+        free(fullpath);
+
+        return path;
+    }
     string_append(&path[1], split[ii - 1]);
 
     liberar_char_array(split);

@@ -9,6 +9,7 @@
 #include <funcionesCompartidas/estructuras.h>
 #include <funcionesCompartidas/serializacion.h>
 #include <funcionesCompartidas/generales.h>
+#include <funcionesCompartidas/logicaNodo.h>
 
 #include "nettingWorker.h"
 #include "estructurasLocales.h"
@@ -25,7 +26,7 @@ void subrutinaEjecutor(int sock_m) {
 	log_trace(logw, "CHILD [%d]: Corriendo Subrutina Ejecutor", wp);
 
 	header head;
-	char *msj, *exe_fname, *data_fname, *fname;
+	char *msj, *exe_fname, *data_fname, *fname, *data;
 	int status, beg, end;
 	int rta = FALLO;
 
@@ -52,8 +53,9 @@ void subrutinaEjecutor(int sock_m) {
 		log_trace(logw, "CHILD [%d]: Ejecuta Transformacion", wp);
 
 		t_info_trans *info_t = deserializar_info_trans(msj);
-		beg = (int) info_t->bloque * maxline;
-		end = beg + maxline;
+		data = getDataBloque(conf->ruta_databin, info_t->bloque);
+		beg = 0;
+		end = info_t->bytes_ocup;
 
 		if (crearArchivoBin(info_t->prog, info_t->size_prog, exe_fname) < 0) {
 			log_error(logw, "No se pudieron crear los archivos de trabajo.");
@@ -61,7 +63,7 @@ void subrutinaEjecutor(int sock_m) {
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
-		if (makeCommandAndExecute(conf->ruta_databin, beg, end, exe_fname, info_t->file_out) < 0) {
+		if (makeCommandAndExecute(data, beg, end, exe_fname, info_t->file_out) < 0) {
 			log_error(logw, "No se pudo completar correctamente la reduccion");
 			liberador(4, msj, info_t->prog, info_t->file_out, info_t);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
