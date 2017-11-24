@@ -652,6 +652,7 @@ void atender_mensaje_WORKER(int codigo, void *mensaje, int socketWorker) {
             if (send(socketWorker, response->buffer, response->sizeBuffer, 0) == -1) {
                 log_error(logi, "Error al enviar al worker save reduccionGlobal");
             }
+            break;
         }
         default: {
             log_info(logi, "Codigo no reconocido worker");

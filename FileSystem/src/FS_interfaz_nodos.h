@@ -35,4 +35,37 @@ void *leer_bloque(bloqueArchivo *bq,int copia); //si copia == 1 me fijo primero 
 
 int crear_archivo_temporal(t_archivo *archivo,char *nomre_temporal);
 
+/* Dado una lista de bloques que conformar un archivo, pide en simultaneo las distintas
+ * partes a cada Nodo de interes y agrupa el resultado final en un char*
+ * En caso exitoso retorna el char* con la info binaria del File
+ * En caso de error retorna -1
+ */
+char *pedirFile(t_list *bloques);
+
+/* Estructuras auxiliares para administrar el pedirFile() */
+struct _bloq {
+	bloqueArchivo *bq;
+	int ord; // orden del bloque en su Archivo
+};
+
+struct _nodoCola {
+	bool hay_pedidos;
+	int fd;
+	int node; // 0 || 1 -> representa en que nodo hay que pedir el bloque
+	struct _bloq *colaPedidos; // mallocar el maximo posible por NODO +1 (NULL)
+};
+
+/* Funciones auxiliares para administrar el pedirFile() */
+int inicializarNodoCola(int nq, struct _nodoCola (*nodC)[nq], t_list *bloques);
+
+void liberarNodoCola(int nq, struct _nodoCola (*nodC)[nq]);
+
+int encolarSobreNodos(int nq, struct _nodoCola (*nodC)[nq], bloqueArchivo *bq, int pos);
+
+int delegarPedidos(int nq, struct _nodoCola (*nodC)[nq], int node);
+
+void enviarPeticion(struct _nodoCola *nodC);
+
+bool restanPedidos(int nq, struct _nodoCola (*nodC)[nq]);
+
 #endif /* FS_INTERFAZ_NODOS_H_ */
