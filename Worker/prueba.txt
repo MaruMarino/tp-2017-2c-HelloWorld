@@ -1,0 +1,10 @@
+total 44
+drwxrwxr-x  4 utnso utnso  4096 nov 13 15:51 .
+drwxrwxr-x 10 utnso utnso  4096 oct 22 21:04 ..
+-rw-rw-r--  1 utnso utnso 12540 oct 23 20:55 .cproject
+drwxrwxr-x  3 utnso utnso  4096 nov 13 16:06 Debug
+-rw-rw-r--  1 utnso utnso     8 oct  3 15:53 .gitignore
+-rw-rw-r--  1 utnso utnso   198 nov  5 19:14 nodo_conf
+-rw-rw-r--  1 utnso utnso   758 oct  3 15:53 .project
+-rw-rw-r--  1 utnso utnso     0 nov 13 16:06 prueba.txt
+drwxrwxr-x  2 utnso utnso  4096 nov 13 12:24 src

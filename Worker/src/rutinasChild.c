@@ -20,6 +20,7 @@
 
 extern t_log *logw;
 extern t_conf *conf;
+extern char *databin;
 
 void subrutinaEjecutor(int sock_m) {
 	pid_t wp = getpid();
@@ -53,24 +54,25 @@ void subrutinaEjecutor(int sock_m) {
 		log_trace(logw, "CHILD [%d]: Ejecuta Transformacion", wp);
 
 		t_info_trans *info_t = deserializar_info_trans(msj);
-		data = getDataBloque(conf->ruta_databin, info_t->bloque);
+		data = getDataBloque(databin, info_t->bloque);
 		beg = 0;
 		end = info_t->bytes_ocup;
 
-		if (crearArchivoBin(info_t->prog, info_t->size_prog, exe_fname) < 0) {
+		if (crearArchivoBin(info_t->prog, info_t->size_prog, exe_fname) < 0){// ||
+//			crearArchivoData(info_t->bloque, (size_t) info_t->bytes_ocup, data_fname)){
 			log_error(logw, "No se pudieron crear los archivos de trabajo.");
-			liberador(4, msj, info_t->prog, info_t->file_out, info_t);
+			liberador(5, data, msj, info_t->prog, info_t->file_out, info_t);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
 		if (makeCommandAndExecute(data, beg, end, exe_fname, info_t->file_out) < 0) {
-			log_error(logw, "No se pudo completar correctamente la reduccion");
-			liberador(4, msj, info_t->prog, info_t->file_out, info_t);
+			log_error(logw, "No se pudo completar correctamente la transformacion");
+			liberador(5, data, msj, info_t->prog, info_t->file_out, info_t);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
 		log_trace(logw, "CHILD [%d]: Finaliza Transformacion", wp);
-		liberador(4, msj, info_t->prog, info_t->file_out, info_t);
+		liberador(5, data, msj, info_t->prog, info_t->file_out, info_t);
 		break;
 
 	case RED_L:
@@ -79,7 +81,7 @@ void subrutinaEjecutor(int sock_m) {
 		t_info_redLocal *info_rl = deserializar_info_redLocal(msj);
 
 		if (crearArchivoBin(info_rl->prog, info_rl->size_prog, exe_fname) < 0) {
-			log_error(logw, "No se pudo crear el ejecutable de reduccion.");
+			log_error(logw, "No se pudo crear el ejecutable de reduccion local.");
 			liberarFnames(info_rl->files);
 			liberador(4, msj, info_rl->file_out, info_rl->prog, info_rl);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
@@ -93,7 +95,7 @@ void subrutinaEjecutor(int sock_m) {
 		}
 
 		if (makeCommandAndExecute(data_fname, 0, -1, exe_fname, info_rl->file_out) < 0) {
-			log_error(logw, "No se pudo completar correctamente la reduccion");
+			log_error(logw, "No se pudo completar correctamente la reduccion local");
 			liberarFnames(info_rl->files);
 			liberador(4, msj, info_rl->file_out, info_rl->prog, info_rl);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
@@ -109,7 +111,7 @@ void subrutinaEjecutor(int sock_m) {
 		t_info_redGlobal *info_rg = deserializar_info_redGlobal(msj);
 
 		if (crearArchivoBin(info_rg->prog, info_rg->size_prog, exe_fname) < 0) {
-			log_error(logw, "No se pudo crear el ejecutable de reduccion.");
+			log_error(logw, "No se pudo crear el ejecutable de reduccion global");
 			liberarInfoNodos(info_rg->nodos);
 			liberador(4, msj, info_rg->prog, info_rg->file_out, info_rg);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
@@ -123,7 +125,7 @@ void subrutinaEjecutor(int sock_m) {
 		}
 
 		if (makeCommandAndExecute(data_fname, 0, -1, exe_fname, info_rg->file_out) < 0) {
-			log_error(logw, "No se pudo completar correctamente la reduccion");
+			log_error(logw, "No se pudo completar correctamente la reduccion global");
 			liberarInfoNodos(info_rg->nodos);
 			liberador(4, msj, info_rg->prog, info_rg->file_out, info_rg);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
@@ -136,17 +138,24 @@ void subrutinaEjecutor(int sock_m) {
 	case ALMAC:
 		log_trace(logw, "CHILD [%d]: Ejecuta Almacenamiento Final", wp);
 
+		t_file *file;
 		fname = deserializar_FName(msj);
 
-		if (almacenarFileEnFilesystem(conf->ip_fs, conf->puerto_fs, fname) == -1) {
-			log_error(logw, "No se logro almacenar %s en FileSystem", fname);
-			cleanWorkspaceFiles(1, fname);
+		if ((file = cargarFile(fname)) == NULL) {
+			log_error(logw, "Fallo cargar el t_file %s para enviar", fname);
 			liberador(2, msj, fname);
 			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
 		}
 
+		if (almacenarFileEnFilesystem(conf->ip_fs, conf->puerto_fs, file) == -1) {
+			log_error(logw, "No se logro almacenar %s en FileSystem", file->fname);
+			liberador(5, msj, fname, file->data, file->fname, file);
+			terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
+		}
+		log_info(logw, "Se almaceno satisfactoriamente %s en FileSystem", file->fname);
+
 		log_trace(logw, "CHILD [%d]: Finaliza Almacenamiento Final", wp);
-		liberador(2, msj, fname);
+		liberador(5, msj, fname, file->data, file->fname, file);
 		break;
 	}
 

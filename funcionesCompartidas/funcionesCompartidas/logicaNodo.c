@@ -45,5 +45,7 @@ void insertBloque(void **dataBinMap, void **buffer, unsigned int numberBloque,si
 }
 
 char *getDataBloque(char *datamap, size_t blk){
-	return datamap + blk * blksize;
+	char *d = malloc(blksize);
+	memcpy(d, datamap + blk * blksize, blksize);
+	return d;
 }

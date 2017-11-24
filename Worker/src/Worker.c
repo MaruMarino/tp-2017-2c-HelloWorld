@@ -45,7 +45,6 @@ int main(int argc, char *argv[]){
 	}
 	puts("Se crea archivo de log en /home/utnso/worker_log");
 	logw = crear_archivo_log("Worker", true, "/home/utnso/worker_log");
-	logw->detail = LOG_LEVEL_TRACE;
 	conf = cargarConfig(argv[1]);
 	mostrarConfig(conf);
 
@@ -55,10 +54,6 @@ int main(int argc, char *argv[]){
 	int fd_proc, lis_fd, status;
 	bool masterQuery = false;
 	
-	fd_set masters_set, read_set;
-	FD_ZERO(&masters_set);
-	FD_ZERO(&read_set);
-
 	if ((databin = openDataBin(conf->ruta_databin, &dsize, conf->size_default)) == NULL){
 		log_error(logw, "Fallo abrir el archivo databin. No se incia el Nodo");
 		log_destroy(logw);
@@ -74,23 +69,14 @@ int main(int argc, char *argv[]){
 	}
 
 	signal(SIGCHLD, handleWorkerRet);
-	FD_SET(lis_fd, &masters_set);
 	while(1){
-		read_set = masters_set;
 
-		try_select:
-		if (select(lis_fd + 1, &read_set, NULL, NULL, NULL) == -1){
-			if (errno == EINTR) goto try_select;
-			perror("Fallo de select(). error");
-			log_error(logw, "Fallo select()");
-			break;
-		}
-
-		log_info(logw, "Un Proceso quiere conectarse!");
 		if ((fd_proc = aceptar_conexion(lis_fd, logw, &status)) == -1){
 			log_error(logw, "No se pudo establecer una conexion!");
 			continue;
 		}
+		log_info(logw, "Un Proceso quiere conectarse!");
+
 		if ((msj = getMessageIntr(fd_proc, &head, &status)) == NULL){
 			if (head.codigo == 0) goto verif;
 			log_error(logw, "No se pudo recibir mensaje de %c", head.letra);
@@ -112,6 +98,7 @@ int main(int argc, char *argv[]){
 
 		log_trace(logw, "Se procede a forkear el proceso...");
 		if ((mpid = fork()) == 0){ // soy proceso hijo
+//			signal(SIGCHLD, SIG_DFL);
 			close(lis_fd);
 			if (masterQuery) // un Master quiere que le procese algo
 				subrutinaEjecutor(fd_proc);
@@ -122,7 +109,7 @@ int main(int argc, char *argv[]){
 		} else if (mpid > 0){
 			log_trace(logw, "Main Worker cierra socket contra Master...");
 			close(fd_proc);
-
+			sleep(3600);
 		} else {
 			perror("Fallo fork(). error");
 			log_error(logw, "Fallo llamada a fork! Esto es un error fatal!");

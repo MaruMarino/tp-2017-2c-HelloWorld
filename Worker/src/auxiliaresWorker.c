@@ -32,6 +32,7 @@ static void liberarApareo(int nfiles, FILE *fs[nfiles], char *ls[nfiles - 1]);
 static void cerrarSockets(int nfds, int *fds);
 
 extern t_log *logw;
+extern char *databin;
 
 char *crearComando(int nargs, char *fst, ...) {
 	log_trace(logw, "Se crea un comando de %d argumentos", nargs);
@@ -77,6 +78,37 @@ int crearArchivoBin(char *bin, size_t bin_sz, char *fname) {
 		return -1;
 	}
 
+	fclose(f);
+	return 0;
+}
+
+int crearArchivoData(size_t blk, size_t count, char *fname) {
+	log_trace(logw, "Se crea archivo de datos %s", fname);
+
+	FILE *f;
+	if ((f = fopen(fname, "w")) == NULL) {
+		perror("No se pudo abrir el archivo");
+		log_error(logw, "No se pudo abrir el archivo %s", fname);
+		return -1;
+	}
+
+	char *data = getDataBloque(databin, blk);
+	if ((fwrite(data, count, 1, f)) != 1) {
+		log_error(logw, "No se pudo escribir el programa en %s", fname);
+		free(data);
+		fclose(f);
+		return -1;
+	}
+
+	// read-only data
+	if (chmod(fname, 0400) == -1) {
+		log_error(logw, "No se pudo dar permiso de ejecucion a %s", fname);
+		free(data);
+		fclose(f);
+		return -1;
+	}
+
+	free(data);
 	fclose(f);
 	return 0;
 }
@@ -175,19 +207,26 @@ int realizarApareo(int nfiles, FILE *fs[nfiles]){
 	return apareadas;
 }
 
-int makeCommandAndExecute(char *data_path, int at, int to, char *exe_fname, char *out_fname){
-	log_trace(logw, "CHILD [%d] crea y ejecuta su comando", getpid());
+int makeCommandAndExecute(char *data, int at, int to, char *exe_fname, char *out_fname){
+	log_trace(logw, "CHILD crea y ejecuta su comando");
 
-	char *opt = strdup("");
+	char *opt = malloc(maxline + 30);
 	char *beg, *end;
+	int ret;
 	if (to > 0){ // data_path es un bloque
 		beg = string_itoa(at);
 		end = string_itoa(to);
-		string_append_with_format(&opt, "head -c %s %s | tail -c %s", end, data_path, end);
+		if ((ret = sprintf(opt, "echo '%s' head -c %s", data, end)) < 0){
+			log_error(logw, "No se pudo crear subcomando a ejecutar");
+			liberador(3, beg, end, opt);
+			return -1;
+		}
+
+//		string_append_with_format(&opt, );
 		liberador(2, beg, end);
 
 	} else // data_path es un textfile
-		string_append_with_format(&opt, "cat %s", data_path);
+		string_append_with_format(&opt, "cat %s", data);
 
 	char *cmd = crearComando(5, opt, " | ./", exe_fname, " | sort -dib > ", out_fname);
 	if (!cmd) {
@@ -196,13 +235,14 @@ int makeCommandAndExecute(char *data_path, int at, int to, char *exe_fname, char
 		return -1;
 	}
 
-	log_trace(logw, "Se llama a system para ejecutar comando %s", cmd);
-
-	if (system(cmd) != 0) { // ejecucion del comando via system()
-		log_error(logw, "Llamada a system() con comando %s fallo.", cmd);
+	log_trace(logw, "Se llama a system para ejecutar el comando", cmd);
+	if ((ret = WEXITSTATUS(system(cmd))) != 0) { // ejecucion del comando via system()
+		perror("[ERROR] Fallo system()");
+		log_error(logw, "Llamada a system() fallo. Retorno: %d", ret);
 		liberador(2, cmd, opt);
 		return -1;
 	}
+	log_trace(logw, "Ejecucion correcta!");
 
 	liberador(2, cmd, opt);
 	return 0;
@@ -360,55 +400,67 @@ int apareoGlobal(t_list *nodos, char *fname){
 	return lcount;
 }
 
-int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname) {
-	log_trace(logw, "Se realiza el almacenamiento en YAMAFS de %s", fname);
+int enviarFile(char *fs_ip, char *fs_port, t_file *file){
 
-	message *msj;
-	t_file *file;
 	int sock_fs, ctl;
+	message *msj;
 	char *file_serial;
 	header head = {.letra = 'W', .codigo = ALMAC_FS};
 
-	if ((file = cargarFile(fname)) == NULL) {
-		log_error(logw, "Fallo cargar el t_file %s para enviar", fname);
-		return -1;
-	}
 	file_serial = serializar_File(file, &head.sizeData);
 	msj = createMessage(&head, file_serial);
 
 	if ((sock_fs = establecerConexion(fs_ip, fs_port, logw, &ctl)) == -1) {
 		log_error(logw, "Fallo conectar con FileSystem en %s:%s", fs_ip, fs_port);
-		liberador(5, file->data, file->fname, file, file_serial, msj);
+		liberador(2, file_serial, msj);
 		return -1;
 	}
 
 	if (realizarHandshake(sock_fs, 'F') == -1) {
 		log_error(logw, "Fallo handshaking con %s:%s", fs_ip, fs_port);
-		liberador(5, file->data, file->fname, file, file_serial, msj);
-		close(sock_fs);
+		liberador(2, file_serial, msj);		close(sock_fs);
 		return -1;
 	}
 
 	if (enviar_messageIntr(sock_fs, msj, logw, &ctl) == -1) {
 		log_error(logw, "Fallo enviar message a FileSystem en %s:%s", fs_ip, fs_port);
-		liberador(5, file->data, file->fname, file, file_serial, msj);
+		liberador(2, file_serial, msj);
 		close(sock_fs);
 		return -1;
 	}
+	log_trace(logw, "Se envio el file %s a FileSystem en %d", file->fname, sock_fs);
+
+	liberador(2, file_serial, msj);
+	return sock_fs;
+}
+
+int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, t_file *file) {
+	log_trace(logw, "Se realiza el almacenamiento en YAMAFS de %s", file->fname);
+
+	message *msj;
+	int sock_fs, ctl, rta;
+	header head;
+
+	if ((sock_fs = enviarFile(fs_ip, fs_port, file)) == -1){
+		log_error(logw, "Fallo enviar %s a FileSystem en %s:%s", file->fname, fs_ip, fs_port);
+		return -1;
+	}
+
+	msj = getMessage(sock_fs, &head, &ctl);
+	if (ctl == -1 || ctl == 0){
+		log_error(logw, "Fallo obtencion mensaje de FileSystem en %d. Error: %d", sock_fs, ctl);
+		rta = -1;
+
+	} else if (head.codigo != 14){
+		log_error(logw, "Recibio de FileSystem en %d un mensaje invalido: %d", sock_fs, head.codigo);
+		rta = -1;
+
+	} else
+		rta = strncmp("1", (char*) msj->buffer, 1);
 
 	free(msj);
-	msj = getMessage(sock_fs, &head, &ctl);
-	if (ctl == -1){
-		log_error(logw, "Fallo obtencion mensaje de FileSystem en %d", sock_fs);
-		liberador(5, file->data, file->fname, file, file_serial, msj);
-		close(sock_fs);
-		return -1;
-	}
-
-
-	liberador(5, file->data, file->fname, file, file_serial, msj);
 	close(sock_fs);
-	return head.codigo;
+	return rta;
 }
 
 t_file *cargarFile(char *fname) {

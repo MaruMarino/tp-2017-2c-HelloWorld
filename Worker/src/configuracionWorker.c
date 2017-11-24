@@ -24,7 +24,6 @@ t_conf *cargarConfig(char *path){
 	conf_w->nombre_nodo =   string_duplicate(config_get_string_value(conf, "NOMBRE_NODO"));
 	conf_w->puerto_worker = string_duplicate(config_get_string_value(conf, "PUERTO_WORKER"));
 	conf_w->ruta_databin =  string_duplicate(config_get_string_value(conf, "RUTA_DATABIN"));
-	conf_w->size_default =  config_get_int_value(conf, "SIZE_DEFAULT") * mib;
 
 	return conf_w;
 }
@@ -36,7 +35,6 @@ void mostrarConfig(t_conf *conf){
 	log_info(logw, "NOMBRE_NODO: %s",       conf->nombre_nodo);
 	log_info(logw, "PUERTO_WORKER: %s",     conf->puerto_worker);
 	log_info(logw, "RUTA_DATABIN: %s",      conf->ruta_databin);
-	log_info(logw, "SIZE_DEFAULT: %d",      conf->size_default);
 }
 
 void liberarConfig(t_conf *conf){

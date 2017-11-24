@@ -16,6 +16,7 @@ char *crearComando(int nargs, char *fst, ...);
  */
 int crearArchivoBin(char *bin, size_t bin_sz, char *fname);
 
+int crearArchivoData(size_t blk, size_t count, char *fname);
 
 /* Aparea todos los files en la lista, fout es el filename del output.
  * Retorna la cantidad de lineas totales apareadas.
@@ -43,11 +44,13 @@ int makeCommandAndExecute(char *data_path, int at, int to, char *exe_fname, char
  */
 int apareoGlobal(t_list *nodos, char *fname);
 
+int enviarFile(char *fs_ip, char *fs_port, t_file *file);
+
 /* Dado el IP y Puerto del FileSystem, se le conecta y le envia el archivo
  * del tipo t_file que corresponde con el filename fname.
  * Retorna -1 si falla el proceso. Retorna 0 en caso exitoso.
  */
-int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname);
+int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, t_file *file);
 
 /* Dada una lista de nodos, se conecta a cada uno de ellos y carga en los
  * punteros *fds y **lns el file_descriptor y la primera linea de cada nodo.
