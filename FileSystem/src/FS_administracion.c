@@ -310,6 +310,7 @@ int recuperar_metadata_un_arhcivo(char *fullpath, int padre) {
     }
 
     liberar_char_array(pathnombre);
+    archi->cantbloques = i;
     list_add(archivos, archi);
     config_destroy(info);
     return 1;
@@ -569,6 +570,7 @@ int liberarBloqueNodo(char *nameNodo, unsigned int numBlock) {
         fetchNodo = list_get(nodos, i);
         if (strcmp(fetchNodo->nombre, nameNodo) == 0) {
             bitarray_clean_bit(fetchNodo->bitmapNodo, (off_t) numBlock);
+            fetchNodo->espacio_libre += Mib;
             return 1;
         }
     }

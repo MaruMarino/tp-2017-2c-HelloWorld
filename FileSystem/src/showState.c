@@ -63,6 +63,7 @@ void checkArchivos() {
         printf("Estado --> %s\n", getEstado(archFetch->estado));
         printf("Tipo --> %s\n", archFetch->tipo);
         printf("Tamanio --> %d\n", archFetch->tamanio);
+        printf("Cantidad de Bloques --> %d\n", archFetch->cantbloques);
         for (j = 0; j < archFetch->bloques->elements_count; j++) {
             bloqueFetch = list_get(archFetch->bloques, j);
 
@@ -80,7 +81,7 @@ void checkArchivos() {
 void checkdirectoris() {
     puts("___________ Estado Directorios ____________");
     int i;
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 6; i++) {
         printf("Fila --> %d\n", i);
         printf("nombre directorio --> %s\n", directorios[i].nombre);
         printf("nombre indice --> %d\n", directorios[i].index);

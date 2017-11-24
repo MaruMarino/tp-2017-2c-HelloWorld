@@ -14,5 +14,7 @@ int direccionar(int socket_rec);
 void atender_mensaje_YAMA(int codigo,void *mensaje);
 void atender_mensaje_NODO(int codigo,void *mensaje);
 void atender_mensaje_WORKER(int codigo, void * mensaje, int socketWorker);
+void liberarSocket(int socket);
+void incorporarSocket(int socket);
 
 #endif /* FS_CONEXIONES_H_ */
