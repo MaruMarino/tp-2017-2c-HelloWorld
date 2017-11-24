@@ -13,4 +13,6 @@ void checkArchivos();
 
 void checkdirectoris();
 
+const char *getEstado();
+
 #endif //FILESYSTEM_SHOWSTATE_H

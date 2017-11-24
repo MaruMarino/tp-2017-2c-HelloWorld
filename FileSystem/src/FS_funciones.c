@@ -44,12 +44,127 @@ void deleteDirectory(char *path);
 void deleteBlocksCpArchive(char *path, char *numBlock, char *numCopy);
 
 int fs_ls(char *h) {
-    printf("Ejecute ls \n");
+
+	char **split = string_split(h," ");
+	int i = 0;
+	while(split[i]!=NULL) i++;
+	if(i== 2){
+
+		int padre =existe_ruta_directorios(split[2]);
+		if(padre == -9){
+			printf("No existe ruta directorio\n");
+			log_info(logi,"Usuario pidio archivos de un path no existente %s ",split[1]);
+			liberar_char_array(split);
+			return 0;
+		}
+
+		void _imprimir_nombre(t_archivo *self){
+
+			if(self->index_padre == padre) printf("%s\n",self->nombre);
+		}
+		list_iterate(archivos,(void *) _imprimir_nombre);
+		liberar_char_array(split);
+
+	}else{
+		printf("La cantidad de parámetros es incorrecta, ingrese '%s? ls%s' para más información\n", cyan, sin);
+		liberar_char_array(split);
+		log_info(logi,"Usuario ingresó mal el comando ls");
+	}
+
     return 0;
 }
 
 int fs_rename(char *i) {
-    printf("Ejecute rename \n");
+
+	char **split = string_split(i," ");
+	int ii=0;
+	while(split[ii]!= NULL) ii++;
+
+	if(ii == 4){
+
+		if( !strcmp(split[3],"-A") || !strcmp(split[3],"-a")){
+
+			t_archivo *archivo = get_metadata_archivo(split[1]);
+			if(archivo == NULL){
+				printf("No existe archivo original\n");
+				liberar_char_array(split);
+				log_info(logi,"Usuario ingresó path original de archivo inexistente");
+				return 0;
+			}
+			char **nuevo = sacar_archivo(split[1]);
+			int padre = existe_ruta_directorios(nuevo[0]);
+			bool existe = existe_archivo(split[2],padre);
+			if(existe){
+				printf("Ya existe un archivo con ese nombre en el directorio\n");
+				liberar_char_array(split);
+				liberar_char_array(nuevo);
+				log_info(logi,"Usuario ingresó nombre que ya existe");
+				return 0;
+			}
+			char *pathNuevo =string_from_format("archivos/%d/%s",padre,split[2]);
+			char *completo = completar_path_metadata(pathNuevo);
+			char *pathViejo = string_from_format("archivos/%d/%s",padre,nuevo[1]);
+			char *completo_viejo = completar_path_metadata(pathViejo);
+
+			if (rename(completo_viejo,completo) == -1){
+				printf("No se pudo renombrar\n");
+				liberar_char_array(split);
+				liberar_char_array(nuevo);
+				free(pathNuevo);
+				free(completo);
+				free(completo_viejo);
+				free(pathViejo);
+				log_info(logi,"Falló rename");
+				return 0;
+			}
+
+			free(archivo->nombre);
+			archivo->nombre = strdup(split[2]);
+			printf("Exitos: %s -> %s \n",nuevo[1],split[2]);
+			log_info(logi,"Exitos rename: %s -> %s",nuevo[1],split[2]);
+			liberar_char_array(split);
+			liberar_char_array(nuevo);
+			free(pathNuevo);
+			free(completo);
+			free(completo_viejo);
+			free(pathViejo);
+
+		}else if( !strcmp(split[3],"-D") || !strcmp(split[3],"-d")){
+
+			int padre = existe_ruta_directorios(split[1]);
+			if(padre == -9){
+				printf("No existe path original\n");
+				log_info(logi,"Usuario quisó cambiar nombre de un directorio inexistente: %s",split[1]);
+				liberar_char_array(split);
+				return 0;
+			}
+			int existe = existe_dir_en_padre(split[2],padre);
+			if(existe == -9){
+				printf("Ya existe un directorio con ese nombre \n");
+				log_info(logi,"Usuario quisó cambiar nombre a uno que ya existe");
+				liberar_char_array(split);
+				return 0;
+			}
+
+			memset(directorios[padre].nombre,'\0',255);
+			memcpy(directorios[padre].nombre,split[2],strlen(split[2]));
+			actualizar_arbol_directorios();
+			printf("Exitos: %s -> %s \n",split[1],split[2]);
+			log_info(logi,"Exitos rename: %s -> %s \n",split[1],split[2]);
+			liberar_char_array(split);
+			return 0;
+		}else{
+			printf("Ingrese '%s? rename%s' para información sobre su sintaxis \n", cyan, sin);
+			liberar_char_array(split);
+			log_info(logi,"Usuario ingresó mal el comando rename");
+		}
+
+	}else{
+		printf("La cantidad de parámetros es incorrecta, ingrese '%s? rename%s' para más información\n", cyan, sin);
+		liberar_char_array(split);
+		log_info(logi,"Usuario ingresó mal el comando renme");
+	}
+
     return 0;
 }
 
@@ -92,7 +207,98 @@ int fs_format(char *j) {
 }
 
 int fs_mv(char *k) {
-    printf("Ejecute mv\n");
+
+	char **split = string_split(k," ");
+	int ii=0;
+	while(split[ii]!= NULL) ii++;
+
+	if(ii == 4){
+
+		if( !strcmp(split[3],"-A") || !strcmp(split[3],"-a")){
+
+			t_archivo *archivo = get_metadata_archivo(split[1]);
+			if(archivo == NULL){
+				printf("No existe archivo original\n");
+				liberar_char_array(split);
+				log_info(logi,"Usuario ingresó path original de archivo inexistente");
+				return 0;
+			}
+			char **nuevo = sacar_archivo(split[1]);
+			int padre = existe_ruta_directorios(nuevo[0]);
+			int existe =existe_ruta_directorios(split[2]);
+			if(existe == -9){
+				printf("No existe directorio destino\n");
+				liberar_char_array(split);
+				liberar_char_array(nuevo);
+				log_info(logi,"Usuario ingresó directorio destino inexistente");
+				return 0;
+			}
+			char *pathNuevo =string_from_format("archivos/%d/%s",existe,nuevo[1]);
+			char *completo = completar_path_metadata(pathNuevo);
+			char *pathViejo = string_from_format("archivos/%d/%s",padre,nuevo[1]);
+			char *completo_viejo = completar_path_metadata(pathViejo);
+
+			if (rename(completo_viejo,completo) == -1){
+				printf("No se pudo mover\n");
+				liberar_char_array(split);
+				liberar_char_array(nuevo);
+				free(pathNuevo);
+				free(completo);
+				free(completo_viejo);
+				free(pathViejo);
+				log_info(logi,"Falló mover");
+				return 0;
+			}
+
+			archivo->index_padre = existe;
+			printf("Exitos: %s -> %s/%s \n",split[1],split[2],nuevo[1]);
+			log_info(logi,"Exitos: %s -> %s/%s \n",split[1],split[2],nuevo[1]);
+			liberar_char_array(split);
+			liberar_char_array(nuevo);
+			free(pathNuevo);
+			free(completo);
+			free(completo_viejo);
+			free(pathViejo);
+
+		}else if( !strcmp(split[3],"-D") || !strcmp(split[3],"-d")){
+
+			int padre = existe_ruta_directorios(split[1]);
+			if(padre == -9){
+				printf("No existe path original\n");
+				log_info(logi,"Usuario quisó mover path inexistente: %s",split[1]);
+				liberar_char_array(split);
+				return 0;
+			}
+			int existe = existe_dir_en_padre(split[2],padre);
+			if(existe == -9){
+				printf("No existe directorio destino \n");
+				log_info(logi,"Usuario quisó mover un directorio a otro que no existe");
+				liberar_char_array(split);
+				return 0;
+			}
+
+			directorios[padre].padre = existe;
+			actualizar_arbol_directorios();
+			char **nombre = sacar_archivo(split[2]);
+			printf("Exitos: %s -> %s/%s \n",split[1],split[2],nombre[1]);
+
+			log_info(logi,"Exitos: %s -> %s/%s \n",split[1],split[2],nombre[1]);
+			liberar_char_array(split);
+			liberar_char_array(nombre);
+
+			return 0;
+		}else{
+			printf("Ingrese '%s? mv%s' para información sobre su sintaxis \n", cyan, sin);
+			liberar_char_array(split);
+			log_info(logi,"Usuario ingresó mal el comando mover");
+		}
+
+	}else{
+		printf("La cantidad de parámetros es incorrecta, ingrese '%s? mover%s' para más información\n", cyan, sin);
+		liberar_char_array(split);
+		log_info(logi,"Usuario ingresó mal el comando mover");
+	}
+
     return 0;
 }
 
@@ -410,16 +616,54 @@ int fs_md5(char *t) {
         liberar_char_array(split);
     }
 
-    printf("Ejecute md5 \n");
     return 0;
 }
 
 int fs_info(char *u) {
-    checkFileSystem();
+   //todo: borrar esto antes de entrega, lo dejo porque migue lo usa para controlar
+	checkFileSystem();
     checkStateNodos();
     checkArchivos();
     checkdirectoris();
-    printf("Ejecute info \n");
+
+    char **split = string_split(u," ");
+    int i=0;
+    while(split[i]!= NULL) i++;
+
+    if(i == 2){
+
+    	t_archivo *fi = get_metadata_archivo(split[1]);
+    	if(fi == NULL){
+            printf("No existe archivo\n");
+            log_info(logi,"Usuario pidio info de un archivo que no se pudo encontrar: %s",split[1]);
+            liberar_char_array(split);
+            return 0;
+    	}
+
+    	printf("Nombre:%s\n",fi->nombre);
+    	printf("Tamanio:%d\n(bytes)-%d(bloques)",fi->tamanio,fi->cantbloques);
+    	printf("Estado:%s\n",getEstado(fi->estado));
+    	printf("Tipo:%s\n",fi->tipo);
+    	printf("Info Bloques:\n");
+    	int i = 0;
+    	printf("Copia # :#BloqueDeArchivo - (#BloqueDeCopia,NombreNodo) \n");
+    	void _imprimir_info_bloque(bloqueArchivo *self){
+
+    		if(self->bloquenodo0 != -1) printf("COPIA0: %d - (%d,%s)\n",i,self->bloquenodo0,self->nodo0);
+    		if(self->bloquenodo1 != -1) printf("COPIA1: %d - (%d,%s)\n",i,self->bloquenodo1,self->nodo1);
+    		printf("Bytes en Bloque %d:%d\n",i,self->bytesEnBloque);
+    		i++;
+    	}
+    	list_iterate(fi->bloques,(void *)_imprimir_info_bloque);
+    	liberar_char_array(split);
+    	log_info(logi,"Usuario solicito info de arhcivo:%s",split[1]);
+
+
+    }else{
+        printf("La cantidad de parámetros es incorrecta, ingrese '%s? info%s' para más información\n", cyan, sin);
+        log_info(logi,"Usuario ejecutó mal comando info");
+        liberar_char_array(split);
+    }
     return 0;
 }
 

@@ -83,6 +83,7 @@ void eliminar_metadata_archivo(t_archivo *arch);
 // eliminar directorio de una, sin verificar si vacío, donde estaban sus archivos
 void eliminar_directorio(int index);
 
+char *completar_path_metadata(char *);
 
 
 #endif /* FS_ADMINISTRACION_H_ */

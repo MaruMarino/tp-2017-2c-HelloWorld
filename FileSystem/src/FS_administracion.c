@@ -41,8 +41,6 @@ extern t_list *archivos;
 // Funciones Auxiliares
 static char *armar_string_nombres_nodos();
 
-static char *completar_path_metadata(char *);
-
 static char *nombres_subdirectorios(char *);
 
 static char *nombres_archivos(char *);
@@ -779,7 +777,7 @@ void eliminar_directorio(int index){
 
 //todo: Funciones Auxiliares
 
-static char *completar_path_metadata(char *archivo) {
+char *completar_path_metadata(char *archivo) {
 
     char *pmetadata = strdup(configuracion->dir_estructuras);
     char *pmdirectorios = strdup("");
