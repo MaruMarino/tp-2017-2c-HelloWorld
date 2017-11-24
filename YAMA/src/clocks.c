@@ -652,6 +652,7 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 	int en_worker_trabajado = 0;
 	int i;
 	t_list *lista_auxiliar = list_create();
+	int cant_temporales = 0;
 
 	t_redGlobal *red_g2;
 	for(i=0; i < sz; i++)
@@ -667,18 +668,22 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 			red_g->temp_red_local = est2->archivo_temporal;
 			red_g->red_global = strdup("");
 
+			cant_temporales++;
 			list_add(lista_auxiliar, red_g);
 		}
 	}
 
+
 	int menor_carga = get_menor_carga(workers);
 
-	bool _menor_carga_(t_worker * wr)
+	bool menor_carga_(t_worker * wr)
 	{
 		return wr->carga_historica == menor_carga;
 	}
 
-	t_worker *wk = list_find(workers, (void *)_menor_carga_);
+	t_worker *wk = list_find(workers, (void *)menor_carga_);
+
+	wk->carga_actual +=  ((cant_temporales + 1) / 2);
 
 	bool _worker_encargado(t_redGlobal *rg)
 	{
@@ -686,6 +691,7 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 	}
 
 	t_redGlobal *red_g = list_find(lista_auxiliar, (void *)_worker_encargado);
+
 	if (red_g != NULL)
 	{
 		red_g->encargado = 1;
@@ -714,7 +720,7 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 
 	message *mensaje = createMessage(&head, (void *)red_global_ser);
 	enviar_message(master_->socket_, mensaje, yama_log, &control);
-	t_estado *estt = generar_estado(master_->master,-10,wk->nodo->nodo,NULL,-10,-10, -10);
+	t_estado *estt = generar_estado(master_->master,-10,wk->nodo->nodo,NULL,cant_temporales,-10, -10);
 	free(estt->archivo_temporal);
 	if(en_worker_trabajado)
 		estt->archivo_temporal = red_g->red_global;
@@ -724,4 +730,37 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 	//cambiar_estado(master_->master,estado_tr->nodo, estado_tr->bloque, REDUCCION_GLOBAL, red_g->red_global);
 	list_destroy(lista_auxiliar);
 	free(red_g);
+}
+
+void recalcular_cargas(int socket_)
+{
+	int i;
+	t_worker *wk;
+	t_master *master_ = find_master(socket_);
+	int sz_ = list_size(tabla_estado);
+	for(i=0; i < sz_; i++)
+	{
+		t_estado *est = list_get(tabla_estado, i);
+		if(est->master == master_->master)
+		{
+			if(est->copia_disponible && est->etapa == TRANSFORMACION)
+			{
+				wk = find_worker(est->nodo);
+				wk->carga_actual--;
+				break;
+			}
+			if(!(est->copia_disponible) && est->etapa == TRANSFORMACION)
+			{
+				wk = find_worker(est->nodo_copia);
+				wk->carga_actual--;
+				break;
+			}
+			if(est->etapa == REDUCCION_GLOBAL)
+			{
+				wk = find_worker(est->nodo_copia);
+				wk->carga_actual += (- est->bloque_copia);
+				break;
+			}
+		}
+	}
 }

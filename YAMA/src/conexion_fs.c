@@ -21,7 +21,7 @@ extern t_log *yama_log;
 
 void solicitar_informacion_archivo(char *info, int _socket)
 {
-	size_t size_buffer = strlen(info);
+	size_t size_buffer = strlen(info) + 1;
 	t_list *archivo_bloques;
 	int control;
 	header head;

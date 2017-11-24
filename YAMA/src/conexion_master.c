@@ -208,7 +208,7 @@ void manejar_respuesta(int socket_)
 		}
 		free(mensaje);
 	} else
-		log_error(yama_log, "Mensaje de emisor desconocido");
+		log_error(yama_log, "Master desconectado");
 }
 
 void realizar_handshake_master(int socket_)
@@ -259,6 +259,8 @@ void enviar_peticion_transformacion(int socket_)
 
 void matar_master(int socket_)
 {
+	recalcular_cargas(socket_);
+
 	header head;
 	head.codigo = 6;
 	head.letra = 'Y';
