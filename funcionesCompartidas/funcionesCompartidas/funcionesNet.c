@@ -4,12 +4,12 @@
 #include <stdlib.h>
 #include <netdb.h>
 #include <string.h>
+#include <errno.h>
+#include <signal.h>
 #include "mensaje.h"
 #include "log.h"
 #include <commons/string.h>
 #include <commons/log.h>
-#include <errno.h>
-#include <signal.h>
 
 void error_sockets(t_log *log, int *controlador, char *proceso);
 
@@ -269,25 +269,40 @@ void *getMessage(int socket, header *head,int *status) {
     return buffer;
 }
 
+char *getMessageIntrNB(int socket, header *head, int *status){
+
+	char *buffer;
+	size_t len = sizeof *head;
+
+	*status = recvall_intr(socket, (char **) &head, &len, MSG_DONTWAIT);
+	if (*status == -1 || *status == -2 || *status == 0)
+        return NULL;
+
+    buffer = malloc(head->sizeData);
+    if ((*status = recvall_intr(socket, &buffer, &head->sizeData, 0)) == -1 ||
+    	 *status == 0){
+    	free(buffer);
+    	return NULL;
+    }
+
+    return buffer;
+}
+
 char *getMessageIntr(int socket, header *head, int *status){
 
 	char *buffer;
 	size_t len = sizeof *head;
 
-	if ((*status = recvall_intr(socket, (char **) &head, &len, 0)) == -1)
-        return NULL;
-	else if (*status == 0)
+	if ((*status = recvall_intr(socket, (char **) &head, &len, 0)) == -1 ||
+		 *status == 0)
 		return NULL;
 
-    buffer = malloc(head->sizeData);
-    if ((*status = recvall_intr(socket, &buffer, &head->sizeData, 0)) == -1){
-    	free(buffer);
-    	return NULL;
-    } else if (*status == 0){
-    	free(buffer);
-    	return NULL;
-    }
-
+	buffer = malloc(head->sizeData);
+	if ((*status = recvall_intr(socket, &buffer, &head->sizeData, 0)) == -1 ||
+			*status == 0){
+		free(buffer);
+		return NULL;
+	}
 
     return buffer;
 }
@@ -301,6 +316,10 @@ int recvall_intr(int sock, char **buffer, size_t *len, int flags){
 	while (total < *len){
 
 		if ((status = recv(sock, *buffer + total, left, flags)) == -1){
+			if (errno == EWOULDBLOCK){
+				perror("No hay nada en el buffer del socket.");
+				return -2;
+			}
 			if (errno != EINTR){
 				perror("No se pudo recvall'ear el paquete. error");
 				break;

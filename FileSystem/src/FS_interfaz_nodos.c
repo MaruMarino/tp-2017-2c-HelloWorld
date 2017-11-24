@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <funcionesCompartidas/estructuras.h>
+#include <funcionesCompartidas/generales.h>
 #include <commons/collections/list.h>
 #include "FS_conexiones.h"
 
@@ -415,13 +416,14 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
     if (archivo->estado == no_disponible) return -1;
 
     FILE *tmp = fopen(nombre_temporal, "w");
+//        buff = pedirFile(archivo->bloques); // todo: testar esto
+//         ya no deberia hacer falta entrar al ciclo for()
     pthread_mutex_lock(&mutex_socket);
     for (i = 0; i < bloques; i++) {
 
         bq = list_get(archivo->bloques, i);
 
         buff = leer_bloque(bq, alternar);
-
         fwrite(buff, bq->bytesEnBloque, 1, tmp);
         fflush(tmp);
         free(buff);
@@ -432,3 +434,167 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
     return 0;
 }
 
+// todo: se va a pelear con el select() -> sacar los FS pertinentes
+// todo: los FD pertinentes estarian en la variable nodC[i].fd, tal vez no todos se necesitarian siempre...
+char *pedirFile(t_list *bloques){ // este t_list contiene bloqueArchivo*
+
+	int i, ctrl, nq, bs;
+	char *data, *file_data;
+	bool restantes = true;
+	header head;
+
+	nq = list_size(nodos);
+	bs = list_size(bloques);
+
+	struct _nodoCola nodC[nq];
+	if (inicializarNodoCola(nq, &nodC, bloques) == -1){
+		log_error(logi, "No se pudo preparar los pedidos de bloques para un archivo");
+		return NULL;
+	}
+
+	// tratamos de mallocar los bytes del archivo. Podria fallar si es un archivo super enorme mal...
+	if ((file_data = malloc(Mib * bs)) == NULL){
+		log_error(logi, "No se pudieron allocar %d megabytes para el archivo pedido", bs);
+		return NULL;
+	}
+
+	// primeras peticiones
+	for (i = 0; i < nq; ++i)
+		enviarPeticion(&nodC[i]);
+
+	// espero recepciones y hago el resto de las peticiones a medida...
+	for (i = 0; restantes; i = (i+1) % nq){
+		if (!nodC[i].hay_pedidos) continue;
+
+		data = getMessageIntrNB(nodC[i].fd, &head, &ctrl);
+		if (ctrl == -2) continue;
+		if (ctrl ==  0){
+			log_info(logi, "Se desconecto Nodo en %d", nodC[i].fd); // todo: hacerle close(nodC[i].fd) ahora? o despues?
+			nodC[i].hay_pedidos = false;
+
+			log_info(logi, "Se intentara buscar bloque en el Nodo alternativo...");
+			if(delegarPedidos(nq, &nodC, i) == -1){
+				log_error(logi, "No es posible delegar el pedido a otro Nodo");
+				break;
+			}
+
+		} else if (ctrl == -1){
+			log_error(logi, "Error de recepcion de mensaje de Nodo en %d", nodC[i].fd);
+			break;
+
+		} else {
+			memcpy(file_data + nodC[i].colaPedidos->ord * Mib, data, head.sizeData);
+
+			// pedido satisfecho, avanzamos y pedimos otro si es que hay mas
+			if (++nodC[i].colaPedidos == NULL){ // todo: creo que esto funciona bien, pero revisar si se puede
+				nodC[i].hay_pedidos = false;
+				restantes = restanPedidos(nq, &nodC);
+				continue;
+			}
+			enviarPeticion(&nodC[i]);
+		}
+		free(data);
+	}
+
+	// no se agotaron todos los Nodos => fue ejecucion erronea
+	if (!restantes){
+		free(file_data);
+		return NULL;
+	}
+
+	return file_data;
+}
+
+
+void enviarPeticion(struct _nodoCola *nodC){
+
+	int blkNodo, ctrl;
+	message *msj;
+	header head = {.codigo = 1, .letra = 'F', .sizeData = sizeof(int)};
+	char *blkBuff = malloc(sizeof(int));
+	blkNodo = (nodC->node == 0)? nodC->colaPedidos->bq->bloquenodo0 : nodC->colaPedidos->bq->bloquenodo1;
+
+	memcpy(blkBuff, &blkNodo, sizeof(int));
+	msj = createMessage(&head, blkBuff);
+	enviar_message(nodC->fd, msj, logi, &ctrl);
+	liberador(2, msj, blkBuff);
+}
+
+int inicializarNodoCola(int nq, struct _nodoCola (*nodC)[nq], t_list *bloques){
+
+	int bs, i, j;
+	bloqueArchivo *bq;
+
+	bs = list_size(bloques);
+	// reservo el espacio maximo posible que cada Nodo podria tener de peticiones
+	for (i = 0; i < nq; ++i){
+		nodC[i]->colaPedidos = malloc(sizeof (struct _bloq) * (2*bs + 1));
+		for (j = bs; j < 2*bs + 1; ++j)
+			nodC[i]->colaPedidos[j].bq = NULL;
+	}
+
+	// ubicar peticiones
+	for (i = 0; i < bs; ++i){
+		bq = list_get(bloques, i);
+		if (encolarSobreNodos(nq, nodC, bq, i) == -1){
+			log_error(logi, "No se encontraron nodos disponibles para el bloque %d", i);
+			liberarNodoCola(nq, nodC);
+			return -1;
+		}
+	}
+	return 0;
+}
+
+void liberarNodoCola(int nq, struct _nodoCola (*nodC)[nq]){
+	int i;
+	for (i = 0; i < nq; ++i)
+		free(nodC[i]->colaPedidos);
+}
+
+int encolarSobreNodos(int nq, struct _nodoCola (*nodC)[nq], bloqueArchivo *bq, int pos){
+
+	NODO *n;
+	int i, j;
+	int node = 0;
+
+	n = get_NODO(bq->nodo0);
+	if (n->estado == no_disponible){
+		n = get_NODO(bq->nodo1);
+		node = 1;
+		if (n->estado == no_disponible) return -1;
+	}
+
+	for (i = j = 0; i < nq ; ++i){
+		if (nodC[i]->fd == n->soket){
+			nodC[i]->colaPedidos[j].bq  = bq;
+			nodC[i]->colaPedidos[j].ord = pos;
+			nodC[i]->node = node;
+		}
+	}
+
+	return 0;
+}
+
+int delegarPedidos(int nq, struct _nodoCola (*nodC)[nq], int node){
+
+	struct _bloq *pedidos = nodC[node]->colaPedidos;
+	while (pedidos != NULL){
+
+		if (encolarSobreNodos(nq, nodC, pedidos->bq, pedidos->ord) == -1){
+			log_error(logi, "No hay nodo disponible para pedir bloque nro %d", pedidos->ord);
+			return -1;
+		}
+		pedidos++;
+	}
+	return 0;
+}
+
+
+bool restanPedidos(int nq, struct _nodoCola (*nodC)[nq]){
+
+	int i;
+	for (i = 0; i < nq; ++i)
+		if (nodC[i]->hay_pedidos)
+			return true;
+	return false;
+}

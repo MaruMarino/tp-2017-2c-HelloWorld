@@ -203,12 +203,16 @@ int fs_cat(char *n) {
         int bloques = archivo->cantbloques, alternar = 0;
         char *buff;
 
+//          buff = pedirFile(archivo->bloques); // todo: testar esto
+//         ya no deberia hacer falta entrar al ciclo for()
+
         //pthread_mutex_lock(&mutex_socket);
         for (i = 0; i < bloques; i++) {
 
             bq = list_get(archivo->bloques, i);
 
             buff = leer_bloque(bq, alternar);
+
             printf("%s", buff);
 
             free(buff);

@@ -102,14 +102,23 @@ message * createMessage(header *head, void *data);
  * */
 void *getMessage(int socket,header *head,int *status);
 
-/* como getMessage pero se banca interrupciones */
+/* como getMessage pero se banca interrupciones
+ * Retorna -1 si ocurrio algun otro problema inmanejable;
+ */
 char *getMessageIntr(int socket, header *head, int *status);
+
+/* como getMessageIntr pero no bloquea en recv().
+ * Retorna -2 si no hay nada que esperar en el buffer de recv();
+ * Retorna -1 si ocurrio algun otro problema inmanejable;
+ */
+char *getMessageIntrNB(int socket, header *head, int *status);
 
 /* recv con esteroides.
  * Recibe el *len completo y lo almacena en *buffer, incluso si ocurre alguna
  * interrupcion. Similar a usar WAITALL para el recv(), pero todavia mejor.
  * Aunque no es infalible... Retorna -1 si falla; *len en caso exitoso.
  * **buffer y *len son parametros de retorno.
+ * Retorna -2 si falla por EWOULDBLOQ -> solo si en flags pasamos MSG_DONTWAIT
  */
 int recvall_intr(int sock, char **buffer, size_t *len, int flags);
 
