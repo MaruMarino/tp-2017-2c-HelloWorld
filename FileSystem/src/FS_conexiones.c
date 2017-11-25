@@ -287,7 +287,7 @@ void manejo_conexiones() {
     char *puerto = string_itoa(configuracion->puerto);
     int control = 0;
     if ((fdmax = configuracion->serverfs = makeListenSock(puerto, logi, &control)) < 0) {
-        perror("Error en algo de sockets %s\n");
+       // perror("Error en algo de sockets %s\n");
         free(puerto);
         pthread_exit((void *) -1);
     }
@@ -317,7 +317,7 @@ void manejo_conexiones() {
                 if (!socketExcluido(i) && FD_ISSET(i, &read_fds)) {
                     //Se detecta alguien nuevo llamando?
                     if (i == configuracion->serverfs) {
-                        puts("nueva conexcion");
+                       // puts("nueva conexcion");
                         //Gestiono la conexion entrante
                         int nuevo_socket = aceptar_conexion(configuracion->serverfs, logi, &control);
                         //Controlo que no haya pasado nada raro y acepto al nuevo
@@ -356,7 +356,7 @@ int direccionar(int socket_rec) {
     if (status == -1) {
         //	perror("Error recibiendo");
     } else if (status == 0) {
-        log_info(logi, "Se desconecto socket");
+       // log_info(logi, "Se desconecto socket");
         disconnectedNodo(socket_rec);
         return -1;
     } else {
@@ -486,9 +486,12 @@ int realizar_handshake(int nuevo_socket) {
                     }
                 } else {
 
-                    configuracion->espacio_total += nuevo_nodo->espacio_total;
-                    configuracion->espacio_libre += nuevo_nodo->espacio_total;
-                    list_add(nodos, nuevo_nodo);
+                	if (!searchNodoInList(nuevo_nodo)){
+                		configuracion->espacio_total += nuevo_nodo->espacio_total;
+                		configuracion->espacio_libre += nuevo_nodo->espacio_total;
+                		list_add(nodos, nuevo_nodo);
+                	}
+
                 }
 
 
@@ -671,8 +674,10 @@ message *create_Message(header *head, void *data) {
 
 void activarSelect() {
     int control;
-    int activar = establecerConexion("127.0.0.1", "5001", logi, &control);
+    char *puerto = string_itoa(configuracion->puerto);
+    int activar = establecerConexion("127.0.0.1", puerto, logi, &control);
     close(activar);
+    free(puerto);
 }
 
 void liberarSocket(int socket) {

@@ -44,16 +44,17 @@ void inicializaciones(void);
 
 int main(int argc, char **argv) {
 
-	logi = log_create("/home/utnso/yamafslog", "YamaFS", true, LOG_LEVEL_INFO);
+	logi = log_create("/home/utnso/yamafslog", "YamaFS", false, LOG_LEVEL_INFO);
 	inicializaciones();
 	leer_configuracion("/home/utnso/tp-2017-2c-HelloWorld/FileSystem/FSconfig");
 	if (argc == 2 && (!strncmp(argv[1], "--clean", 7))) {
-
+		printf("Iniciando YAMA-FS de cero\n");
 		log_info(logi, "Iniciando YAMA-FS de cero");
 		configuracion->inicio_limpio = 1;
 
 	} else {
 
+		printf("Restaurando estructuras de un estado anterior...\n");
 		log_info(logi, "Restaurando estructuras de un estado anterior...");
 		configuracion->inicio_limpio = 0;
 		int res = recuperar_estructuras_administrativas();

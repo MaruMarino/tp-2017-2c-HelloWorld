@@ -556,7 +556,55 @@ int fs_cpfrom(char *q) {
 }
 
 int fs_cpto(char *r) {
-    printf("Ejecute cpto \n");
+	 char **split = string_split(r, " ");
+	    int i = 0;
+	    while (split[i] != NULL) i++;
+
+	    if (i == 2) {
+
+	        char **dirName = sacar_archivo(split[1]);
+	        int padre = existe_ruta_directorios(dirName[0]);
+	        if (padre == -9) {
+	            liberar_char_array(split);
+	            liberar_char_array(dirName);
+	            printf("No existe ruta\n");
+	            return 0;
+	        }
+	        t_archivo *archivo = get_metadata_archivo_sinvalidar(dirName[1], padre);
+	        if (archivo == NULL) {
+	            liberar_char_array(split);
+	            liberar_char_array(dirName);
+	            printf("No existe archivo\n");
+	            return 0;
+	        }
+	        if (archivo->estado == no_disponible) {
+	            liberar_char_array(split);
+	            liberar_char_array(dirName);
+	            printf("Archivo no dispobible \n");
+	            return 0;
+	        }
+	        char *path = string_from_format("%s/%s",split[2],dirName[1]);
+	        int temp = crear_archivo_temporal(archivo, path);
+	        if (temp == -1) {
+	            liberar_char_array(split);
+	            liberar_char_array(dirName);
+	            printf("El archivo no se encuentra disponible\n");
+	            return 0;
+	        }
+
+	        printf("Archivo copiado al FS local \n");
+	        free(path);
+
+	        liberar_char_array(split);
+	        liberar_char_array(dirName);
+
+	    } else {
+
+	        printf("La cantidad de parámetros es incorrecta, ingrese '%s? cat%s' para más información\n", cyan, sin);
+	        liberar_char_array(split);
+	    }
+
+	    return 0;
     return 0;
 }
 
