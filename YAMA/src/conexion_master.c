@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <errno.h>
@@ -212,6 +213,7 @@ void manejar_respuesta(int socket_)
 		free(mensaje);
 	} else
 		log_error(yama_log, "Master desconectado");
+	sleep(config->retardo_plan/1000.0);
 }
 
 void realizar_handshake_master(int socket_)
