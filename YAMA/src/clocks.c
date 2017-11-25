@@ -70,7 +70,6 @@ void calcular_disponibilidad()
 
 		if(strcmp(config->algortimo_bal,"CLOCK"))
 		{
-			worker->carga_actual = 0; //sacar esto
 			int maxima_carga = get_maxima_carga();
 			pwl = maxima_carga - worker->carga_actual;
 		}
@@ -156,11 +155,11 @@ void posicionar_clock()
 		}
 	}
 
-	int menor_carga = get_menor_carga2(lista_auxiliar);
+	int menor_carga = get_menor_carga(lista_auxiliar);
 
 	bool _menor_carga(t_worker *worker)
 	{
-		return worker->carga_actual == menor_carga;
+		return worker->carga_historica == menor_carga;
 	}
 
 	t_worker *worker_ = list_find(workers, (void *)_menor_carga);

@@ -36,6 +36,7 @@ void reconfiguracion();
 int main(int argc, char **argv)
 {
 	yama_log = crear_archivo_log("YAMA",true,"/home/utnso/conf/master_log");
+	printf("Hello\n");
 
 	path = argv[1];
 	inicializar_variables();
