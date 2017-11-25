@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <pthread.h>
 #include <sys/socket.h>
@@ -202,7 +203,7 @@ void sumar_disponibilidad_base()
 t_worker *get_worker(t_list *archivo, int n_bloque)
 {
 	escribir_log(yama_log, "Buscando Worker para trabajar");
-	sleep(config->retardo_plan/1000);
+	sleep(config->retardo_plan/1000.0);
 	t_worker *worker = NULL;
 	t_worker * worker2;
 	int clock;
