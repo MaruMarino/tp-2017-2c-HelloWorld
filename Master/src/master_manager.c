@@ -753,9 +753,9 @@ void ejecutar_almacenamiento(t_almacenado *almacenado)
 	else
 		escribir_log_compuesto(log_Mas, "HandShake exitoso con Worker: ",almacenado->nodo->nodo);
 
-	//Envio de pedido de reduccion Global
+	//Envio de pedido de almacenamiento final
 	size_t len_total;
-	char *buffer_envio = serializar_FName(almacenado->red_global, &len_total);
+	char *buffer_envio = serializar_FName2(almacenado->red_global, config->path_file_destino, &len_total);
 
 	header_.letra = 'M';
 	header_.codigo = 4;
