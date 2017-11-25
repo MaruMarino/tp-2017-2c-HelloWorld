@@ -133,18 +133,18 @@ void subrutinaEjecutor(int sock_m) {
 
         case ALMAC:
             log_trace(logw, "CHILD [%d]: Ejecuta Almacenamiento Final", wp);
+            char *yamafn;
+            fname = deserializar_FName2(msj, &yamafn);
 
-            fname = deserializar_FName(msj);
-
-            if (almacenarFileEnFilesystem(conf->ip_fs, conf->puerto_fs, fname) == -1) {
+            if (almacenarFileEnFilesystem(conf->ip_fs, conf->puerto_fs, fname, yamafn) == -1) {
                 log_error(logw, "No se logro almacenar %s en FileSystem", fname);
                 cleanWorkspaceFiles(1, fname);
-                liberador(2, msj, fname);
+                liberador(3, msj, fname, yamafn);
                 terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
             }
 
             log_trace(logw, "CHILD [%d]: Finaliza Almacenamiento Final", wp);
-            liberador(2, msj, fname);
+            liberador(3, msj, fname, yamafn);
             break;
     }
 

@@ -382,7 +382,7 @@ int apareoGlobal(t_list *nodos, char *fname) {
     return lcount;
 }
 
-int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname) {
+int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname, char *yamafn) {
     log_trace(logw, "Se realiza el almacenamiento en YAMAFS de %s", fname);
 
     message *msj;
@@ -391,7 +391,7 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname) {
     char *file_serial;
     header head = {.letra = 'W', .codigo = ALMAC_FS};
 
-    if ((file = cargarFile(fname)) == NULL) {
+    if ((file = cargarFile(fname, yamafn)) == NULL) {
         log_error(logw, "Fallo cargar el t_file %s para enviar", fname);
         return -1;
     }
@@ -433,12 +433,12 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname) {
     return head.codigo;
 }
 
-t_file *cargarFile(char *fname) {
+t_file *cargarFile(char *fname, char *yamafn) {
     log_trace(logw, "Se carga el file %s en un archivo para enviar", fname);
 
     FILE *f;
     t_file *file = malloc(sizeof *file);
-    file->fname = strdup(fname);
+    file->fname = strdup(yamafn);
 
     if ((f = fopen(fname, "r")) == NULL) {
         log_error(logw, "No se pudo abrir el archivo %s", fname);

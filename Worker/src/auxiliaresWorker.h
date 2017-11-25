@@ -48,7 +48,7 @@ int apareoGlobal(t_list *nodos, char *fname);
  * del tipo t_file que corresponde con el filename fname.
  * Retorna -1 si falla el proceso. Retorna 0 en caso exitoso.
  */
-int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname);
+int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname, char *yamafn);
 
 /* Dada una lista de nodos, se conecta a cada uno de ellos y carga en los
  * punteros *fds y **lns el file_descriptor y la primera linea de cada nodo.
@@ -58,7 +58,7 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname);
 int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns);
 
 /* A partir de un path genera un t_file* con los datos pertinentes */
-t_file *cargarFile(char *fname);
+t_file *cargarFile(char *fname, char *yamafn);
 
 off_t fsize(FILE *f);
 
