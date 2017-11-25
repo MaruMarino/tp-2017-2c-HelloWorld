@@ -72,7 +72,7 @@ void solicitar_informacion_archivo(char *info, int _socket)
 	}
 	else if(head.codigo == 4)
 	{
-		//enviar mensaje a master
+		matar_master(_socket);
 	}
 
 
