@@ -74,6 +74,9 @@ int enviarBloque(header *req, void *buffer) {
         escribir_log(_log_file, "Error al enviar el bloque");
         return -1;
     }
+    free(bloqueData);
+    free(bufferRes->buffer);
+    free(bufferRes);
     return 0;
 }
 

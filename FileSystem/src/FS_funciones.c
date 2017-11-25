@@ -671,10 +671,13 @@ int fs_md5(char *t) {
 
 int fs_info(char *u) {
     //todo: borrar esto antes de entrega, lo dejo porque migue lo usa para controlar
-    checkFileSystem();
+   if(configuracion->estado_estable){
+	  	checkFileSystem();
     checkStateNodos();
     checkArchivos();
     checkdirectoris();
+   }
+
 
     char **split = string_split(u, " ");
     int i = 0;
