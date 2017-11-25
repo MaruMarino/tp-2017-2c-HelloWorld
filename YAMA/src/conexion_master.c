@@ -212,6 +212,7 @@ void manejar_respuesta(int socket_)
 		free(mensaje);
 	} else
 		log_error(yama_log, "Master desconectado");
+	sleep(config->retardo_plan);
 }
 
 void realizar_handshake_master(int socket_)
