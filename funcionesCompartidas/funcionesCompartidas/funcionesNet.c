@@ -317,11 +317,11 @@ int recvall_intr(int sock, char **buffer, size_t *len, int flags){
 
 		if ((status = recv(sock, *buffer + total, left, flags)) == -1){
 			if (errno == EWOULDBLOCK){
-				perror("No hay nada en el buffer del socket.");
+				//perror("No hay nada en el buffer del socket.");
 				return -2;
 			}
 			if (errno != EINTR){
-				perror("No se pudo recvall'ear el paquete. error");
+//				perror("No se pudo recvall'ear el paquete. error");
 				break;
 
 			}
@@ -348,7 +348,7 @@ int sendall_intr(int sock, char *buff, size_t *len, int flags){
 		try_send:
 		if ((stat = send(sock, buff + total, left, flags)) == -1){
 			if (errno == EINTR) goto try_send;
-			perror("No se pudo sendall'ear el paquete. error");
+			//perror("No se pudo sendall'ear el paquete. error");
 			break;
 		}
 		total += (size_t) stat;

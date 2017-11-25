@@ -16,6 +16,7 @@ char *crearComando(int nargs, char *fst, ...);
  */
 int crearArchivoBin(char *bin, size_t bin_sz, char *fname);
 
+int crearArchivoData(size_t blk, size_t count, char *fname);
 
 /* Aparea todos los files en la lista, fout es el filename del output.
  * Retorna la cantidad de lineas totales apareadas.
@@ -35,7 +36,7 @@ int realizarApareo(int nfiles, FILE *fs[nfiles]);
  * Retorna -1 si fallan o bien la creacion del comando o bien su ejecucion.
  * Retorna 0 en salida exitosa.
  */
-int makeCommandAndExecute(char *data_path, int at, int to, char *exe_fname, char *out_fname);
+int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname);
 
 /* Se conecta a todos los nodos y va recibiendo de a una linea de cada uno.
  * Aparea todos los inputs recibidos en el FILE de salida fname.

@@ -100,11 +100,15 @@ int setBlock(void *buffer, size_t size_buffer, t_list *bloquesArch) {
             return -1;
         }
         if (cantCopy == 0) {
+
             nuevo->nodo0 = strdup(nodoSend->nombre);
             nuevo->bloquenodo0 = nodoSendBlock;
+
         } else {
+
             nuevo->nodo1 = strdup(nodoSend->nombre);
             nuevo->bloquenodo1 = nodoSendBlock;
+
         }
 
         bitarray_set_bit(nodoSend->bitmapNodo, nodoSendBlock);
@@ -204,6 +208,7 @@ t_list *escribir_desde_archivo(char *local_path, char file_type, int filesize) {
     ssize_t getln;
     size_t len_line, len;
     t_list *ba = list_create();
+    //int alter = 0;
 
     if (file_type == 'B' || file_type == 'b') {
 
@@ -217,6 +222,7 @@ t_list *escribir_desde_archivo(char *local_path, char file_type, int filesize) {
 
             fread(buffer, Mib, 1, archi);
             setBlock(buffer, Mib, ba);
+            // alter = (alter + 1) % 2;
 
 
         }
@@ -239,6 +245,7 @@ t_list *escribir_desde_archivo(char *local_path, char file_type, int filesize) {
                 free(buffer);
                 buffer = strdup("");
                 leido = 0;
+                // alter = (alter + 1) % 2;
             }
             string_append(&buffer, linea);
             leido += len_line;
@@ -418,7 +425,10 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
     FILE *tmp = fopen(nombre_temporal, "w");
 //        buff = pedirFile(archivo->bloques); // todo: testar esto
 //         ya no deberia hacer falta entrar al ciclo for()
-    pthread_mutex_lock(&mutex_socket);
+    // pthread_mutex_lock(&mutex_socket);
+
+    //  buff = pedirFile(archivo->bloques);
+
     for (i = 0; i < bloques; i++) {
 
         bq = list_get(archivo->bloques, i);
@@ -429,172 +439,189 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
         free(buff);
         alternar = (alternar == 0) ? 1 : 0;
     }
-    pthread_mutex_unlock(&mutex_socket);
+    //pthread_mutex_unlock(&mutex_socket);
+
+//    fwrite(buff, archivo->tamanio, 1, tmp);
     fclose(tmp);
     return 0;
 }
 
 // todo: se va a pelear con el select() -> sacar los FS pertinentes
 // todo: los FD pertinentes estarian en la variable nodC[i].fd, tal vez no todos se necesitarian siempre...
-char *pedirFile(t_list *bloques){ // este t_list contiene bloqueArchivo*
+char *pedirFile(t_list *bloques) { // este t_list contiene bloqueArchivo*
 
-	int i, ctrl, nq, bs;
-	char *data, *file_data;
-	bool restantes = true;
-	header head;
+    int i, ctrl, nq, bs;
+    char *data, *file_data;
+    bool restantes = true;
+    header head;
 
-	nq = list_size(nodos);
-	bs = list_size(bloques);
+    nq = list_size(nodos);
+    bs = list_size(bloques);
 
-	struct _nodoCola nodC[nq];
-	if (inicializarNodoCola(nq, &nodC, bloques) == -1){
-		log_error(logi, "No se pudo preparar los pedidos de bloques para un archivo");
-		return NULL;
-	}
+    struct _nodoCola nodC[nq];
+    if (inicializarNodoCola(nq, &nodC, bloques) == -1) {
+        log_error(logi, "No se pudo preparar los pedidos de bloques para un archivo");
+        return NULL;
+    }
 
-	// tratamos de mallocar los bytes del archivo. Podria fallar si es un archivo super enorme mal...
-	if ((file_data = malloc(Mib * bs)) == NULL){
-		log_error(logi, "No se pudieron allocar %d megabytes para el archivo pedido", bs);
-		return NULL;
-	}
+    // tratamos de mallocar los bytes del archivo. Podria fallar si es un archivo super enorme mal...
+    if ((file_data = malloc(Mib * bs)) == NULL) {
+        log_error(logi, "No se pudieron allocar %d megabytes para el archivo pedido", bs);
+        return NULL;
+    }
 
-	// primeras peticiones
-	for (i = 0; i < nq; ++i)
-		enviarPeticion(&nodC[i]);
+    // primeras peticiones
+    for (i = 0; i < nq; ++i) {
+        if (nodC[i].hay_pedidos)
+            enviarPeticion(&nodC[i]);
+    }
 
-	// espero recepciones y hago el resto de las peticiones a medida...
-	for (i = 0; restantes; i = (i+1) % nq){
-		if (!nodC[i].hay_pedidos) continue;
+    // espero recepciones y hago el resto de las peticiones a medida...
+    for (i = 0; restantes; i = (i + 1) % nq) {
+        if (!nodC[i].hay_pedidos) continue;
 
-		data = getMessageIntrNB(nodC[i].fd, &head, &ctrl);
-		if (ctrl == -2) continue;
-		if (ctrl ==  0){
-			log_info(logi, "Se desconecto Nodo en %d", nodC[i].fd); // todo: hacerle close(nodC[i].fd) ahora? o despues?
-			nodC[i].hay_pedidos = false;
+        data = getMessageIntrNB(nodC[i].fd, &head, &ctrl);
+        if (ctrl == -2) continue;
+        if (ctrl == 0) {
+            log_info(logi, "Se desconecto Nodo en %d", nodC[i].fd); // todo: hacerle close(nodC[i].fd) ahora? o despues?
+            nodC[i].hay_pedidos = false;
 
-			log_info(logi, "Se intentara buscar bloque en el Nodo alternativo...");
-			if(delegarPedidos(nq, &nodC, i) == -1){
-				log_error(logi, "No es posible delegar el pedido a otro Nodo");
-				break;
-			}
+            log_info(logi, "Se intentara buscar bloque en el Nodo alternativo...");
+            if (delegarPedidos(nq, &nodC, i) == -1) {
+                log_error(logi, "No es posible delegar el pedido a otro Nodo");
+                break;
+            }
 
-		} else if (ctrl == -1){
-			log_error(logi, "Error de recepcion de mensaje de Nodo en %d", nodC[i].fd);
-			break;
+        } else if (ctrl == -1) {
+            log_error(logi, "Error de recepcion de mensaje de Nodo en %d", nodC[i].fd);
+            break;
 
-		} else {
-			memcpy(file_data + nodC[i].colaPedidos->ord * Mib, data, head.sizeData);
+        } else {
+            memcpy(file_data + nodC[i].colaPedidos->ord * Mib, data, head.sizeData);
 
-			// pedido satisfecho, avanzamos y pedimos otro si es que hay mas
-			if (++nodC[i].colaPedidos == NULL){ // todo: creo que esto funciona bien, pero revisar si se puede
-				nodC[i].hay_pedidos = false;
-				restantes = restanPedidos(nq, &nodC);
-				continue;
-			}
-			enviarPeticion(&nodC[i]);
-		}
-		free(data);
-	}
+            // pedido satisfecho, avanzamos y pedimos otro si es que hay mas
+            ++nodC[i].colaPedidos;
+            if (nodC[i].colaPedidos->bq == NULL) { // todo: creo que esto funciona bien, pero revisar si se puede
+                nodC[i].hay_pedidos = false;
+                incorporarSocket(nodC[i].fd);
+                restantes = restanPedidos(nq, &nodC);
+                continue;
+            }
+            enviarPeticion(&nodC[i]);
+        }
+        free(data);
+    }
 
-	// no se agotaron todos los Nodos => fue ejecucion erronea
-	if (!restantes){
-		free(file_data);
-		return NULL;
-	}
+    // no se agotaron todos los Nodos => fue ejecucion erronea
+    if (restantes) {
+        free(file_data);
+        return NULL;
+    }
 
-	return file_data;
+/*    bloqueArchivo *bq;
+    bq = list_get(bloques, bs - 1);
+    file_data[Mib * (bs - 1) + bq->bytesEnBloque + 1] = '\0';*/
+    return file_data;
 }
 
 
-void enviarPeticion(struct _nodoCola *nodC){
+void enviarPeticion(struct _nodoCola *nodC) {
 
-	int blkNodo, ctrl;
-	message *msj;
-	header head = {.codigo = 1, .letra = 'F', .sizeData = sizeof(int)};
-	char *blkBuff = malloc(sizeof(int));
-	blkNodo = (nodC->node == 0)? nodC->colaPedidos->bq->bloquenodo0 : nodC->colaPedidos->bq->bloquenodo1;
+    int blkNodo, ctrl;
+    message *msj;
+    header head = {.codigo = 1, .letra = 'F', .sizeData = sizeof(int)};
+    char *blkBuff = malloc(sizeof(int));
+    blkNodo = (nodC->node == 0) ? nodC->colaPedidos->bq->bloquenodo0 : nodC->colaPedidos->bq->bloquenodo1;
 
-	memcpy(blkBuff, &blkNodo, sizeof(int));
-	msj = createMessage(&head, blkBuff);
-	enviar_message(nodC->fd, msj, logi, &ctrl);
-	liberador(2, msj, blkBuff);
+    memcpy(blkBuff, &blkNodo, sizeof(int));
+    msj = createMessage(&head, blkBuff);
+    enviar_message(nodC->fd, msj, logi, &ctrl);
+    liberador(2, msj, blkBuff);
 }
 
-int inicializarNodoCola(int nq, struct _nodoCola (*nodC)[nq], t_list *bloques){
+int inicializarNodoCola(int nq, struct _nodoCola (*nodC)[nq], t_list *bloques) {
 
-	int bs, i, j;
-	bloqueArchivo *bq;
+    int bs, i, j;
+    bloqueArchivo *bq;
+    NODO *n;
 
-	bs = list_size(bloques);
-	// reservo el espacio maximo posible que cada Nodo podria tener de peticiones
-	for (i = 0; i < nq; ++i){
-		nodC[i]->colaPedidos = malloc(sizeof (struct _bloq) * (2*bs + 1));
-		for (j = bs; j < 2*bs + 1; ++j)
-			nodC[i]->colaPedidos[j].bq = NULL;
-	}
+    bs = list_size(bloques);
+    // reservo el espacio maximo posible que cada Nodo podria tener de peticiones
+    for (i = 0; i < nq; ++i) {
+        n = list_get(nodos, i);
+        (*nodC)[i].fd = n->soket;
+        (*nodC)[i].hay_pedidos = false;
+        (*nodC)[i].colaPedidos = malloc(sizeof(struct _bloq) * (2 * bs + 1));
+        for (j = 0; j < 2 * bs + 1; ++j)
+            (*nodC)[i].colaPedidos[j].bq = NULL;
+    }
 
-	// ubicar peticiones
-	for (i = 0; i < bs; ++i){
-		bq = list_get(bloques, i);
-		if (encolarSobreNodos(nq, nodC, bq, i) == -1){
-			log_error(logi, "No se encontraron nodos disponibles para el bloque %d", i);
-			liberarNodoCola(nq, nodC);
-			return -1;
-		}
-	}
-	return 0;
+    // ubicar peticiones
+    for (i = 0; i < bs; ++i) {
+        bq = list_get(bloques, i);
+        if (encolarSobreNodos(nq, nodC, bq, i) == -1) {
+            log_error(logi, "No se encontraron nodos disponibles para el bloque %d", i);
+            liberarNodoCola(nq, nodC);
+            return -1;
+        }
+    }
+    return 0;
 }
 
-void liberarNodoCola(int nq, struct _nodoCola (*nodC)[nq]){
-	int i;
-	for (i = 0; i < nq; ++i)
-		free(nodC[i]->colaPedidos);
+void liberarNodoCola(int nq, struct _nodoCola (*nodC)[nq]) {
+    int i;
+    for (i = 0; i < nq; ++i)
+        free((*nodC)[i].colaPedidos);
 }
 
-int encolarSobreNodos(int nq, struct _nodoCola (*nodC)[nq], bloqueArchivo *bq, int pos){
+int encolarSobreNodos(int nq, struct _nodoCola (*nodC)[nq], bloqueArchivo *bq, int pos) {
 
-	NODO *n;
-	int i, j;
-	int node = 0;
+    NODO *n;
+    int i, j;
+    int node = 0;
 
-	n = get_NODO(bq->nodo0);
-	if (n->estado == no_disponible){
-		n = get_NODO(bq->nodo1);
-		node = 1;
-		if (n->estado == no_disponible) return -1;
-	}
+    n = get_NODO(bq->nodo0);
+    if (n->estado == no_disponible) {
+        n = get_NODO(bq->nodo1);
+        node = 1;
+        if (n->estado == no_disponible) return -1;
 
-	for (i = j = 0; i < nq ; ++i){
-		if (nodC[i]->fd == n->soket){
-			nodC[i]->colaPedidos[j].bq  = bq;
-			nodC[i]->colaPedidos[j].ord = pos;
-			nodC[i]->node = node;
-		}
-	}
+    }
 
-	return 0;
+    for (i = 0; i < nq; ++i) {
+        if ((*nodC)[i].fd == n->soket) {
+            for (j = 0; (*nodC)[i].colaPedidos[j].bq != NULL; ++j); // nada
+            (*nodC)[i].colaPedidos[j].bq = bq;
+            (*nodC)[i].colaPedidos[j].ord = pos;
+            (*nodC)[i].node = node;
+            (*nodC)[i].hay_pedidos = true;
+            liberarSocket((*nodC)[i].fd);
+        }
+    }
+
+    return 0;
 }
 
-int delegarPedidos(int nq, struct _nodoCola (*nodC)[nq], int node){
+int delegarPedidos(int nq, struct _nodoCola (*nodC)[nq], int node) {
 
-	struct _bloq *pedidos = nodC[node]->colaPedidos;
-	while (pedidos != NULL){
+    struct _bloq *pedidos = (*nodC)[node].colaPedidos;
+    while (pedidos != NULL) {
 
-		if (encolarSobreNodos(nq, nodC, pedidos->bq, pedidos->ord) == -1){
-			log_error(logi, "No hay nodo disponible para pedir bloque nro %d", pedidos->ord);
-			return -1;
-		}
-		pedidos++;
-	}
-	return 0;
+        if (encolarSobreNodos(nq, nodC, pedidos->bq, pedidos->ord) == -1) {
+            log_error(logi, "No hay nodo disponible para pedir bloque nro %d", pedidos->ord);
+            return -1;
+        }
+        pedidos++;
+    }
+    return 0;
 }
 
 
-bool restanPedidos(int nq, struct _nodoCola (*nodC)[nq]){
+bool restanPedidos(int nq, struct _nodoCola (*nodC)[nq]) {
 
-	int i;
-	for (i = 0; i < nq; ++i)
-		if (nodC[i]->hay_pedidos)
-			return true;
-	return false;
+    int i;
+    for (i = 0; i < nq; ++i)
+        if ((*nodC)[i].hay_pedidos)
+            return true;
+    return false;
 }

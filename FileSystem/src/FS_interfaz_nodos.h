@@ -26,14 +26,16 @@ int get_file_size(char *);
 
 bool hay_lugar_para_archivo(int size);
 
-t_list  *get_copia_nodos_activos();
+t_list *get_copia_nodos_activos();
 
 void disconnectedNodo(int socket);
+
 /*todo Funciones para realizar Leer Archivo*/
 
-void *leer_bloque(bloqueArchivo *bq,int copia); //si copia == 1 me fijo primero en la copia, else primero en el original
+void *
+leer_bloque(bloqueArchivo *bq, int copia); //si copia == 1 me fijo primero en la copia, else primero en el original
 
-int crear_archivo_temporal(t_archivo *archivo,char *nomre_temporal);
+int crear_archivo_temporal(t_archivo *archivo, char *nomre_temporal);
 
 /* Dado una lista de bloques que conformar un archivo, pide en simultaneo las distintas
  * partes a cada Nodo de interes y agrupa el resultado final en un char*
@@ -44,15 +46,15 @@ char *pedirFile(t_list *bloques);
 
 /* Estructuras auxiliares para administrar el pedirFile() */
 struct _bloq {
-	bloqueArchivo *bq;
-	int ord; // orden del bloque en su Archivo
+    bloqueArchivo *bq;
+    int ord; // orden del bloque en su Archivo
 };
 
 struct _nodoCola {
-	bool hay_pedidos;
-	int fd;
-	int node; // 0 || 1 -> representa en que nodo hay que pedir el bloque
-	struct _bloq *colaPedidos; // mallocar el maximo posible por NODO +1 (NULL)
+    bool hay_pedidos;
+    int fd;
+    int node; // 0 || 1 -> representa en que nodo hay que pedir el bloque
+    struct _bloq *colaPedidos; // mallocar el maximo posible por NODO +1 (NULL)
 };
 
 /* Funciones auxiliares para administrar el pedirFile() */
