@@ -31,13 +31,13 @@ void solicitar_informacion_archivo(char *info, int _socket)
 	head.sizeData = size_buffer;
 
 	message *mensaje = createMessage(&head, info);
-	enviar_message(config->socket_fs, mensaje, yama_log, &control);
+	enviar_messageIntr(config->socket_fs, mensaje, yama_log, &control);
 
 	escribir_log(yama_log, "Se solicitó a FS información de los bloques del archivo");
 
 	header head2;
 	t_list *bloques_auxiliar = list_create();
-	char *mensaje2 = getMessage(config->socket_fs, &head2, &control);
+	char *mensaje2 = getMessageIntr(config->socket_fs, &head2, &control);
 
 	escribir_log(yama_log, "Se recibió la información de los bloques de FS");
 
@@ -61,6 +61,16 @@ void solicitar_informacion_archivo(char *info, int _socket)
 			bl2->n_bloque = bloque->bloquenodo1;
 			bl2->n_bloque_archivo = i;
 
+			//logear info
+		/*	escribir_log_con_numero(yama_log, "Bytes bloque1: ", bl1->bytes);
+			escribir_log_con_numero(yama_log, "Bytes bloque2: ", bl2->bytes);
+			escribir_log_compuesto(yama_log, "Nodo bloque1: ", bl1->nodo);
+			escribir_log_compuesto(yama_log, "Nodo bloque2: ", bl2->nodo);
+			escribir_log_con_numero(yama_log, "NumBloque bloque1: ", bl1->n_bloque);
+			escribir_log_con_numero(yama_log, "NumBloque bloque2: ", bl2->n_bloque);
+			escribir_log_con_numero(yama_log, "NumBloque Archivo bloque1: ", bl1->n_bloque_archivo);
+			escribir_log_con_numero(yama_log, "NumBloque Archivo bloque2: ", bl2->n_bloque_archivo);
+*/
 			list_add(bloques_auxiliar, bl1);
 			list_add(bloques_auxiliar, bl2);
 
@@ -68,6 +78,7 @@ void solicitar_informacion_archivo(char *info, int _socket)
 		}
 
 		list_iterate(archivo_bloques,(void *)_convertir_bloques);
+		printf("Cantidad nodos archivo: %d \n", i);
 		ejecutar_clock(bloques_auxiliar,i,_socket);
 	}
 	else if(head.codigo == 4)
