@@ -459,6 +459,10 @@ void crear_subdirectorios(void) {
 	mkdir(path_armado, 0775);
 	free(path_armado);
 
+	path_armado = completar_path_metadata("archivos/0");
+	mkdir(path_armado, 0775);
+	free(path_armado);
+
 }
 //todo: Funciones para manipular/operar/etc elementos de las diferentes estructuras ya creadas
 

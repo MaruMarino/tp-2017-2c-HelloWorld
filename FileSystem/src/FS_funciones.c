@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <funcionesCompartidas/generales.h>
 #include <commons/log.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
 #include "FS_administracion.h"
@@ -33,6 +34,7 @@ extern pthread_mutex_t mutex_socket;
 
 #define cyan  "\x1B[36m"
 #define sin "\x1B[0m"
+#define verde  "\x1B[32m"
 #define Mib 0x100000
 
 comando *buscar_comando(char *nombre);
@@ -179,6 +181,7 @@ int fs_format(char *j) {
 
             if (nodos->elements_count < 2) {
 
+            	printf("No se puede Formatear, se nesecitan al menos 2 Nodos\n");
                 log_info(logi, "No se puede Formatear, se nesecitan al menos 2 Nodos");
 
             } else if (!configuracion->estado_estable) {
@@ -189,15 +192,21 @@ int fs_format(char *j) {
                 iniciar_bitmaps_nodos();
 
                 configuracion->estado_estable = 1;
+                printf("%s¡Formateo Exitoso!%s\n",verde,sin);
+
             } else {
 
-                log_info(logi, "El File System ya fue fomateado \n");
+            	printf("El File System ya fue fomateado \n");
+                log_info(logi, "El File System ya fue fomateado");
             }
         } else {
-            log_info(logi, "El File System ya fue fomateado \n");
+
+        	puts("El File System ya fue fomateado");
+            log_info(logi, "El File System ya fue fomateado ");
         }
 
     } else {
+    	log_info(logi,"Usuario ingreso mal el comando Format ¯\_(ツ)_/¯");
         printf("La cantidad de parámetros es incorrecta, ingrese '%s? format%s' para más información\n", cyan, sin);
 
     }
@@ -449,22 +458,40 @@ int fs_mkdir(char *p) {
 
     if (i == 2) {
 
-        if (!string_contains(splt[1], "/")) {
-            padre = existe_ruta_directorios(splt[1]);
-            if (padre != -9 || padre == 0) {
+    	if (!string_contains(splt[1], "/")) {
+    		padre = existe_ruta_directorios(splt[1]);
+    		if (padre != -9 ) {
+    			liberar_char_array(splt);
+    			printf("Ya existe directorio\n");
+    			return 0;
+    		}
+    		int d = agregar_directorio(splt[1], 0);
+            if (d == -1) {
                 liberar_char_array(splt);
-                printf("Ya existe directorio\n");
+                printf("No hay lugar para un nuevo directorio\n");
                 return 0;
             }
+            liberar_char_array(splt);
+            printf("%s¡Se creó el Directorio!%s\n",verde,sin);
+            actualizar_arbol_directorios();
 
-        } else {
-            char **nuevo_dir = sacar_archivo(splt[1]);
-            padre = existe_ruta_directorios(nuevo_dir[0]);
-            if (padre == -9) {
-                liberar_char_array(splt);
-                liberar_char_array(nuevo_dir);
-                printf("No existe ruta directorios\n");
-                return 0;
+            char *aux = string_from_format("archivos/%d",d);
+            char *path = completar_path_metadata(aux);
+
+            mkdir(path,0775);
+            free(aux);
+            free(path);
+
+            return 0;
+
+    	} else {
+    		char **nuevo_dir = sacar_archivo(splt[1]);
+    		padre = existe_ruta_directorios(nuevo_dir[0]);
+    		if (padre == -9) {
+    			liberar_char_array(splt);
+    			liberar_char_array(nuevo_dir);
+    			printf("No existe ruta directorios\n");
+    			return 0;
             }
             int existe = existe_dir_en_padre(nuevo_dir[1], padre);
             if (existe != -9) {
@@ -482,8 +509,15 @@ int fs_mkdir(char *p) {
             }
             liberar_char_array(splt);
             liberar_char_array(nuevo_dir);
-            printf("Operación Exitosa\n");
+            printf("%s¡Se creó el Directorio!%s\n",verde,sin);
             actualizar_arbol_directorios();
+            char *aux = string_from_format("archivos/%d",d);
+            char *path = completar_path_metadata(aux);
+
+            mkdir(path,0775);
+            free(aux);
+            free(path);
+
             return 0;
         }
 

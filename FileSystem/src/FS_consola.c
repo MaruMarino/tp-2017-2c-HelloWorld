@@ -29,6 +29,7 @@
 #define blanco  "\x1B[37m"
 
 extern pthread_t hiloConexiones;
+extern yamafs_config *configuracion;
 
 comando commands[] = {
 		{ "ayuda", fs_ayuda, "Mostrar menu de comandos", "ayuda"},
@@ -91,6 +92,13 @@ int ejecutar_linea (char *line){
 	comando *command = find_command (line);
 	if (!command){
 		printf ("No existe ese comando YAMA-FS  %s┐(￣-￣)┌%s - pida '%sayuda%s' \n",verde,sin,cyan,sin);
+		return (-1);
+	}
+
+	if(configuracion->inicio_limpio && configuracion->estado_estable ==0 && strcmp(command->name,"format")!=0 &&
+			strcmp(command->name,"ayuda")!=0 && strcmp(command->name,"?")!=0){
+
+		printf("YAMA-FS no fue formateado  %s┐(￣-￣)┌%s \n",magenta,sin);
 		return (-1);
 	}
 
