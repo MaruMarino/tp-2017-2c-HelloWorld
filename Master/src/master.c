@@ -15,7 +15,7 @@
 #include "estructuras.h"
 
 pthread_mutex_t mutex_estadistica;
-//BUSCADOR	pthread_mutex_t sem_yama;
+pthread_mutex_t sem_yama;
 t_list *hilos;
 t_configuracion *config;
 t_estadistica *estadistica;
@@ -77,7 +77,7 @@ void inicializar_variables()
 	config->puerto = strdup("");
 
 	pthread_mutex_init(&mutex_estadistica,NULL);
-	//BUSCADOR	pthread_mutex_init(&sem_yama,NULL);
+	pthread_mutex_init(&sem_yama,NULL);
 }
 
 void leer_configuracion()
@@ -129,9 +129,9 @@ void conectar_yama()
 
 		message *mensaje = createMessage(handshake, config->path_file_target);
 
-		enviar_message(config->socket_yama, mensaje, log_Mas, &controlador);
+		enviar_messageIntr(config->socket_yama, mensaje, log_Mas, &controlador);
 		/*
-		getMessage(config->socket_yama, handshake, &controlador);
+		getMessageIntr(config->socket_yama, handshake, &controlador);
 		*/
 		free(handshake);
 		free(mensaje->buffer);
