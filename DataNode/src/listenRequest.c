@@ -61,6 +61,7 @@ void listenRequest(int socketCliente, t_log *file_log, void *dataBin) {
 
 int enviarBloque(header *req, void *buffer) {
     unsigned int numBloque;
+    int control;
     memcpy(&numBloque, buffer, req->sizeData);
     log_info(_log_file, "Buscando Bloque [%d]", numBloque);
     void *bloqueData = getBloque(&_dataBin, numBloque);
@@ -70,7 +71,7 @@ int enviarBloque(header *req, void *buffer) {
     headSend.sizeData = megaByte;
     message *bufferRes = createMessage(&headSend, bloqueData);
     log_info(_log_file, "Enviando data del bloque [%d]", numBloque);
-    if (send(_socketCliente, bufferRes->buffer, bufferRes->sizeBuffer, 0) < 0) {
+    if (enviar_messageIntr(_socketCliente, bufferRes, _log_file, &control) < 0) {
         escribir_log(_log_file, "Error al enviar el bloque");
         return -1;
     }

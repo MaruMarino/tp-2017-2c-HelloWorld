@@ -76,7 +76,7 @@ int waitAccept(int socket, t_log *file_log, config *config,size_t sizeDataBin) {
     void *Buffer = serializar_nodo(InfoNodo, &response.sizeData);
 
     message *res = createMessage(&response, Buffer);
-    if (send(socket, res->buffer, res->sizeBuffer, 0) < 0) {
+    if (enviar_messageIntr(socket,res,file_log,&controler) < 0) {
         escribir_error_log(file_log, "No pudo enviar el mjs de aceptacion");
         return -1;
     }
