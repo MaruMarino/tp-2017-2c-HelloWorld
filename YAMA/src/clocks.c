@@ -40,6 +40,10 @@ void armar_workers(char *rta)
 		worker->nodo = nodo;
 		worker->carga_historica = 0;
 
+		escribir_log(yama_log, worker->nodo->nodo);
+		escribir_log_compuesto(yama_log,"IP: ", worker->nodo->ip);
+		escribir_log_con_numero(yama_log, "Puerto: ", worker->nodo->puerto);
+
 		list_add(workers, worker);
 	}
 	list_iterate(nodos_aux, (void *)_armar_workers);
@@ -237,6 +241,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 	int w_size = list_size(workers);
 	if(worker != NULL)
 	{
+		escribir_log(yama_log, "Se encontró el bloque donde esta posicionado el clock");
 		int next_index;
 		bool _bloque_archivo(t_bloque *bl2)
 		{
@@ -289,6 +294,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 		int cant = 0;
 		while(!encontrado && !vuelta_completa)
 		{
+			escribir_log(yama_log, "Buscando bloque en nodo distinto al del clock");
 			worker2 = list_get(workers, next_index);
 
 			t_list *lista43 = list_create();
@@ -297,7 +303,10 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 				t_bloque *bl = list_get(archivo, i);
 
 				if(bl->n_bloque_archivo == n_bloque)
+				{
 					list_add(lista43, bl);
+					escribir_log_compuesto(yama_log, "Nodo con bloque0 ", bl->nodo);
+				}
 			}
 
 			bool _bloque(t_bloque *bl)
@@ -306,8 +315,12 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 			}
 			bool any = list_any_satisfy(lista43,(void *) _bloque);
 
+			escribir_log_con_numero(yama_log,"Bloque buscado ", n_bloque);
+			escribir_log_compuesto(yama_log, "Disponilidad worker: ", worker2->nodo->nodo);
+
 			if ( any && worker2->disponibilidad > 0)
 			{
+				escribir_log(yama_log, "Primera condicion para bloque no clock");
 				bool _bloque_archivo(t_bloque *bl2)
 				{
 					return (!strcmp(bl2->nodo, worker2->nodo->nodo));
@@ -322,19 +335,26 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 			}
 			else
 			{
+				escribir_log(yama_log, "Segunda condicion para bloque no clock");
 				next_index = (next_index + 1) % w_size;
 				cant ++;
 				if(cant == w_size)
 					vuelta_completa = 1;
 			}
+			list_destroy(lista43);
+		}
+		if(encontrado)
+		{
+			escribir_log(yama_log, "Worker encontrado");
+			return worker2;
 		}
 		if(vuelta_completa)
 		{
+			escribir_log(yama_log, "Dio vuelta completa suma base");
 			sumar_disponibilidad_base();
 			return get_worker(archivo, n_bloque);
 		}
-		if(encontrado)
-			return worker2;
+
 	}
 
 	list_destroy(lista_aux);
@@ -397,6 +417,14 @@ void obtener_nodo_transformacion(t_list *archivo, t_list *transformaciones, int 
 	t_estado *est = generar_estado(master, bloque_->n_bloque, worker0->nodo->nodo, worker_cop->nodo->nodo, b_cop->n_bloque, bloque_->bytes, bloque);
 	transf->temporal = est->archivo_temporal;
 
+	escribir_log_compuesto(yama_log, "Transformacion en :", transf->nodo->nodo);
+	escribir_log_compuesto(yama_log, "IP: ", transf->nodo->ip);
+	escribir_log_con_numero(yama_log, "Puerto: ", transf->nodo->puerto);
+	escribir_log_compuesto(yama_log, "Archivo :", transf->temporal);
+	escribir_log_con_numero(yama_log, "Bytes :", transf->bytes);
+	escribir_log_con_numero(yama_log, "Bloque: ", transf->bloque);
+
+
 	list_add(transformaciones, transf);
 }
 
@@ -425,7 +453,7 @@ void ejecutar_clock(t_list *archivo_bloques, int cant_bloques, int _socket)
 	char *transformaciones_ser = serializar_lista_transformacion(transformaciones, &head.sizeData);
 
 	message *mensaje = createMessage(&head, transformaciones_ser);
-	enviar_message(_socket, mensaje, yama_log, &control);
+	enviar_messageIntr(_socket, mensaje, yama_log, &control);
 }
 
 t_master *find_master(int sockt)
@@ -509,7 +537,7 @@ void armar_reduccion_local(int sz, t_master *master_, t_estado *est, t_estado_ma
 	head.sizeData = len;
 
 	message *mensaje = createMessage(&head, (void *)red_local_ser);
-	enviar_message(master_->socket_, mensaje, yama_log, &control);
+	enviar_messageIntr(master_->socket_, mensaje, yama_log, &control);
 	t_estado *es_rl = generar_estado(master_->master, -10, estado_tr->nodo, NULL, -10, -10, -10);
 	es_rl->archivo_temporal = red_l->temp_red_local;
 	es_rl->etapa = REDUCCION_LOCAL;
@@ -569,7 +597,7 @@ void armar_transformacion_replanificada(t_estado *estado, int socket_)
 	char *transformaciones_ser = serializar_lista_transformacion(transformaciones, &head.sizeData);
 
 	message *mensaje = createMessage(&head, transformaciones_ser);
-	enviar_message(socket_, mensaje, yama_log, &control);
+	enviar_messageIntr(socket_, mensaje, yama_log, &control);
 
 	free(transformaciones);
 }
@@ -720,7 +748,7 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 	head.sizeData = len;
 
 	message *mensaje = createMessage(&head, (void *)red_global_ser);
-	enviar_message(master_->socket_, mensaje, yama_log, &control);
+	enviar_messageIntr(master_->socket_, mensaje, yama_log, &control);
 	t_estado *estt = generar_estado(master_->master,-10,wk->nodo->nodo,NULL,cant_temporales,-10, -10);
 	free(estt->archivo_temporal);
 	if(en_worker_trabajado)

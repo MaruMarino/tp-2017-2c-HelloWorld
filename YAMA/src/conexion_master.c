@@ -106,7 +106,7 @@ void manejar_respuesta(int socket_)
 {
 	header head;
 	int status;
-	char *mensaje = (char *)getMessage(socket_, &head, &status);
+	char *mensaje = (char *)getMessageIntr(socket_, &head, &status);
 
 	t_master *ms = find_master(socket_);
 	escribir_log_con_numero(yama_log, "Mensaje recibido de Master: ", ms->master);
