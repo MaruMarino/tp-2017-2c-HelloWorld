@@ -206,7 +206,7 @@ void subrutinaServidor(int sock_w) {
         msg = createMessage(&head_serv, line);
         enviar_message(sock_w, msg, logw, &ctl);
 
-        liberador(3, msj, msg, line);
+        liberador(3, msj, msg->buffer, msg, line);
     } while (ret != -1 && (msj = getMessage(sock_w, &head_cli, &ctl)));
 
     if (ret == 0) {

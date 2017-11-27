@@ -174,7 +174,7 @@ int realizarApareo(int nfiles, FILE *fs[nfiles]) {
             } else if (fs[i] == NULL)
                 continue;
 
-            minp = (strncmp(ls[minp], ls[i], maxline) > 0) ? i : minp;
+            minp = (strcoll(ls[minp], ls[i]) > 0) ? i : minp;
         }
 
         if (nulls == nlines)
@@ -212,7 +212,7 @@ int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname) {
     log_trace(logw, "CHILD [%d] crea y ejecuta su comando", getpid());
 
     char *cmd = crearComando(7, "cat ", data_fname, "|", "./", exe_fname,
-                             " | sort -dib > ", out_fname);
+                             " | sort > ", out_fname);
     if (!cmd) {
         log_error(logw, "Fallo la creacion del comando a ejecutar.");
         return -1;
@@ -261,10 +261,10 @@ int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns) {
         if (enviar_message((*fds)[i], req, logw, &ctl) < 0) {
             log_error(logw, "Fallo envio de mensaje a Nodo en %s:%s", n->ip, n->port);
             cerrarSockets(i, *fds);
-            liberador(2, msj, req);
+            liberador(3, msj, req->buffer, req);
             return -1;
         }
-        liberador(2, msj, req);
+        liberador(3, msj, req->buffer, req);
 
         msj = getMessage((*fds)[i], &head, &ctl);
         if (ctl == -1 || ctl == 0) {
@@ -299,14 +299,14 @@ int apareoGlobal(t_list *nodos, char *fname) {
     if ((fout = fopen(fname, "w")) == NULL) {
         perror("Fallo fopen()");
         log_error(logw, "No se pudo abrir el archivo de output %s", fname);
-        //liberador(2, lines, fds);
+        liberador(4, lines, fds, req->buffer, req);
         return -1;
     }
 
     // Preparamos las primeras lineas a comparar
     if (conectarYCargar(nquant, nodos, &fds, &lines) == -1) {
         log_error(logw, "Fallo conexion y carga de textos a aparear");
-        //liberador(2, lines, fds);
+        liberador(4, lines, fds, req->buffer, req);
         return -1;
     }
 
@@ -330,7 +330,7 @@ int apareoGlobal(t_list *nodos, char *fname) {
             log_error(logw, "Fallo escribir linea %s en %s", lines[min], fout);
             liberarBuffers(nquant, lines);
             cerrarSockets(nquant, fds);
-            //liberador(2, lines, fds);
+            liberador(4, lines, fds, req->buffer, req);
             fclose(fout);
             return -1;
         }
@@ -340,7 +340,7 @@ int apareoGlobal(t_list *nodos, char *fname) {
             log_error(logw, "Fallo pedido siguiente linea a Nodo en %d", fds[min]);
             liberarBuffers(nquant, lines);
             cerrarSockets(nquant, fds);
-            //liberador(2, lines, fds);
+            liberador(4, lines, fds, req->buffer, req);
             fclose(fout);
             return -1;
         }
@@ -351,7 +351,7 @@ int apareoGlobal(t_list *nodos, char *fname) {
             log_error(logw, "Fallo obtencion mensaje de Nodo en %d", fds[min]);
             liberarBuffers(nquant, lines);
             cerrarSockets(nquant, fds);
-            //liberador(2, lines, fds);
+            liberador(4, lines, fds, req->buffer, req);
             fclose(fout);
             return -1;
 
@@ -359,7 +359,7 @@ int apareoGlobal(t_list *nodos, char *fname) {
             log_error(logw, "Nodo en %d fallo al leer su linea", fds[min]);
             liberarBuffers(nquant, lines);
             cerrarSockets(nquant, fds);
-            //liberador(2, lines, fds);
+            liberador(4, lines, fds, req->buffer, req);
             fclose(fout);
             return -1;
 
@@ -373,6 +373,7 @@ int apareoGlobal(t_list *nodos, char *fname) {
         }
 
         // Deserializamos la linea sobre el buffer de lineas
+        free(lines[min]);
         lines[min] = deserializar_stream(msj, &head.sizeData);
         free(msj);
         lcount++;
@@ -388,7 +389,7 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname, char *yam
     message *msj;
     t_file *file;
     int sock_fs, ctl;
-    char *file_serial;
+    char *file_serial, *msj_rv;
     header head = {.letra = 'W', .codigo = ALMAC_FS};
 
     if ((file = cargarFile(fname, yamafn)) == NULL) {
@@ -400,35 +401,34 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname, char *yam
 
     if ((sock_fs = establecerConexion(fs_ip, fs_port, logw, &ctl)) == -1) {
         log_error(logw, "Fallo conectar con FileSystem en %s:%s", fs_ip, fs_port);
-        liberador(5, file->data, file->fname, file, file_serial, msj);
+        liberador(6, file->data, file->fname, file, file_serial, msj->buffer, msj);
         return -1;
     }
 
     if (realizarHandshake(sock_fs, 'F') == -1) {
         log_error(logw, "Fallo handshaking con %s:%s", fs_ip, fs_port);
-        liberador(5, file->data, file->fname, file, file_serial, msj);
+        liberador(6, file->data, file->fname, file, file_serial, msj->buffer, msj);
         close(sock_fs);
         return -1;
     }
 
     if (enviar_messageIntr(sock_fs, msj, logw, &ctl) == -1) {
         log_error(logw, "Fallo enviar message a FileSystem en %s:%s", fs_ip, fs_port);
-        liberador(5, file->data, file->fname, file, file_serial, msj);
+        liberador(6, file->data, file->fname, file, file_serial, msj->buffer, msj);
         close(sock_fs);
         return -1;
     }
 
-    free(msj);
-    msj = getMessage(sock_fs, &head, &ctl);
+    msj_rv = getMessage(sock_fs, &head, &ctl);
     if (ctl == -1) {
         log_error(logw, "Fallo obtencion mensaje de FileSystem en %d", sock_fs);
-        liberador(5, file->data, file->fname, file, file_serial, msj);
+        liberador(6, file->data, file->fname, file, file_serial, msj->buffer, msj);
         close(sock_fs);
         return -1;
     }
 
 
-    liberador(5, file->data, file->fname, file, file_serial, msj);
+    liberador(7, file->data, file->fname, file, file_serial, msj->buffer, msj, msj_rv);
     close(sock_fs);
     return head.codigo;
 }

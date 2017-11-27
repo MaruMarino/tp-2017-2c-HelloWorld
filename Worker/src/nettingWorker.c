@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <commons/log.h>
 
+#include <funcionesCompartidas/generales.h>
 #include <funcionesCompartidas/funcionesNet.h>
 
 #include "nettingWorker.h"
@@ -15,11 +16,11 @@ int responderHandshake(int fd_proc){
 	message *msj = createMessage(&head, NULL);
 
 	if (enviar_message(fd_proc, msj, logw, &ctl) < 0){
-		free(msj);
+		liberador(2, msj->buffer, msj);
 		return -1;
 	}
 
-	free(msj);
+	liberador(2, msj->buffer, msj);
 	return 0;
 }
 
@@ -47,10 +48,10 @@ int realizarHandshake(int fd_proc, char proc_expected){
 
 	if (enviar_message(fd_proc, msj, logw, &ctl) < 0){
 		log_trace(logw, "Fallo realizarHandshake con %d", fd_proc);
-		free(msj);
+		liberador(2, msj->buffer, msj);
 		return -1;
 	}
-	free(msj);
+	liberador(2, msj->buffer, msj);
 
 	free(getMessage(fd_proc, &head, &ctl));
 	if (ctl == -1){
@@ -77,5 +78,5 @@ void enviarResultado(int fd_m, int cod_rta){
 	message *msj = createMessage(&head, "");
 
 	enviar_message(fd_m, msj, logw, &ctl);
-	free(msj);
+	liberador(2, msj->buffer, msj);
 }

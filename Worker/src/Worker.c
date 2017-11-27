@@ -7,6 +7,7 @@
 #include <semaphore.h>
 #include <signal.h>
 #include <errno.h>
+#include <sys/mman.h>
 
 #include <commons/config.h>
 #include <commons/string.h>
@@ -44,8 +45,7 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 	puts("Se crea archivo de log en /home/utnso/worker_log");
-	logw = crear_archivo_log("Worker", true, "/home/utnso/worker_log");
-	logw->detail = LOG_LEVEL_TRACE;
+	log_create("/home/utnso/worker_log", "Worker", true, LOG_LEVEL_TRACE);
 	conf = cargarConfig(argv[1]);
 	mostrarConfig(conf);
 
@@ -134,6 +134,7 @@ int main(int argc, char *argv[]){
 	log_trace(logw, "Se procede a liberar los ultimos recursos...");
 	log_destroy(logw);
 	liberarConfig(conf);
+	munmap(databin, dsize);
 	close(lis_fd);
 	return 0;
 }
