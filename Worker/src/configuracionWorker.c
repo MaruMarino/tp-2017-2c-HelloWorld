@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <commons/config.h>
 #include <commons/string.h>
@@ -18,13 +19,20 @@ t_conf *cargarConfig(char *path){
 
 	t_config *conf = config_create(path);
 	t_conf *conf_w = malloc(sizeof *conf_w);
+	char *ip, *port, *node, *portw, *dbpath;
+	ip     = config_get_string_value(conf, "IP_FILESYSTEM");
+	port   = config_get_string_value(conf, "PUERTO_FILESYSTEM");
+	node   = config_get_string_value(conf, "NOMBRE_NODO");
+	portw  = config_get_string_value(conf, "PUERTO_WORKER");
+	dbpath = config_get_string_value(conf, "RUTA_DATABIN");
 
-	conf_w->ip_fs =         string_duplicate(config_get_string_value(conf, "IP_FILESYSTEM"));
-	conf_w->puerto_fs =     string_duplicate(config_get_string_value(conf, "PUERTO_FILESYSTEM"));
-	conf_w->nombre_nodo =   string_duplicate(config_get_string_value(conf, "NOMBRE_NODO"));
-	conf_w->puerto_worker = string_duplicate(config_get_string_value(conf, "PUERTO_WORKER"));
-	conf_w->ruta_databin =  string_duplicate(config_get_string_value(conf, "RUTA_DATABIN"));
+	conf_w->ip_fs =         strdup(ip);
+	conf_w->puerto_fs =     strdup(port);
+	conf_w->nombre_nodo =   strdup(node);
+	conf_w->puerto_worker = strdup(portw);
+	conf_w->ruta_databin =  strdup(dbpath);
 
+	config_destroy(conf);
 	return conf_w;
 }
 

@@ -290,8 +290,8 @@ int apareoGlobal(t_list *nodos, char *fname) {
     char **lines, *msj;
     int i, ctl, min, nquant, remaining, *fds, lcount;
     remaining = nquant = list_size(nodos);
-    header head = {.letra = 'W', .codigo = FILE_REQ, .sizeData = 0};
-    message *req = createMessage(&head, NULL);
+    header head = {.letra = 'W', .codigo = FILE_REQ, .sizeData = 1};
+    message *req = createMessage(&head, "");
 
     lines = malloc((size_t) nquant * sizeof *lines);
     fds = malloc((size_t) nquant * sizeof *fds);
@@ -359,7 +359,7 @@ int apareoGlobal(t_list *nodos, char *fname) {
             log_error(logw, "Nodo en %d fallo al leer su linea", fds[min]);
             liberarBuffers(nquant, lines);
             cerrarSockets(nquant, fds);
-            liberador(4, lines, fds, req->buffer, req);
+            liberador(5, lines, fds, req->buffer, req, msj);
             fclose(fout);
             return -1;
 
@@ -367,6 +367,7 @@ int apareoGlobal(t_list *nodos, char *fname) {
             log_trace(logw, "Se recibio EOF para Nodo en %d", fds[min]);
             close(fds[min]);
             fds[min] = 0;
+            liberador(2, lines[min], msj);
             lines[min] = NULL;
             remaining--;
             continue;
@@ -379,58 +380,38 @@ int apareoGlobal(t_list *nodos, char *fname) {
         lcount++;
     }
 
+    liberador(4, lines, fds, req->buffer, req);
     fclose(fout);
     return lcount;
 }
 
-int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname, char *yamafn) {
-    log_trace(logw, "Se realiza el almacenamiento en YAMAFS de %s", fname);
+int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, t_file *file){
+	log_trace(logw, "Se realiza el almacenamiento en YAMAFS de %s", file->fname);
 
-    message *msj;
-    t_file *file;
-    int sock_fs, ctl;
-    char *file_serial, *msj_rv;
-    header head = {.letra = 'W', .codigo = ALMAC_FS};
+	char *msj;
+	int sock_fs, ctl, rta;
+	header head;
 
-    if ((file = cargarFile(fname, yamafn)) == NULL) {
-        log_error(logw, "Fallo cargar el t_file %s para enviar", fname);
-        return -1;
-    }
-    file_serial = serializar_File(file, &head.sizeData);
-    msj = createMessage(&head, file_serial);
+	if ((sock_fs = enviarFile(fs_ip, fs_port, file)) == -1){
+		log_error(logw, "Fallo enviar %s a FileSystem en %s:%s", file->fname, fs_ip, fs_port);
+		return -1;
+	}
 
-    if ((sock_fs = establecerConexion(fs_ip, fs_port, logw, &ctl)) == -1) {
-        log_error(logw, "Fallo conectar con FileSystem en %s:%s", fs_ip, fs_port);
-        liberador(6, file->data, file->fname, file, file_serial, msj->buffer, msj);
-        return -1;
-    }
+	msj = getMessage(sock_fs, &head, &ctl);
+	if (ctl == -1 || ctl == 0){
+		log_error(logw, "Fallo obtencion mensaje de FileSystem en %d. Error: %d", sock_fs, ctl);
+		rta = -1;
 
-    if (realizarHandshake(sock_fs, 'F') == -1) {
-        log_error(logw, "Fallo handshaking con %s:%s", fs_ip, fs_port);
-        liberador(6, file->data, file->fname, file, file_serial, msj->buffer, msj);
-        close(sock_fs);
-        return -1;
-    }
+	} else if (head.codigo != 14){
+		log_error(logw, "Recibio de FileSystem en %d un mensaje invalido: %d", sock_fs, head.codigo);
+		rta = -1;
 
-    if (enviar_messageIntr(sock_fs, msj, logw, &ctl) == -1) {
-        log_error(logw, "Fallo enviar message a FileSystem en %s:%s", fs_ip, fs_port);
-        liberador(6, file->data, file->fname, file, file_serial, msj->buffer, msj);
-        close(sock_fs);
-        return -1;
-    }
+	} else
+		rta = strncmp("1", msj, 1);
 
-    msj_rv = getMessage(sock_fs, &head, &ctl);
-    if (ctl == -1) {
-        log_error(logw, "Fallo obtencion mensaje de FileSystem en %d", sock_fs);
-        liberador(6, file->data, file->fname, file, file_serial, msj->buffer, msj);
-        close(sock_fs);
-        return -1;
-    }
-
-
-    liberador(7, file->data, file->fname, file, file_serial, msj->buffer, msj, msj_rv);
-    close(sock_fs);
-    return head.codigo;
+	free(msj);
+	close(sock_fs);
+	return rta;
 }
 
 t_file *cargarFile(char *fname, char *yamafn) {
@@ -464,6 +445,41 @@ t_file *cargarFile(char *fname, char *yamafn) {
 
     fclose(f);
     return file;
+}
+
+int enviarFile(char *fs_ip, char *fs_port, t_file *file){
+
+	int sock_fs, ctl;
+	message *msj;
+	char *file_serial;
+	header head = {.letra = 'W', .codigo = ALMAC_FS};
+
+	file_serial = serializar_File(file, &head.sizeData);
+	msj = createMessage(&head, file_serial);
+
+	if ((sock_fs = establecerConexion(fs_ip, fs_port, logw, &ctl)) == -1) {
+		log_error(logw, "Fallo conectar con FileSystem en %s:%s", fs_ip, fs_port);
+		liberador(3, file_serial, msj->buffer, msj);
+		return -1;
+	}
+
+	if (realizarHandshake(sock_fs, 'F') == -1) {
+		log_error(logw, "Fallo handshaking con %s:%s", fs_ip, fs_port);
+		liberador(3, file_serial, msj->buffer, msj);
+		close(sock_fs);
+		return -1;
+	}
+
+	if (enviar_messageIntr(sock_fs, msj, logw, &ctl) == -1) {
+		log_error(logw, "Fallo enviar message a FileSystem en %s:%s", fs_ip, fs_port);
+		liberador(3, file_serial, msj->buffer, msj);
+		close(sock_fs);
+		return -1;
+	}
+	log_trace(logw, "Se envio el file %s a FileSystem en %d", file->fname, sock_fs);
+
+	liberador(3, file_serial, msj->buffer, msj);
+	return sock_fs;
 }
 
 off_t fsize(FILE *f) {

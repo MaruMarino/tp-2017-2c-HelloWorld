@@ -7,11 +7,11 @@ typedef struct {
     size_t sizeBuffer;
 }message;
 
-typedef struct {
+typedef struct  {
     char letra;
     int codigo;
     size_t sizeData;
-}header;
+} __attribute__((packed)) header; //todo: sino sizeof da 12 en vez del 9 esperable
 
 /* Dados IP y puerto de destino, se trata de conectar a un servidor...
  * Crea y retorna el socket que permite la comunicacion con el servidor.

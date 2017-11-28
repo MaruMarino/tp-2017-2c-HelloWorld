@@ -44,12 +44,6 @@ int makeCommandAndExecute(char *data_fname, char *exe_fname, char *out_fname);
  */
 int apareoGlobal(t_list *nodos, char *fname);
 
-/* Dado el IP y Puerto del FileSystem, se le conecta y le envia el archivo
- * del tipo t_file que corresponde con el filename fname.
- * Retorna -1 si falla el proceso. Retorna 0 en caso exitoso.
- */
-int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname, char *yamafn);
-
 /* Dada una lista de nodos, se conecta a cada uno de ellos y carga en los
  * punteros *fds y **lns el file_descriptor y la primera linea de cada nodo.
  * Estos punteros son los parametros de retorno que interesan.
@@ -57,8 +51,22 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, char *fname, char *yam
  */
 int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns);
 
-/* A partir de un path genera un t_file* con los datos pertinentes */
-t_file *cargarFile(char *fname, char *yamafn);
+/* Dado el IP y Puerto del FileSystem, le envia el archivo y espera respuesta
+ * para el resultado del almacenamiento.
+ * Retorna 0 en caso exitoso. Retorna != 0 en caso de fallo.
+ */
+int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, t_file *file);
+
+/* A partir de un path genera un t_file* con filename fn y sus datos binarios
+ * Retorna NULL en caso de algun error. Sino retorna el t_file generado
+ */
+t_file *cargarFile(char *path, char *fn);
+
+/* Establece conexion con IP y PUERTO (deberian ser del FileSystem),
+ * realiza un handshake y le envia el file.
+ * Retorna -1 en caso de fallo. Sino retorna el socket para el FileSystem.
+ */
+int enviarFile(char *fs_ip, char *fs_port, t_file *file);
 
 off_t fsize(FILE *f);
 

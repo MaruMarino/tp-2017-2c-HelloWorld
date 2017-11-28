@@ -244,7 +244,7 @@ char *serializar_stream(char *bytes, size_t bytelen, size_t *len) {
     memcpy(bytes_serial + *len, bytes, bytelen);
     *len += bytelen;
 
-    printf("Se serializaron %d bytes\n", *len);
+//    printf("Se serializaron %d bytes\n", *len);
 
     return bytes_serial;
 }
@@ -261,7 +261,7 @@ char *deserializar_stream(char *bytes_serial, size_t *bytelen) {
     memcpy(bytes, bytes_serial + off, *bytelen);
     off += *bytelen;
 
-    printf("Se deserializaron %d bytes\n", off);
+    //printf("Se deserializaron %d bytes\n", off);
 
     return bytes;
 }

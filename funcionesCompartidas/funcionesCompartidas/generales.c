@@ -34,16 +34,11 @@ size_t sizeOfInfoNodos(t_list *nodos){
 	return total;
 }
 
-
 void liberarInfoNodos(t_list *nodos){
-
-	int i;
-	t_info_nodo *n;
-
-	for (i = 0; i < nodos->elements_count; ++i){
-		n = list_get(nodos, i);
+	void freer(t_info_nodo *n){
 		liberador(4, n->fname, n->ip, n->port, n);
 	}
+	list_destroy_and_destroy_elements(nodos, (void*) freer);
 }
 
 size_t sizeOfFnames(t_list *fnames){
@@ -61,14 +56,7 @@ size_t sizeOfFnames(t_list *fnames){
 }
 
 void liberarFnames(t_list *fnames){
-
-	int i;
-	char *fn;
-
-	for (i = 0; i < fnames->elements_count; ++i){
-		fn = list_get(fnames, i);
-		free(fn);
-	}
+	list_destroy_and_destroy_elements(fnames, free);
 }
 
 size_t tamanio_bloque_archivo(bloqueArchivo *ba){

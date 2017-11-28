@@ -7,7 +7,6 @@ typedef struct{
 		 *nombre_nodo,
 		 *puerto_worker,
 		 *ruta_databin;
-	int size_default;
 } t_conf;
 
 t_conf *cargarConfig(char *path);
