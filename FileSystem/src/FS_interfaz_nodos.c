@@ -31,7 +31,6 @@
 
 //extern yamafs_config *configuracion;
 extern t_log *logi;
-extern pthread_mutex_t mutex_socket;
 //extern t_directory directorios[100];
 extern t_list *nodos;
 //extern t_list *archivos;

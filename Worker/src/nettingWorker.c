@@ -12,8 +12,8 @@ int responderHandshake(int fd_proc){
 	log_trace(logw, "Se responde handshake al socket %d", fd_proc);
 
 	int ctl;
-	header head = {.letra = 'W', .codigo = 0, .sizeData = 0};
-	message *msj = createMessage(&head, NULL);
+	header head = {.letra = 'W', .codigo = 0, .sizeData = 1};
+	message *msj = createMessage(&head, "");
 
 	if (enviar_message(fd_proc, msj, logw, &ctl) < 0){
 		liberador(2, msj->buffer, msj);

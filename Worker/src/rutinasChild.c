@@ -98,6 +98,7 @@ void subrutinaEjecutor(int sock_m) {
             }
 
             log_trace(logw, "CHILD [%d]: Finaliza Reduccion Local", wp);
+            liberarFnames(info_rl->files);
             liberador(4, msj, info_rl->file_out, info_rl->prog, info_rl);
             break;
 
@@ -128,25 +129,36 @@ void subrutinaEjecutor(int sock_m) {
             }
 
             log_trace(logw, "CHILD [%d]: Finaliza Reduccion Global", wp);
+            liberarInfoNodos(info_rg->nodos);
             liberador(4, msj, info_rg->prog, info_rg->file_out, info_rg);
             break;
 
         case ALMAC:
-            log_trace(logw, "CHILD [%d]: Ejecuta Almacenamiento Final", wp);
-            char *yamafn;
-            fname = deserializar_FName2(msj, &yamafn);
+        	log_trace(logw, "CHILD [%d]: Ejecuta Almacenamiento Final", wp);
 
-            if (almacenarFileEnFilesystem(conf->ip_fs, conf->puerto_fs, fname, yamafn) == -1) {
-                log_error(logw, "No se logro almacenar %s en FileSystem", fname);
-                cleanWorkspaceFiles(1, fname);
-                liberador(3, msj, fname, yamafn);
-                terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
-            }
+        	char *yamafn;
+        	t_file *file;
+        	fname = deserializar_FName2(msj, &yamafn);
+        	log_trace(logw, "Se cargara el file %s para almacenarse como %s", fname, yamafn);
 
-            log_trace(logw, "CHILD [%d]: Finaliza Almacenamiento Final", wp);
-            liberador(3, msj, fname, yamafn);
-            break;
+        	if ((file = cargarFile(fname, yamafn)) == NULL) {
+        		log_error(logw, "Fallo cargar el t_file %s para enviar", fname);
+        		liberador(3, msj, fname, yamafn);
+        		terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
+        	}
+
+        	if (almacenarFileEnFilesystem(conf->ip_fs, conf->puerto_fs, file) != 0) {
+        		log_error(logw, "No se logro almacenar %s en FileSystem", file->fname);
+        		liberador(6, msj, fname, yamafn, file->data, file->fname, file);
+        		terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
+        	}
+        	log_info(logw, "Se almaceno satisfactoriamente %s en FileSystem", file->fname);
+
+        	log_trace(logw, "CHILD [%d]: Finaliza Almacenamiento Final", wp);
+        	liberador(6, msj, fname, yamafn, file->data, file->fname, file);
+        	break;
     }
+
 
     terminarEjecucion(sock_m, OK, conf, exe_fname, data_fname);
 }

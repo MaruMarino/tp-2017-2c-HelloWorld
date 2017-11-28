@@ -31,11 +31,14 @@ t_log *logw;
 t_conf *conf;
 char *databin;
 size_t dsize;
+bool die = false;
 
 /* El unico proposito de este handler es llamar waitpid() pa matar zombies */
 void handleWorkerRet(int sig){
 	int r;
 	while((r = waitpid(-1, &sig, WNOHANG)) != -1 && r != 0) ; // no-op
+	if (sig == SIGUSR1)
+		die = true;
 }
 
 int main(int argc, char *argv[]){
@@ -45,7 +48,7 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 	puts("Se crea archivo de log en /home/utnso/worker_log");
-	log_create("/home/utnso/worker_log", "Worker", true, LOG_LEVEL_TRACE);
+	logw = log_create("/home/utnso/worker_log", "Worker", true, LOG_LEVEL_TRACE);
 	conf = cargarConfig(argv[1]);
 	mostrarConfig(conf);
 
@@ -54,12 +57,12 @@ int main(int argc, char *argv[]){
 	char *msj;
 	int fd_proc, lis_fd, status;
 	bool masterQuery = false;
-	
+
 	fd_set masters_set, read_set;
 	FD_ZERO(&masters_set);
 	FD_ZERO(&read_set);
 
-	if ((databin = openDataBin(conf->ruta_databin, &dsize, conf->size_default)) == NULL){
+	if ((databin = openDataBin(conf->ruta_databin, &dsize, 0)) == NULL){
 		log_error(logw, "Fallo abrir el archivo databin. No se incia el Nodo");
 		log_destroy(logw);
 		liberarConfig(conf);
@@ -79,6 +82,7 @@ int main(int argc, char *argv[]){
 		read_set = masters_set;
 
 		try_select:
+		if (die) break;
 		if (select(lis_fd + 1, &read_set, NULL, NULL, NULL) == -1){
 			if (errno == EINTR) goto try_select;
 			perror("Fallo de select(). error");

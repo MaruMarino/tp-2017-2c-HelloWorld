@@ -309,25 +309,19 @@ char *getMessageIntr(int socket, header *head, int *status){
 
 int recvall_intr(int sock, char **buffer, size_t *len, int flags){
 
-	int status;
+	int status = 0;
 	size_t total = 0;
 	size_t left = *len;
 
 	while (total < *len){
 
 		if ((status = recv(sock, *buffer + total, left, flags)) == -1){
-			if (errno == EWOULDBLOCK){
-				//perror("No hay nada en el buffer del socket.");
+			if (errno == EWOULDBLOCK)
 				return -2;
-			}
-			if (errno != EINTR){
-//				perror("No se pudo recvall'ear el paquete. error");
+			if (errno != EINTR)
 				break;
-
-			}
-		}else if(!status){
-					return 0;
-			}
+		}else if(!status)
+			return 0;
 
 		total += (size_t) status;
 		left -= (size_t) status;
