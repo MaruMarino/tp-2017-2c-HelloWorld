@@ -29,12 +29,12 @@ extern t_log *logi;
 extern t_list *archivos;
 extern t_directory directorios[100];
 extern t_list *nodos;
-extern pthread_mutex_t mutex_socket;
 
 
 #define cyan  "\x1B[36m"
 #define sin "\x1B[0m"
 #define verde  "\x1B[32m"
+#define rojo "\x1B[31m"
 #define Mib 0x100000
 
 comando *buscar_comando(char *nombre);
@@ -47,33 +47,36 @@ void deleteBlocksCpArchive(char *path, char *numBlock, char *numCopy);
 
 int fs_ls(char *h) {
 
-    char **split = string_split(h, " ");
-    int i = 0;
-    while (split[i] != NULL) i++;
-    if (i == 2) {
+	char **split = string_split(h, " ");
+	int i = 0;
+	while (split[i] != NULL) i++;
 
-        int padre = existe_ruta_directorios(split[2]);
-        if (padre == -9) {
-            printf("No existe ruta directorio\n");
-            log_info(logi, "Usuario pidio archivos de un path no existente %s ", split[1]);
-            liberar_char_array(split);
-            return 0;
-        }
+	if (i == 2) {
 
-        void _imprimir_nombre(t_archivo *self) {
+		int padre = existe_ruta_directorios(split[1]);
+		if (padre == -9) {
+			printf("%sNo existe ruta directorio%s\n",rojo,sin);
+			log_info(logi, "Usuario pidio archivos de un path no existente %s ", split[1]);
+			liberar_char_array(split);
+			return 0;
+		}
 
-            if (self->index_padre == padre) printf("%s\n", self->nombre);
-        }
-        list_iterate(archivos, (void *) _imprimir_nombre);
-        liberar_char_array(split);
+		void _imprimir_nombre(t_archivo *self) {
 
-    } else {
-        printf("La cantidad de parámetros es incorrecta, ingrese '%s? ls%s' para más información\n", cyan, sin);
-        liberar_char_array(split);
-        log_info(logi, "Usuario ingresó mal el comando ls");
-    }
+			if (self->index_padre == padre) printf("%s%s%s\n",verde ,self->nombre,sin);
+		}
+		list_iterate(archivos, (void *) _imprimir_nombre);
 
-    return 0;
+		liberar_char_array(split);
+
+	} else {
+
+		printf("La cantidad de parámetros es incorrecta, ingrese '%s? ls%s' para más información\n", cyan, sin);
+		liberar_char_array(split);
+		log_info(logi, "Usuario ingresó mal el comando ls");
+	}
+
+	return 0;
 }
 
 int fs_rename(char *i) {
@@ -88,16 +91,17 @@ int fs_rename(char *i) {
 
             t_archivo *archivo = get_metadata_archivo(split[1]);
             if (archivo == NULL) {
-                printf("No existe archivo original\n");
+                printf("%sNo existe archivo original%s\n",rojo,sin);
                 liberar_char_array(split);
                 log_info(logi, "Usuario ingresó path original de archivo inexistente");
                 return 0;
             }
+
             char **nuevo = sacar_archivo(split[1]);
             int padre = existe_ruta_directorios(nuevo[0]);
             bool existe = existe_archivo(split[2], padre);
             if (existe) {
-                printf("Ya existe un archivo con ese nombre en el directorio\n");
+                printf("%sYa existe un archivo con ese nombre en el directorio%s\n",rojo,sin);
                 liberar_char_array(split);
                 liberar_char_array(nuevo);
                 log_info(logi, "Usuario ingresó nombre que ya existe");
@@ -109,7 +113,7 @@ int fs_rename(char *i) {
             char *completo_viejo = completar_path_metadata(pathViejo);
 
             if (rename(completo_viejo, completo) == -1) {
-                printf("No se pudo renombrar\n");
+                printf("%sNo se pudo renombrar%s\n",rojo,sin);
                 liberar_char_array(split);
                 liberar_char_array(nuevo);
                 free(pathNuevo);
@@ -122,7 +126,7 @@ int fs_rename(char *i) {
 
             free(archivo->nombre);
             archivo->nombre = strdup(split[2]);
-            printf("Exitos: %s -> %s \n", nuevo[1], split[2]);
+            printf("%sExitos: %s -> %s%s\n",verde, nuevo[1], split[2],sin);
             log_info(logi, "Exitos rename: %s -> %s", nuevo[1], split[2]);
             liberar_char_array(split);
             liberar_char_array(nuevo);
@@ -135,14 +139,14 @@ int fs_rename(char *i) {
 
             int padre = existe_ruta_directorios(split[1]);
             if (padre == -9) {
-                printf("No existe path original\n");
+                printf("%sNo existe path original%s\n",rojo,sin);
                 log_info(logi, "Usuario quisó cambiar nombre de un directorio inexistente: %s", split[1]);
                 liberar_char_array(split);
                 return 0;
             }
-            int existe = existe_dir_en_padre(split[2], padre);
-            if (existe == -9) {
-                printf("Ya existe un directorio con ese nombre \n");
+            int existe = existe_dir_en_padre(split[2], directorios[padre].padre);
+            if (existe != -9) {
+                printf("%sYa existe un directorio con ese nombre%s\n",rojo,sin);
                 log_info(logi, "Usuario quisó cambiar nombre a uno que ya existe");
                 liberar_char_array(split);
                 return 0;
@@ -151,7 +155,7 @@ int fs_rename(char *i) {
             memset(directorios[padre].nombre, '\0', 255);
             memcpy(directorios[padre].nombre, split[2], strlen(split[2]));
             actualizar_arbol_directorios();
-            printf("Exitos: %s -> %s \n", split[1], split[2]);
+            printf("%sExitos: %s -> %s%s\n",verde, split[1], split[2],sin);
             log_info(logi, "Exitos rename: %s -> %s \n", split[1], split[2]);
             liberar_char_array(split);
             return 0;
@@ -236,7 +240,7 @@ int fs_mv(char *k) {
             int padre = existe_ruta_directorios(nuevo[0]);
             int existe = existe_ruta_directorios(split[2]);
             if (existe == -9) {
-                printf("No existe directorio destino\n");
+                printf("%sNo existe directorio destino%s\n",rojo,sin);
                 liberar_char_array(split);
                 liberar_char_array(nuevo);
                 log_info(logi, "Usuario ingresó directorio destino inexistente");
@@ -260,7 +264,7 @@ int fs_mv(char *k) {
             }
 
             archivo->index_padre = existe;
-            printf("Exitos: %s -> %s/%s \n", split[1], split[2], nuevo[1]);
+            printf("%sExitos: %s -> %s/%s %s\n",verde, split[1], split[2], nuevo[1],sin);
             log_info(logi, "Exitos: %s -> %s/%s \n", split[1], split[2], nuevo[1]);
             liberar_char_array(split);
             liberar_char_array(nuevo);
@@ -278,14 +282,23 @@ int fs_mv(char *k) {
                 liberar_char_array(split);
                 return 0;
             }
-            int existe = existe_dir_en_padre(split[2], padre);
+           // int existe = existe_dir_en_padre(split[2], padre);
+            int existe = existe_ruta_directorios(split[2]);
             if (existe == -9) {
                 printf("No existe directorio destino \n");
                 log_info(logi, "Usuario quisó mover un directorio a otro que no existe");
                 liberar_char_array(split);
                 return 0;
             }
-
+            char **aux= sacar_archivo(split[1]);
+            int yaHay = existe_dir_en_padre(aux[1],existe);
+            if(yaHay != -9){
+                printf("%sYa existe un directorio con ese nombre en directorio destino%s\n",rojo,sin);
+                log_info(logi, "Usuario quisó mover un directorio a otro que ya tiene uno con ese nombre");
+                liberar_char_array(split);
+                liberar_char_array(aux);
+                return 0;
+            }
             directorios[padre].padre = existe;
             actualizar_arbol_directorios();
             char **nombre = sacar_archivo(split[2]);
@@ -330,6 +343,7 @@ int fs_rm(char *argv) {
     int cantArgv = 0;
     char **arguments = string_split(argv, " ");
     if (arguments[1] == NULL) {
+    	printf("Falta argumentos para el comando rm \n");
         log_error(logi, "Falta argumentos para el comando rm");
         liberar_char_array(arguments);
         return 0;
@@ -565,6 +579,13 @@ int fs_cpfrom(char *q) {
             return 0;
         }
         t_list *ba = escribir_desde_archivo(split_paths[1], split_paths[3][0], sizearchi);
+        if(ba==NULL){
+        	printf("%sNo existe archivo archivo en el FS local%s\n",rojo,sin);
+        	log_info(logi,"No existe archivo archivo en el FS local");
+            liberar_char_array(split_paths);
+            liberar_char_array(nombre);
+            return 0;
+        }
 
         t_archivo *arch = malloc(sizeof(t_archivo));
         arch->tipo = strdup(split_paths[3]);
@@ -728,7 +749,7 @@ int fs_info(char *u) {
         }
 
         printf("Nombre:%s\n", fi->nombre);
-        printf("Tamanio:%d\n(bytes)-%d(bloques)", fi->tamanio, fi->cantbloques);
+        printf("Tamanio:%d\n(bytes)-%d(bloques)\n", fi->tamanio, fi->cantbloques);
         printf("Estado:%s\n", getEstado(fi->estado));
         printf("Tipo:%s\n", fi->tipo);
         printf("Info Bloques:\n");
@@ -775,6 +796,7 @@ void deleteArchive(char *path) {
     log_info(logi, "Verificando path");
     if ((indexDirectory = existe_ruta_directorios(directory)) == -9) {
         liberar_char_array(pathSplit);
+        printf("%sNo existe%s\n",rojo,sin);
         log_error(logi, "No existe directorio");
         return;
     }
@@ -842,11 +864,13 @@ void deleteDirectory(char *path) {
     int indexDirectory;
     log_info(logi, "Verificando path");
     if ((indexDirectory = existe_ruta_directorios(path)) == -9) {
+    	printf("%sNo existe directorio%s\n",rojo,sin);
         log_error(logi, "No existe directorio");
         return;
     }
     log_info(logi, "Verificando si esta vacio el directorio");
     if (!directoryEmpty(indexDirectory)) {
+    	printf("%sEl directorio no esta vacío%s\n",rojo,sin);
         log_error(logi, "El directorio no esta vacio");
         return;
     }
@@ -856,6 +880,7 @@ void deleteDirectory(char *path) {
     freeDirectory->padre = -9;
     eliminar_directorio(indexDirectory);
     actualizar_arbol_directorios();
+    printf("%sDirectorio Eliminado%s\n",verde,sin);
 }
 
 void deleteBlocksCpArchive(char *path, char *numBlock, char *numCopy) {

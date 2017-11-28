@@ -605,13 +605,13 @@ bool directoryEmpty(int index) {
 	char *files = nombres_archivos(pathReal);
 	if (strcmp(files, "NADA") != 0) {
 		free(pathReal);
-		free(files);
+		//free(files);
 		log_error(logi, "El directorio contiene archivos");
 		return false;
 	}
 	if (containsDirOtherDir(index)) {
 		free(pathReal);
-		free(files);
+		//free(files);
 		log_error(logi, "El directorio contiene otro directorios");
 		return false;
 	}
@@ -867,6 +867,7 @@ static char *nombres_subdirectorios(char *donde) {
 
 static char *nombres_archivos(char *donde) {
 
+	// todo: malloc NADA o ver donde no freeaer
 	DIR *directorio;
 	struct dirent *entry;
 	int cantidad_archivos;

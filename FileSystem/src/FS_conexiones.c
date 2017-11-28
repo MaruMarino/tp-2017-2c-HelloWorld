@@ -646,7 +646,7 @@ void atender_mensaje_WORKER(int codigo, void *mensaje, int socketWorker) {
                 crear_metadata_archivo(arch);
 
                 unlink("/tmp/almacenado_final.txt");
-                log_info(logi, "Archivo Almacenado");
+                log_info(logi, "Archivo Final Almacenado");
 
             }
 
