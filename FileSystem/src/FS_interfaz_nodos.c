@@ -448,36 +448,52 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
 
 // todo: se va a pelear con el select() -> sacar los FS pertinentes
 // todo: los FD pertinentes estarian en la variable nodC[i].fd, tal vez no todos se necesitarian siempre...
-char *pedirFile(t_list *bloques) { // este t_list contiene bloqueArchivo*
+char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene bloqueArchivo*
 
-    int i, ctrl, nq, bs;
+    int i, j, z, ctrl, lengthNodo, lengthBloques;
     char *data, *file_data;
     bool restantes = true;
     header head;
 
-    nq = list_size(nodos);
-    bs = list_size(bloques);
+    lengthNodo = nodos->elements_count;
+    lengthBloques = bloques->elements_count;
 
-    struct _nodoCola nodC[nq];
-    if (inicializarNodoCola(nq, &nodC, bloques) == -1) {
+    struct _nodoCola nodC[lengthNodo];
+    if (inicializarNodoCola(lengthNodo, &nodC, bloques) == -1) {
         log_error(logi, "No se pudo preparar los pedidos de bloques para un archivo");
         return NULL;
     }
 
     // tratamos de mallocar los bytes del archivo. Podria fallar si es un archivo super enorme mal...
-    if ((file_data = malloc(Mib * bs)) == NULL) {
-        log_error(logi, "No se pudieron allocar %d megabytes para el archivo pedido", bs);
+    if ((file_data = malloc(size_archive)) == NULL) {
+        log_error(logi, "No se pudieron allocar %d megabytes para el archivo pedido", lengthBloques);
         return NULL;
     }
-
-    // primeras peticiones
-    for (i = 0; i < nq; ++i) {
-        if (nodC[i].hay_pedidos)
-            enviarPeticion(&nodC[i]);
+    bloqPedido *Pedido;
+    for (j = 0; j < lengthNodo; ++j) {
+        puts("---Verificando estado---");
+        printf("Socket --> %d\n", nodC[j].fd);
+        printf("Hay Pedidos --> %d\n", nodC[j].hay_pedidos);
+        for (z = 0; z < nodC[j].colaPedidos->elements_count; ++z) {
+            Pedido = list_get(nodC[j].colaPedidos, z);
+            printf("numero del bloque --> %d\n", Pedido->numberBlock);
+            printf("posicion del bloque en el archivo --> %d\n", Pedido->orden);
+            printf("tamaño de bloque en bytes --> %zu\n", Pedido->sizeBuffer);
+        }
     }
 
-    // espero recepciones y hago el resto de las peticiones a medida...
-    for (i = 0; restantes; i = (i + 1) % nq) {
+    log_info(logi, "Enviando Primeras Peticiones");
+    int posicionPeticion = 0;
+    bloqPedido *bloquePedidoFetch;
+    for (i = 0; i < lengthNodo; i++) {
+        if (nodC[i].hay_pedidos) {
+            bloquePedidoFetch = list_get(nodC[i].colaPedidos, posicionPeticion);
+            enviarPeticion(nodC[i].fd, bloquePedidoFetch->numberBlock);
+        }
+    }
+
+    log_info(logi, "Recolectando Bloque Enviados");
+    for (i = 0; restantes; i = (i + 1) % lengthNodo) {
         if (!nodC[i].hay_pedidos) continue;
 
         data = getMessageIntrNB(nodC[i].fd, &head, &ctrl);
@@ -487,81 +503,79 @@ char *pedirFile(t_list *bloques) { // este t_list contiene bloqueArchivo*
             nodC[i].hay_pedidos = false;
 
             log_info(logi, "Se intentara buscar bloque en el Nodo alternativo...");
-            if (delegarPedidos(nq, &nodC, i) == -1) {
+            /*if (delegarPedidos(lengthNodo, &nodC, i) == -1) {
                 log_error(logi, "No es posible delegar el pedido a otro Nodo");
                 break;
-            }
+            }*/
 
         } else if (ctrl == -1) {
             log_error(logi, "Error de recepcion de mensaje de Nodo en %d", nodC[i].fd);
             break;
 
         } else {
-            memcpy(file_data + nodC[i].colaPedidos->ord * Mib, data, head.sizeData);
+            bloquePedidoFetch = list_get(nodC[i].colaPedidos, posicionPeticion);
+            memcpy(file_data + (bloquePedidoFetch->orden * bloquePedidoFetch->sizeBuffer), data,
+                   bloquePedidoFetch->sizeBuffer);
 
             // pedido satisfecho, avanzamos y pedimos otro si es que hay mas
-            ++nodC[i].colaPedidos;
-            if (nodC[i].colaPedidos->bq == NULL) { // todo: creo que esto funciona bien, pero revisar si se puede
+            //++nodC[i].colaPedidos;
+            //si fue realizado se lo elimina de la lista de pedidos
+            list_remove(nodC[i].colaPedidos, posicionPeticion);
+
+            if (nodC[i].colaPedidos->elements_count ==
+                0) { // todo: creo que esto funciona bien, pero revisar si se puede
                 nodC[i].hay_pedidos = false;
                 incorporarSocket(nodC[i].fd);
-                restantes = restanPedidos(nq, &nodC);
+                restantes = restanPedidos(lengthNodo, &nodC);
                 continue;
             }
-            enviarPeticion(&nodC[i]);
+            //buscamos el siguiente bloque
+            bloquePedidoFetch = list_get(nodC[i].colaPedidos, posicionPeticion);
+            enviarPeticion(nodC[i].fd, bloquePedidoFetch->numberBlock);
         }
         free(data);
     }
 
     // no se agotaron todos los Nodos => fue ejecucion erronea
-    if (restantes) {
+    /*if (restantes) {
         free(file_data);
         return NULL;
-    }
+    }*/
 
-/*    bloqueArchivo *bq;
-    bq = list_get(bloques, bs - 1);
-    file_data[Mib * (bs - 1) + bq->bytesEnBloque + 1] = '\0';*/
     return file_data;
 }
 
+void enviarPeticion(int socket, int bloque) {
 
-void enviarPeticion(struct _nodoCola *nodC) {
-
-    int blkNodo, ctrl;
-    message *msj;
+    int ctrl, i;
+    message *msj = NULL;
     header head = {.codigo = 1, .letra = 'F', .sizeData = sizeof(int)};
-    char *blkBuff = malloc(sizeof(int));
-    blkNodo = (nodC->node == 0) ? nodC->colaPedidos->bq->bloquenodo0 : nodC->colaPedidos->bq->bloquenodo1;
+    void *bufferMjs = malloc(sizeof(int));
 
-    memcpy(blkBuff, &blkNodo, sizeof(int));
-    msj = createMessage(&head, blkBuff);
-    enviar_message(nodC->fd, msj, logi, &ctrl);
-    liberador(2, msj, blkBuff);
+    memcpy(bufferMjs, &bloque, sizeof(int));
+    msj = createMessage(&head, bufferMjs);
+    enviar_message(socket, msj, logi, &ctrl);
+    liberador(2, msj, bufferMjs);
 }
 
-int inicializarNodoCola(int nq, struct _nodoCola (*nodC)[nq], t_list *bloques) {
+int inicializarNodoCola(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], t_list *bloques) {
 
-    int bs, i, j;
-    bloqueArchivo *bq;
-    NODO *n;
+    int lengthBloque, i;
+    bloqueArchivo *bloqueFetch;
+    NODO *nodoFetch;
 
-    bs = list_size(bloques);
-    // reservo el espacio maximo posible que cada Nodo podria tener de peticiones
-    for (i = 0; i < nq; ++i) {
-        n = list_get(nodos, i);
-        (*nodC)[i].fd = n->soket;
+    lengthBloque = list_size(bloques);
+    for (i = 0; i < lengthNodo; ++i) {
+        nodoFetch = list_get(nodos, i);
+        (*nodC)[i].fd = nodoFetch->soket;
         (*nodC)[i].hay_pedidos = false;
-        (*nodC)[i].colaPedidos = malloc(sizeof(struct _bloq) * (2 * bs + 1));
-        for (j = 0; j < 2 * bs + 1; ++j)
-            (*nodC)[i].colaPedidos[j].bq = NULL;
+        (*nodC)[i].colaPedidos = list_create();
     }
 
-    // ubicar peticiones
-    for (i = 0; i < bs; ++i) {
-        bq = list_get(bloques, i);
-        if (encolarSobreNodos(nq, nodC, bq, i) == -1) {
+    for (i = 0; i < lengthBloque; ++i) {
+        bloqueFetch = list_get(bloques, i);
+        if (!encolarSobreNodos(lengthNodo, nodC, bloqueFetch, i)) {
             log_error(logi, "No se encontraron nodos disponibles para el bloque %d", i);
-            liberarNodoCola(nq, nodC);
             return -1;
         }
     }
@@ -574,34 +588,68 @@ void liberarNodoCola(int nq, struct _nodoCola (*nodC)[nq]) {
         free((*nodC)[i].colaPedidos);
 }
 
-int encolarSobreNodos(int nq, struct _nodoCola (*nodC)[nq], bloqueArchivo *bq, int pos) {
+int countColaNodo(char *nameNodo, int lengthNodo, struct _nodoCola (*nodC)[lengthNodo]) {
+    int i;
+    NODO *nodoFetch;
+    for (i = 0; i < lengthNodo; ++i) {
+        nodoFetch = get_NODO(nameNodo);
+        if (nodoFetch->soket == (*nodC)[i].fd) {
+            return (*nodC)[i].colaPedidos->elements_count;
+        }
+    }
+    return -1;
+}
 
-    NODO *n;
-    int i, j;
-    int node = 0;
+int encolarSobreNodos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], bloqueArchivo *bloque, int pos) {
 
-    n = get_NODO(bq->nodo0);
-    if (n->estado == no_disponible) {
-        n = get_NODO(bq->nodo1);
-        node = 1;
-        if (n->estado == no_disponible) return -1;
+    NODO *nodoFetchCopy0 = get_NODO(bloque->nodo0);
+    NODO *nodoFetchCopy1 = get_NODO(bloque->nodo1);
+    int i, numFD;
+    int nodoCopy = 0;
 
+    if (nodoFetchCopy0 == NULL || nodoFetchCopy1 == NULL) {
+        log_error(logi, "Uno o Dos nodos no fueron encontrados");
+        return 0;
     }
 
-    for (i = 0; i < nq; ++i) {
-        if ((*nodC)[i].fd == n->soket) {
-            for (j = 0; (*nodC)[i].colaPedidos[j].bq != NULL; ++j); // nada
-            (*nodC)[i].colaPedidos[j].bq = bq;
-            (*nodC)[i].colaPedidos[j].ord = pos;
-            (*nodC)[i].node = node;
+    if (nodoFetchCopy0->estado == no_disponible && nodoFetchCopy1->estado == no_disponible) {
+        log_error(logi, "Los Nodos que contiene la copia no estan disponibles");
+        return 0;
+    }
+
+    if (nodoFetchCopy0->estado == disponible && nodoFetchCopy1->estado == disponible) {
+        if (countColaNodo(bloque->nodo0, lengthNodo, nodC) < countColaNodo(bloque->nodo1, lengthNodo, nodC)) {
+            nodoCopy = 0;
+        } else {
+            nodoCopy = 1;
+        }
+    } else {
+        if (nodoFetchCopy0->estado == disponible) {
+            nodoCopy = 0;
+        } else {
+            nodoCopy = 1;
+        }
+    }
+
+
+    bloqPedido *nuevoPedido = malloc(sizeof(bloqPedido));
+    nuevoPedido->numberBlock = nodoCopy ? bloque->bloquenodo1 : bloque->bloquenodo0;
+    nuevoPedido->orden = pos;
+    nuevoPedido->sizeBuffer = (size_t) bloque->bytesEnBloque;
+
+    numFD = nodoCopy ? nodoFetchCopy1->soket : nodoFetchCopy0->soket;
+
+    for (i = 0; i < lengthNodo; ++i) {
+        if ((*nodC)[i].fd == numFD) {
+            list_add((*nodC)[i].colaPedidos, nuevoPedido);
+            (*nodC)[i].node = nodoCopy;
             (*nodC)[i].hay_pedidos = true;
             liberarSocket((*nodC)[i].fd);
         }
     }
-
-    return 0;
+    return 1;
 }
-
+/*
 int delegarPedidos(int nq, struct _nodoCola (*nodC)[nq], int node) {
 
     struct _bloq *pedidos = (*nodC)[node].colaPedidos;
@@ -615,12 +663,12 @@ int delegarPedidos(int nq, struct _nodoCola (*nodC)[nq], int node) {
     }
     return 0;
 }
+*/
 
-
-bool restanPedidos(int nq, struct _nodoCola (*nodC)[nq]) {
+bool restanPedidos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo]) {
 
     int i;
-    for (i = 0; i < nq; ++i)
+    for (i = 0; i < lengthNodo; ++i)
         if ((*nodC)[i].hay_pedidos)
             return true;
     return false;

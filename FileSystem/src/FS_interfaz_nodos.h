@@ -42,31 +42,37 @@ int crear_archivo_temporal(t_archivo *archivo, char *nomre_temporal);
  * En caso exitoso retorna el char* con la info binaria del File
  * En caso de error retorna -1
  */
-char *pedirFile(t_list *bloques);
+char *pedirFile(t_list *bloques, size_t size_archive);
 
 /* Estructuras auxiliares para administrar el pedirFile() */
-struct _bloq {
+typedef struct {
     bloqueArchivo *bq;
     int ord; // orden del bloque en su Archivo
-};
+} _bloq;
+
+typedef struct {
+    int numberBlock;
+    int orden;
+    size_t sizeBuffer;
+} bloqPedido;
 
 struct _nodoCola {
     bool hay_pedidos;
     int fd;
     int node; // 0 || 1 -> representa en que nodo hay que pedir el bloque
-    struct _bloq *colaPedidos; // mallocar el maximo posible por NODO +1 (NULL)
+    t_list *colaPedidos; // mallocar el maximo posible por NODO +1 (NULL)
 };
 
 /* Funciones auxiliares para administrar el pedirFile() */
-int inicializarNodoCola(int nq, struct _nodoCola (*nodC)[nq], t_list *bloques);
+int inicializarNodoCola(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], t_list *bloques);
 
 void liberarNodoCola(int nq, struct _nodoCola (*nodC)[nq]);
 
-int encolarSobreNodos(int nq, struct _nodoCola (*nodC)[nq], bloqueArchivo *bq, int pos);
+int encolarSobreNodos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], bloqueArchivo *bloque, int pos);
 
 int delegarPedidos(int nq, struct _nodoCola (*nodC)[nq], int node);
 
-void enviarPeticion(struct _nodoCola *nodC);
+void enviarPeticion(int socket, int bloque);
 
 bool restanPedidos(int nq, struct _nodoCola (*nodC)[nq]);
 
