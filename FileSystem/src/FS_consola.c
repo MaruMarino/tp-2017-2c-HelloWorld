@@ -63,6 +63,7 @@ void iniciar_consola_FS(){
 		if(!strncmp(linea,"exit",4)){
 			printf("Bai\n");
 			free(linea);
+			clear_history();
 			pthread_cancel(hiloConexiones);
 			break;
 

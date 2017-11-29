@@ -404,6 +404,7 @@ int realizar_handshake(int nuevo_socket) {
                 send(nuevo_socket, mensajeEnviar->buffer, mensajeEnviar->sizeBuffer, 0);
                 yamasock = nuevo_socket;
                 retornar = 1;
+                free(buff);
 
             } else {
 
@@ -426,7 +427,7 @@ int realizar_handshake(int nuevo_socket) {
 
                 respuesta->codigo = 0;
                 respuesta->letra = 'F';
-                respuesta->sizeData = 0;
+                respuesta->sizeData = 1;
                 mensajeEnviar = createMessage(respuesta, "");
 
                 send(nuevo_socket, mensajeEnviar->buffer, mensajeEnviar->sizeBuffer, 0);
@@ -562,6 +563,7 @@ void atender_mensaje_YAMA(int codigo, void *mensaje) {
         case 5: {
 
             int ctrl = 0;
+            message *mensajje;
             header h;
             h.codigo = 3;
             h.letra = 'F';
@@ -573,8 +575,8 @@ void atender_mensaje_YAMA(int codigo, void *mensaje) {
                 h.sizeData = 0;
                 h.codigo = 4;
 
-                message *mensaje = create_Message(&h, "");
-                enviar_message(yamasock, mensaje, logi, &ctrl);
+                mensajje= create_Message(&h, "");
+                enviar_message(yamasock, mensajje, logi, &ctrl);
 
             } else {
 
@@ -584,10 +586,15 @@ void atender_mensaje_YAMA(int codigo, void *mensaje) {
                 char *bloques_serializados = dserializar_list_bloque_archivo(ElArchivo->bloques, &j);
                 h.sizeData = j;
 
-                message *mensaje = create_Message(&h, bloques_serializados);
-                enviar_messageIntr(yamasock, mensaje, logi, &ctrl);
+                mensajje = create_Message(&h, bloques_serializados);
+                enviar_messageIntr(yamasock, mensajje, logi, &ctrl);
+
+                free(bloques_serializados);
 
             }
+
+            free(mensajje->buffer);
+            free(mensajje);
             break;
         }
 
@@ -649,12 +656,20 @@ void atender_mensaje_WORKER(int codigo, void *mensaje, int socketWorker) {
                 log_info(logi, "Archivo Final Almacenado");
 
             }
+            free(fileReduccionGlobal->fname);
+            free(fileReduccionGlobal->data);
+            free(fileReduccionGlobal);
+
 
             message *response = createMessage(&headResponse, &resultSaveFile);
             log_info(logi, "Enviando mensaje de confirmacion");
             if (send(socketWorker, response->buffer, response->sizeBuffer, 0) == -1) {
                 log_error(logi, "Error al enviar al worker save reduccionGlobal");
             }
+            free(response->buffer);
+            free(response);
+            liberar_char_array(dirnomb);
+
             break;
         }
         default: {

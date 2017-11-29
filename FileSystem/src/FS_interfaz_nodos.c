@@ -132,6 +132,7 @@ int searchNodoInList(NODO *TestNodo) {
         if (strcmp(nodoFetch->nombre, TestNodo->nombre) == 0) {
             nodoFetch->soket = TestNodo->soket;
             nodoFetch->puerto = TestNodo->puerto;
+            if(nodoFetch->ip != NULL) free(nodoFetch->ip);
             nodoFetch->ip = strdup(TestNodo->ip);
             nodoFetch->estado = disponible;
             return 1;

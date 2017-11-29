@@ -266,7 +266,7 @@ int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns) {
         }
         liberador(3, msj, req->buffer, req);
 
-        msj = getMessage((*fds)[i], &head, &ctl);
+        msj = getMessageIntr((*fds)[i], &head, &ctl);
         if (ctl == -1 || ctl == 0) {
             log_error(logw, "Fallo obtencion mensaje del Nodo en %s:%s", n->ip, n->port);
             cerrarSockets(i, *fds);
@@ -346,7 +346,7 @@ int apareoGlobal(t_list *nodos, char *fname) {
         }
 
         // Obtenemos la proxima linea del Nodo ganador
-        msj = getMessage(fds[min], &head, &ctl);
+		msj = getMessageIntr(fds[min], &head, &ctl);
         if (ctl == -1) {
             log_error(logw, "Fallo obtencion mensaje de Nodo en %d", fds[min]);
             liberarBuffers(nquant, lines);
@@ -389,6 +389,7 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, t_file *file){
 	log_trace(logw, "Se realiza el almacenamiento en YAMAFS de %s", file->fname);
 
 	char *msj;
+	int uno = 0;
 	int sock_fs, ctl, rta;
 	header head;
 
@@ -397,21 +398,19 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, t_file *file){
 		return -1;
 	}
 
-	msj = getMessage(sock_fs, &head, &ctl);
-	if (ctl == -1 || ctl == 0){
+	msj = getMessageIntr(sock_fs, &head, &ctl);
+	if (ctl == -1 || ctl == 0)
 		log_error(logw, "Fallo obtencion mensaje de FileSystem en %d. Error: %d", sock_fs, ctl);
-		rta = -1;
 
-	} else if (head.codigo != 14){
+	else if (head.codigo != 14)
 		log_error(logw, "Recibio de FileSystem en %d un mensaje invalido: %d", sock_fs, head.codigo);
-		rta = -1;
 
-	} else
-		rta = strncmp("1", msj, 1);
+	else
+		memcpy(&uno, msj, sizeof(int));
 
 	free(msj);
 	close(sock_fs);
-	return rta;
+	return (uno)? 0 : -1;
 }
 
 t_file *cargarFile(char *fname, char *yamafn) {

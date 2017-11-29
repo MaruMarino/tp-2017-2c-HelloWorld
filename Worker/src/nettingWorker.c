@@ -53,7 +53,7 @@ int realizarHandshake(int fd_proc, char proc_expected){
 	}
 	liberador(2, msj->buffer, msj);
 
-	free(getMessage(fd_proc, &head, &ctl));
+	free(getMessageIntr(fd_proc, &head, &ctl));
 	if (ctl == -1){
 		log_trace(logw, "Fallo realizarHandshake con %d", fd_proc);
 		return -1;

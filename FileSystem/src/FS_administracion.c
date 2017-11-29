@@ -134,13 +134,11 @@ int recuperar_nodos(void) {
 	char *key_aux;
 
 	while (nombres_nodos[i] != NULL) {
-
 		NODO *nodo_recuperado = malloc(sizeof(NODO));
 
 		nodo_recuperado->estado = no_disponible;
 
-		nodo_recuperado->nombre = malloc(strlen(nombres_nodos[i]));
-		strcpy(nodo_recuperado->nombre, nombres_nodos[i]);
+		nodo_recuperado->nombre = strdup(nombres_nodos[i]);
 
 		key_aux = string_from_format("%sTotal", nombres_nodos[i]);
 		nodo_recuperado->espacio_total = (config_get_int_value(config_nodos,
@@ -151,7 +149,7 @@ int recuperar_nodos(void) {
 		nodo_recuperado->espacio_libre = (config_get_int_value(config_nodos,
 				key_aux)) * Mib;
 		free(key_aux);
-
+		nodo_recuperado->ip =NULL;
 		list_add(nodos, nodo_recuperado);
 		i++;
 	}
@@ -217,11 +215,15 @@ int recuperar_metadata_archivos(void) {
 		archivoss = nombres_archivos(fullpath);
 
 		if (archivoss == NULL) {
+
 			free(subdirectorio);
 			free(fullpath);
 			liberar_char_array(aux_split);
+			free(nombres_sub);
 			return -1;
+
 		} else if (strncmp(archivoss, "NADA", 4) != 0) {
+
 			char **aux_split_archs = string_split(archivoss, "-");
 			int c = 0;
 			char *fullpath_archivo;
@@ -765,6 +767,9 @@ void eliminar_metadata_archivo(t_archivo *arch) {
 			arch->nombre);
 
 	unlink(path_armado_conNombre);
+	free(aux_path);
+	free(path_armado);
+	free(path_armado_conNombre);
 }
 
 void eliminar_directorio(int index) {

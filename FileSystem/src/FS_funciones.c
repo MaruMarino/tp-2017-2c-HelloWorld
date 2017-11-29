@@ -763,8 +763,9 @@ int fs_info(char *u) {
             i++;
         }
         list_iterate(fi->bloques, (void *) _imprimir_info_bloque);
-        liberar_char_array(split);
         log_info(logi, "Usuario solicito info de arhcivo:%s", split[1]);
+        liberar_char_array(split);
+
 
 
     } else {
@@ -857,6 +858,7 @@ void deleteArchive(char *path) {
     list_remove_and_destroy_by_condition(archivos, (void *) _searchByName, (void *) _freeMemoryArchive);
 
     actualizar_tabla_nodos();
+    liberar_char_array(pathSplit);
 
 }
 

@@ -41,7 +41,7 @@ void subrutinaEjecutor(int sock_m) {
         terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
     }
 
-    msj = getMessage(sock_m, &head, &status);
+    msj = getMessageIntr(sock_m, &head, &status);
     if (status == -1 || status == 0) {
         log_error(logw, "Error en la recepcion del mensaje");
         free(msj);
@@ -183,7 +183,7 @@ void subrutinaServidor(int sock_w) {
     }
 
     ctl = 0;
-    msj = getMessage(sock_w, &head_cli, &ctl);
+    msj = getMessageIntr(sock_w, &head_cli, &ctl);
     if (ctl == -1 || ctl == 0) {
         log_error(logw, "Fallo conexion con Worker cliente o se desconecto");
         close(sock_w);
@@ -219,7 +219,7 @@ void subrutinaServidor(int sock_w) {
         enviar_message(sock_w, msg, logw, &ctl);
 
         liberador(3, msj, msg->buffer, msg, line);
-    } while (ret != -1 && (msj = getMessage(sock_w, &head_cli, &ctl)));
+    } while (ret != -1 && (msj = getMessageIntr(sock_w, &head_cli, &ctl)));
 
     if (ret == 0) {
         log_info(logw, "Se desconecta el Worker cliente de forma esperada");

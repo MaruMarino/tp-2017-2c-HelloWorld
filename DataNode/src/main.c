@@ -14,6 +14,7 @@
 #include <funcionesCompartidas/serializacion_yama_master.h>
 
 int waitAccept(int socket, t_log *file_log, config *config,size_t sizeDataBin);
+void liberar_memoria(config *c,t_log* l);
 
 int main(int argc, char *argv[]) {
 
@@ -53,6 +54,8 @@ int main(int argc, char *argv[]) {
 
     munmap(dataBin, sizeDataBin);
     close(socketCliente);
+    liberar_memoria(condifguracion,file_log);
+
 
     return 0;
 }
@@ -78,24 +81,55 @@ int waitAccept(int socket, t_log *file_log, config *config,size_t sizeDataBin) {
     message *res = createMessage(&response, Buffer);
     if (enviar_messageIntr(socket,res,file_log,&controler) < 0) {
         escribir_error_log(file_log, "No pudo enviar el mjs de aceptacion");
+        free(InfoNodo);
+        free(Buffer);
+        free(res->buffer);
+        free(res);
         return -1;
     }
 
     int aceeptM = 0;
+    free(Buffer);
     Buffer = getMessage(socket, &response, &controler);
 
     if (Buffer == NULL) {
         escribir_error_log(file_log, "No se puedo recibir el mensaje");
+        free(InfoNodo);
+        free(res->buffer);
+        free(res);
         return -1;
     }
     memcpy(&aceeptM, Buffer, sizeof(int));
 
     if (aceeptM) {
         escribir_log(file_log, "Aceptado por FileSystem");
+        free(InfoNodo);
+        free(Buffer);
+        free(res->buffer);
+        free(res);
         return 0;
     } else {
         escribir_error_log(file_log, "No aceptado por FileSystem");
+        free(InfoNodo);
+        free(Buffer);
+        free(res->buffer);
+        free(res);
         return -1;
     }
 }
 
+void liberar_memoria(config *c,t_log* l){
+
+	free(c->ip_filesystem);
+	free(c->ip_worker);
+	free(c->nombre_nodo);
+	free(c->puerto_dateNode);
+	free(c->puerto_filesystem);
+	free(c->puerto_worker);
+	free(c->ruta_databin);
+
+	free(c);
+
+	log_destroy(l);
+
+}
