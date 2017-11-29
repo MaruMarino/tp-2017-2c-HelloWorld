@@ -25,7 +25,6 @@ int numero_pedido_trans;
 int numero_pedido_reducc;
 int numero_pedido_reducc_glo;
 int numero_pedido_alm;
-t_list *lista_estados;
 /*CALIDAD - FIN*/
 
 void matar_hilos();
@@ -41,8 +40,6 @@ void atender_reduccion_global(t_list *lista_global);
 
 //borrar
 void calidad_transformacion(t_list *algo);
-void calidad_estados();
-void agregar_estados(t_estado_master *algo);
 
 void escuchar_peticiones()
 {
@@ -99,12 +96,12 @@ void escuchar_peticiones()
 			default:
 				puts("No se reconocio el mensaje recibido");
 				matar_hilos();
+				finalizar_tiempos();
 				flag_continuar = 0;
 				break;
 		}
 		free(buffer);
 	}
-	//calidad_estados();
 }
 
 void atender_tranformacion(t_list *list_transf)
@@ -122,25 +119,13 @@ void atender_tranformacion(t_list *list_transf)
 		pthread_t hiloPrograma;
 
 		t_transformacion *transf = list_get(list_transf,i);
+
+		//ejecutar_transformador(transf);
 		pthread_create(&hiloPrograma,&attr,(void*)ejecutar_transformador,transf);
 
 		list_add(hilos, &hiloPrograma);
 	}
-
 	pthread_attr_destroy(&attr);
-
-	/*
-	void eliminar(t_transformacion *self)
-	{
-		free(self->nodo->ip);
-		free(self->temporal);
-		free(self->nodo->nodo);
-		free(self->nodo);
-		free(self);
-	}
-
-	list_destroy_and_destroy_elements(list_transf, (void*)eliminar);
-	*/
 }
 
 void ejecutar_transformador(t_transformacion *transf)
@@ -261,8 +246,6 @@ void ejecutar_transformador(t_transformacion *transf)
 	header_.letra = 'M';
 	header_.codigo = 5;
 
-	//agregar_estados(t_estado);
-
 	char *estado_a_enviar = serializar_estado_master(t_estado, &header_.sizeData);
 
 	message *mensj_transf_est = createMessage(&header_, estado_a_enviar);
@@ -288,6 +271,11 @@ void ejecutar_transformador(t_transformacion *transf)
 	free(t_estado);
 	free(mensj_transf_est->buffer);
 	free(mensj_transf_est);
+	free(transf->nodo->ip);
+	free(transf->temporal);
+	free(transf->nodo->nodo);
+	free(transf->nodo);
+	free(transf);
 }
 
 void error_transformacion(t_transformacion *transf)
@@ -299,8 +287,6 @@ void error_transformacion(t_transformacion *transf)
 	t_estado->bloque = transf->bloque;
 	t_estado->estado = 1;
 	t_estado->nodo = transf->nodo->nodo;
-
-	//agregar_estados(t_estado);
 
 	char *serializado = serializar_estado_master(t_estado, &len_total);
 
@@ -322,6 +308,12 @@ void error_transformacion(t_transformacion *transf)
 	free(mensj_error);
 	free(t_estado);
 	free(header_d);
+
+	free(transf->nodo->ip);
+	free(transf->temporal);
+	free(transf->nodo->nodo);
+	free(transf->nodo);
+	free(transf);
 }
 
 void atender_reduccion_local(t_redLocal *reduccion_local)
@@ -441,8 +433,6 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 	header_.letra = 'M';
 	header_.codigo = 6;
 
-	//agregar_estados(t_estado);
-
 	char *estado_a_enviar = serializar_estado_master(t_estado, &header_.sizeData);
 
 	message *mensj_transf_est = createMessage(&header_, estado_a_enviar);
@@ -468,6 +458,18 @@ void atender_reduccion_local(t_redLocal *reduccion_local)
 	free(t_estado);
 	free(mensj_transf_est->buffer);
 	free(mensj_transf_est);
+
+	void _limpiar(char *texto)
+	{
+		free(texto);
+	}
+
+	list_destroy_and_destroy_elements(reduccion_local->archivos_temp, (void*) _limpiar);
+	free(reduccion_local->temp_red_local);
+	free(reduccion_local->nodo->ip);
+	free(reduccion_local->nodo->nodo);
+	free(reduccion_local->nodo);
+	free(reduccion_local);
 }
 
 void error_reduccion_local(t_redLocal *reduccion_local)
@@ -479,8 +481,6 @@ void error_reduccion_local(t_redLocal *reduccion_local)
 	//t_estado->bloque = transf->bloque;
 	t_estado->estado = 1;
 	t_estado->nodo = reduccion_local->nodo->nodo;
-
-	//agregar_estados(t_estado);
 
 	char *serializado = serializar_estado_master(t_estado, &len_total);
 
@@ -502,6 +502,18 @@ void error_reduccion_local(t_redLocal *reduccion_local)
 	free(mensj_error);
 	free(t_estado);
 	free(header_d);
+
+	void _limpiar(char *texto)
+	{
+		free(texto);
+	}
+
+	list_destroy_and_destroy_elements(reduccion_local->archivos_temp, (void*) _limpiar);
+	free(reduccion_local->temp_red_local);
+	free(reduccion_local->nodo->ip);
+	free(reduccion_local->nodo->nodo);
+	free(reduccion_local->nodo);
+	free(reduccion_local);
 }
 
 void atender_reduccion_global(t_list *lista_global)
@@ -641,8 +653,6 @@ void atender_reduccion_global(t_list *lista_global)
 	header_.letra = 'M';
 	header_.codigo = 7;
 
-	//agregar_estados(t_estado);
-
 	char *estado_a_enviar = serializar_estado_master(t_estado, &header_.sizeData);
 
 	message *mensj_transf_est = createMessage(&header_, estado_a_enviar);
@@ -674,11 +684,18 @@ void atender_reduccion_global(t_list *lista_global)
 		free(self);
 	}
 
+	list_destroy_and_destroy_elements(lista_global,(void *)eliminar_elementos);
 	free(buffer_rta);
 	free(t_estado);
 	free(mensj_transf_est->buffer);
 	free(mensj_transf_est);
-	list_destroy_and_destroy_elements(lista_global,(void *)eliminar_elementos);
+
+	free(encargado->nodo->ip);
+	free(encargado->nodo->nodo);
+	free(encargado->nodo);
+	free(encargado->red_global);
+	free(encargado->temp_red_local);
+	free(encargado);
 }
 
 void error_reduccion_global(t_redGlobal *reduccion_global)
@@ -690,8 +707,6 @@ void error_reduccion_global(t_redGlobal *reduccion_global)
 	//t_estado->bloque = transf->bloque;
 	t_estado->estado = 1;
 	t_estado->nodo = reduccion_global->nodo->nodo;
-
-	//agregar_estados(t_estado);
 
 	char *serializado = serializar_estado_master(t_estado, &len_total);
 
@@ -713,6 +728,13 @@ void error_reduccion_global(t_redGlobal *reduccion_global)
 	free(mensj_error);
 	free(t_estado);
 	free(header_d);
+
+	free(reduccion_global->nodo->ip);
+	free(reduccion_global->nodo->nodo);
+	free(reduccion_global->nodo);
+	free(reduccion_global->red_global);
+	free(reduccion_global->temp_red_local);
+	free(reduccion_global);
 }
 
 void ejecutar_almacenamiento(t_almacenado *almacenado)
@@ -725,6 +747,11 @@ void ejecutar_almacenamiento(t_almacenado *almacenado)
 
 	//Conecto con Worker
 	char *port = string_itoa(almacenado->nodo->puerto);
+
+	//Imprimo informacion de la peticion
+	printf("Ip: %s Puerto: %s\n", almacenado->nodo->ip, port);//print prueba
+	printf("Archivo almacenamiento: %s\n", almacenado->red_global);
+
 	socket_local = establecerConexion(almacenado->nodo->ip, port, log_Mas, &controlador);
 	free(port);
 
@@ -819,8 +846,6 @@ void ejecutar_almacenamiento(t_almacenado *almacenado)
 	header_.letra = 'M';
 	header_.codigo = 8;
 
-	//agregar_estados(t_estado);
-
 	char *estado_a_enviar = serializar_estado_master(t_estado, &header_.sizeData);
 
 	message *mensj_transf_est = createMessage(&header_, estado_a_enviar);
@@ -846,6 +871,12 @@ void ejecutar_almacenamiento(t_almacenado *almacenado)
 	free(t_estado);
 	free(mensj_transf_est->buffer);
 	free(mensj_transf_est);
+
+	free(almacenado->nodo->ip);
+	free(almacenado->nodo->nodo);
+	free(almacenado->nodo);
+	free(almacenado->red_global);
+	free(almacenado);
 }
 
 void error_almacenamiento(t_almacenado *almacenado)
@@ -857,8 +888,6 @@ void error_almacenamiento(t_almacenado *almacenado)
 	//t_estado->bloque = transf->bloque;
 	t_estado->estado = 1;
 	t_estado->nodo = almacenado->nodo->nodo;
-
-	//agregar_estados(t_estado);
 
 	char *serializado = serializar_estado_master(t_estado, &len_total);
 
@@ -880,6 +909,12 @@ void error_almacenamiento(t_almacenado *almacenado)
 	free(mensj_error);
 	free(t_estado);
 	free(header_d);
+
+	free(almacenado->nodo->ip);
+	free(almacenado->nodo->nodo);
+	free(almacenado->nodo);
+	free(almacenado->red_global);
+	free(almacenado);
 }
 
 void matar_hilos()
@@ -889,8 +924,7 @@ void matar_hilos()
 		//free(el_hilo);
 	}
 
-	list_clean_and_destroy_elements(hilos, (void*) _destruir_elemento);
-	list_destroy(hilos);
+	list_destroy_and_destroy_elements(hilos, (void*) _destruir_elemento);
 }
 
 void calidad_transformacion(t_list *lista)
@@ -923,32 +957,4 @@ void calidad_transformacion(t_list *lista)
 	printf("Nodo con Nombre NULO: %d\n", nodo_sin_nombre);
 	printf("Nodo con Puerto 0: %d\n", nodo_sin_puerto);
 	printf("Nodo con size 0: %d\n", nodo_sin_size);
-}
-
-void agregar_estados(t_estado_master *estado)
-{
-	t_estado_master *nuevo_estado = malloc(sizeof(t_estado_master));
-	nuevo_estado = estado;
-
-	list_add(lista_estados, nuevo_estado);
-}
-
-void calidad_estados()
-{
-	int sin_nodo;
-	int sin_bloque;
-	int sin_estado;
-
-	void _calidad(t_estado_master *estado)
-	{
-		if(estado->nodo == NULL)	sin_nodo++;
-		if(estado->bloque == 0)		sin_bloque++;
-		if(estado->estado != 0 || estado->estado != 1 || estado->estado != 2) sin_estado++;
-	}
-
-	list_iterate(lista_estados, (void*) _calidad);
-
-	printf("Estados sin nodo: %d\n", sin_nodo);
-	printf("Estados sin bloque: %d\n", sin_bloque);
-	printf("Estados raros: %d\n", sin_estado);
 }

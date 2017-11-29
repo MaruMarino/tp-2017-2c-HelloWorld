@@ -163,6 +163,15 @@ void agregar_fallo_almac()
 	pthread_mutex_unlock(&mutex_estadistica);
 }
 
+void finalizar_tiempos()
+{
+	estadistica->fin_alm = time(NULL);
+	estadistica->fin_reduc_global = time(NULL);
+	estadistica->fin_reduc_local = time(NULL);
+	estadistica->fin_trans = time(NULL);
+	estadistica->finalizacion = time(NULL);
+}
+
 void mostrar_estadisticas()
 {
 	printf("Ejecucion finalizada\n");

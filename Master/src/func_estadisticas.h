@@ -22,6 +22,7 @@ void agregar_fallo_transf();
 void agregar_fallo_reducc_local();
 void agregar_fallo_reducc_global();
 void agregar_fallo_almac();
+void finalizar_tiempos();
 void mostrar_estadisticas();
 
 #endif /* FUNC_ESTADISTICAS_H_ */
