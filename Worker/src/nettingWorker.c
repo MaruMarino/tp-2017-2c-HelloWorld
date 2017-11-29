@@ -1,5 +1,8 @@
 #include <stdlib.h>
 #include <commons/log.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <errno.h>
 
 #include <funcionesCompartidas/generales.h>
 #include <funcionesCompartidas/funcionesNet.h>
@@ -79,4 +82,22 @@ void enviarResultado(int fd_m, int cod_rta){
 
 	enviar_message(fd_m, msj, logw, &ctl);
 	liberador(2, msj->buffer, msj);
+}
+
+int aceptar_conexion_intr(int socket_in, int *control) {
+    int sock_comm;
+    struct sockaddr_in clientAddr;
+    socklen_t clientSize = sizeof(clientAddr);
+    *control = 0;
+
+    if ((sock_comm = accept(socket_in, (struct sockaddr *) &clientAddr, &clientSize)) == -1) {
+    	if (errno == EINTR){
+    			*control = EINTR;
+    			return -1;
+    	}
+        *control = 6;
+        log_error(logw, "Error aceptando conexion");
+    }
+
+    return sock_comm;
 }

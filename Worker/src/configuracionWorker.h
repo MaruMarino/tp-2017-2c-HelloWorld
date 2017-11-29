@@ -5,6 +5,7 @@ typedef struct{
 	char *ip_fs,
 		 *puerto_fs,
 		 *nombre_nodo,
+		 *ip_worker,
 		 *puerto_worker,
 		 *ruta_databin;
 } t_conf;

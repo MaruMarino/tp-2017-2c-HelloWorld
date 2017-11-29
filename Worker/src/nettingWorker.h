@@ -19,3 +19,10 @@ int realizarHandshake(int fd_proc, char proc);
 
 /* Avisa al Master en fd_m el resultado de la operacion a traves del cod_rta */
 void enviarResultado(int fd_m, int cod_rta);
+
+/* Bloquea hasta lograr accept() con una conexion entrante u ocurra una INTR
+ * En caso de INTRE, setea EINTR en *control y retorna -1,
+ * En caso de otros errores retorna -1,
+ * Retorna el nuevo socket hecho para con el cliente en caso exitoso.
+ */
+int aceptar_conexion_intr(int socket_in, int *control);
