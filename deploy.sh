@@ -26,15 +26,13 @@ sudo apt-get install libreadline6 libreadline6-dev
 
 echo "ReadLine instalada"
 
-mv /home/utnso/tp-2017-2c-HelloWorld/DS /home/utnso
-
 mkdir /home/utnso/metadata/
+
+mkdir /home/utnso/conf
 
 cd /home/utnso/tp-2017-2c-HelloWorld/DataNode 
 
 gcc -o "DataNode" ./src/*.c -lcommons -lcompartidas
-
-./script.sh
 
 cd ..
 
