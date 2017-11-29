@@ -103,6 +103,7 @@ t_transformacion *deserializar_transformacion(char *tran)
 	memcpy(tran_des->temporal, tran + len, len_temp);
 	len += len_temp;
 
+	free(nodo_ser);
 	return tran_des;
 }
 
@@ -283,6 +284,7 @@ t_redGlobal *deserializar_redGlobal(char *red_ser)
 	memcpy(&red_des->encargado, red_ser + len, 4);
 	len += 4;
 
+	free(nodo_ser);
 	return red_des;
 }
 
@@ -328,6 +330,7 @@ t_almacenado *deserializar_almacenado(char *alm_ser)
 	memcpy(alm_des->red_global, alm_ser + len, len_global);
 	len += len_global;
 
+	free(nodo_ser);
 	return alm_des;
 }
 
@@ -404,7 +407,7 @@ char *serializar_lista_transformacion(t_list *l_transformacion, size_t *len)
 	}
 
 	i = 0;
-	transfs_serializadas = malloc((size_t)tam_malloc);
+	transfs_serializadas = malloc((size_t)(tam_malloc + 4*tam_lista));
 	memcpy(transfs_serializadas, &tam_lista, 4);
 	*len += 4;
 
@@ -447,6 +450,7 @@ t_list *deserializar_lista_transformacion(char *lista_ser)
 		t_transformacion *transf = deserializar_transformacion(tr_ser);
 
 		list_add(lista_des, transf);
+		free(tr_ser);
 
 		size_list--;
 	}
@@ -480,7 +484,7 @@ char *serializar_lista_redGlobal(t_list *l_redGlobal, size_t *len)
 	}
 
 	i = 0;
-	redGlobs_serializadas = malloc((size_t)tam_malloc);
+	redGlobs_serializadas = malloc((size_t)(tam_malloc + 4*tam_lista));
 	memcpy(redGlobs_serializadas, &tam_lista, 4);
 	*len += 4;
 
@@ -523,7 +527,7 @@ t_list *deserializar_lista_redGlobal(char *lista_ser)
 		t_redGlobal *redG = deserializar_redGlobal(redG_ser);
 
 		list_add(lista_des, redG);
-
+		free(redG_ser);
 		size_list--;
 	}
 

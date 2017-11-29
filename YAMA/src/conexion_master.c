@@ -113,7 +113,6 @@ void manejar_respuesta(int socket_)
 
 	if(status <= 0)
 	{
-		t_master *ms = find_master(socket_);
 		if(ms != NULL)
 			ms->socket_ += 1000;
 
@@ -121,11 +120,8 @@ void manejar_respuesta(int socket_)
 		close(socket_);
 	}
 
-	//char *header = get_header(mensaje);
 	if (head.letra == 'M' && status > 0)
 	{
-		//int codigo = get_codigo(mensaje);
-		//char *info = get_mensaje(mensaje);
 		switch (head.codigo)
 		{
 			case 0:; //procesar archivo -> peticion transformacion
@@ -137,10 +133,11 @@ void manejar_respuesta(int socket_)
 				escribir_log(yama_log,"Se recibió el estado de una transformacion");
 				t_estado_master *estado_tr = deserializar_estado_master(mensaje);
 				if(estado_tr->estado == FINALIZADO_OK)
-				{
 					enviar_reduccion_local(estado_tr, socket_);
-				}else
+				else
 					replanificar(estado_tr, socket_);
+
+				free(estado_tr);
 				break;
 			case 6:; //Reduccion global
 				escribir_log(yama_log, "Se recibió estado de una reducción local");
@@ -155,27 +152,26 @@ void manejar_respuesta(int socket_)
 					escribir_error_log(yama_log, "Error en la reducción local, no se puede replanificar :(");
 					matar_master(socket_);
 				}
+				free(estado_tr2);
 				break;
 			case 8: //Respuesta almacenamiento final
 				escribir_log(yama_log, "Se recibió el estado de almacenamiento final");
 				t_estado_master *estado_tr8 = deserializar_estado_master(mensaje);
-				t_master * ms2 = find_master(socket_);
-				t_estado *est55 = get_estado(ms2->master, estado_tr8->nodo, -10, ALMACENAMIENTO_FINAL);
+				t_estado *est55 = get_estado(ms->master, estado_tr8->nodo, -10, ALMACENAMIENTO_FINAL);
 				if(estado_tr8->estado == FINALIZADO_OK)
 					est55->estado = FINALIZADO_OK;
 				else
 					est55->estado = ERROR;
 
 				matar_master(socket_);
-
+				free(estado_tr8);
 				break;
 			case 7: //Almacenamiento Final
 				escribir_log(yama_log, "Se recibió el estado de una Reducción Global");
 				t_estado_master *estado_tr3 = deserializar_estado_master(mensaje);
+				t_estado *est = get_estado(ms->master, estado_tr3->nodo, -10, REDUCCION_GLOBAL);
 				if(estado_tr3->estado == FINALIZADO_OK)
 				{
-					t_master * ms = find_master(socket_);
-					t_estado *est = get_estado(ms->master, estado_tr3->nodo, -10, REDUCCION_GLOBAL);
 					t_worker *wk = find_worker(estado_tr3->nodo);est->estado = FINALIZADO_OK;
 					t_almacenado *alma = malloc(sizeof(t_almacenado));
 					alma->nodo = wk->nodo;
@@ -197,14 +193,20 @@ void manejar_respuesta(int socket_)
 					message *mens = createMessage(&head, alm_ser);
 					enviar_message(socket_, mens, yama_log, &control);
 
+					free(mens->buffer);
 					free(mens);
+					free(alm_ser);
+					free(alma);
 				}
 				else
 				{
 					escribir_error_log(yama_log, "Error en la reducción global, bai");
+					est->estado = ERROR;
 					//finalizado error
 					matar_master(socket_);
 				}
+				free(estado_tr3->nodo);
+				free(estado_tr3);
 				break;
 			default:
 				printf("default");
@@ -214,52 +216,6 @@ void manejar_respuesta(int socket_)
 	} else
 		log_error(yama_log, "Master desconectado");
 	sleep(config->retardo_plan/1000.0);
-}
-
-void realizar_handshake_master(int socket_)
-{
-	int control;
-	enviar(socket_, "Y000000000000000", yama_log, &control);
-	manejar_respuesta(socket_);
-	t_master *master = malloc (sizeof (t_master));
-	master->master = master_id ++;
-	master->socket_ = socket_;
-	list_add(masters, master);
-}
-
-void enviar_peticion_transformacion(int socket_)
-{
-	t_nodo *nodo;
-	t_transformacion *transformacion;
-	header *head;
-	message *mensaje;
-	int control = 0;
-
-	nodo = malloc(sizeof(t_nodo));
-	nodo->ip = strdup("127.0.0.1");
-	nodo->nodo = strdup("Nodo 1");
-	nodo->puerto = 5002;
-
-	transformacion = malloc(sizeof(t_transformacion));
-	transformacion->bloque = 18;
-	transformacion->bytes = 1024;
-	transformacion->nodo = nodo;
-	transformacion->temporal = strdup("/archivo/temporal_prueba");
-
-	size_t size_buffer = 0;
-
-	char *t_ser = serializar_transformacion(transformacion, &size_buffer);
-
-	head = malloc(sizeof(header));
-	head->codigo = 1;
-	head->letra = 'Y';
-	head->sizeData = size_buffer;
-
-	mensaje = createMessage(head, t_ser);
-	enviar_message(socket_, mensaje, yama_log, &control);
-
-	//agregar frees
-	free(head);
 }
 
 void matar_master(int socket_)
@@ -272,7 +228,10 @@ void matar_master(int socket_)
 	head.sizeData = 1;
 	int control;
 
-
 	message *mensaje = createMessage(&head, "");
 	enviar_message(socket_, mensaje, yama_log, &control);
+
+	free(mensaje->buffer);
+	free(mensaje);
+
 }

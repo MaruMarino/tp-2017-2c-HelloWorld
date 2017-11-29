@@ -69,11 +69,11 @@ t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bl
 	char *arch_temp = generar_nombre_temporal(master, nodo, bloqqq);
 
 	estado->master = master;
-	estado->job = master; //chequear
+	estado->job = master;
 	estado->etapa = TRANSFORMACION;
 	estado->bloque = bloque;
-	estado->nodo = strdup(nodo);
-	estado->archivo_temporal = strdup(arch_temp);
+	estado->nodo = nodo;
+	estado->archivo_temporal = arch_temp;
 	estado->estado = EN_PROCESO;
 	estado->cant_bloques_nodo = calcular_cantidad(master, nodo);
 	estado->copia_disponible = true;
@@ -82,7 +82,6 @@ t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bl
 	estado->bytes = bytes;
 
 	list_add(tabla_estado, estado);
-	free(arch_temp);
 	return estado;
 }
 

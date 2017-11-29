@@ -47,6 +47,7 @@ void armar_workers(char *rta)
 		list_add(workers, worker);
 	}
 	list_iterate(nodos_aux, (void *)_armar_workers);
+	list_destroy(nodos_aux);
 }
 
 int get_maxima_carga()
@@ -454,6 +455,10 @@ void ejecutar_clock(t_list *archivo_bloques, int cant_bloques, int _socket)
 
 	message *mensaje = createMessage(&head, transformaciones_ser);
 	enviar_messageIntr(_socket, mensaje, yama_log, &control);
+	free(transformaciones_ser);
+	list_destroy(transformaciones);
+	free(mensaje->buffer);
+	free(mensaje);
 }
 
 t_master *find_master(int sockt)
@@ -539,10 +544,12 @@ void armar_reduccion_local(int sz, t_master *master_, t_estado *est, t_estado_ma
 	message *mensaje = createMessage(&head, (void *)red_local_ser);
 	enviar_messageIntr(master_->socket_, mensaje, yama_log, &control);
 	t_estado *es_rl = generar_estado(master_->master, -10, estado_tr->nodo, NULL, -10, -10, -10);
+	free(es_rl->archivo_temporal);
 	es_rl->archivo_temporal = red_l->temp_red_local;
 	es_rl->etapa = REDUCCION_LOCAL;
 	list_destroy(lista_auxiliar);
 	free(red_l);
+	free(red_local_ser);
 }
 
 void enviar_reduccion_local(t_estado_master *estado_tr, int socket_)
@@ -759,6 +766,9 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 	//cambiar_estado(master_->master,estado_tr->nodo, estado_tr->bloque, REDUCCION_GLOBAL, red_g->red_global);
 	list_destroy(lista_auxiliar);
 	free(red_g);
+	free(red_global_ser);
+	free(mensaje->buffer);
+	free(mensaje);
 }
 
 void recalcular_cargas(int socket_)

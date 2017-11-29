@@ -107,14 +107,14 @@ int conectar_fs()
 	else
 	{
 		escribir_log(yama_log, "Conectado a FS");
-		header head;
-		header *head2 = malloc(sizeof(head2));
-		head2->codigo = 0;
-		head2->letra = 'Y';
-		head2->sizeData = 0;
+		header head, head2;
+		head2.codigo = 0;
+		head2.letra = 'Y';
+		head2.sizeData = 0;
 
-		void *mensaje = createMessage(head2, "");
+		message *mensaje = createMessage(&head2, "");
 		enviar_messageIntr(config->socket_fs, mensaje, yama_log, &control);
+
 		char *rta = getMessageIntr(config->socket_fs, &head, &control);
 		if (head.codigo == 0)
 		{
@@ -131,8 +131,9 @@ int conectar_fs()
 			escribir_error_log(yama_log, "No comprendo el mensaje recibido");
 			cont = 0;
 		}
+		free(mensaje->buffer);
+		free(mensaje);
 		free(rta);
-		free(head2);
 	}
 	return cont;
 }

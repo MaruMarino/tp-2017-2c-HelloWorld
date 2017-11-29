@@ -104,6 +104,10 @@ void solicitar_informacion_archivo(char *info, int _socket)
 	free(mensaje2->buffer);
 	free(mensaje);
 	free(mensaje2);*/
+	free(mensaje2);
+	list_destroy(archivo_bloques);
+	free(mensaje->buffer);
+	free(mensaje);
 	//list_destroy_and_destroy_elements(archivo_bloques, _destruir_bloque);
 	//list_destroy_and_destroy_elements(archivo_bloques, _destruir_bloque2);
 }
