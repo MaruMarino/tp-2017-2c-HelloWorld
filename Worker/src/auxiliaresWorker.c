@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 
 #include <commons/string.h>
 
@@ -24,6 +25,9 @@
 
 #define maxline 0x100000 // 1 MiB
 #define FD_SELF -1
+
+extern char *databin;
+extern size_t dsize;
 
 static void liberarBuffers(int n, char **buff);
 
@@ -389,7 +393,6 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, t_file *file){
 	log_trace(logw, "Se realiza el almacenamiento en YAMAFS de %s", file->fname);
 
 	char *msj;
-	int uno = 0;
 	int sock_fs, ctl, rta;
 	header head;
 
@@ -406,11 +409,11 @@ int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, t_file *file){
 		log_error(logw, "Recibio de FileSystem en %d un mensaje invalido: %d", sock_fs, head.codigo);
 
 	else
-		memcpy(&uno, msj, sizeof(int));
+		memcpy(&rta, msj, sizeof(int));
 
 	free(msj);
 	close(sock_fs);
-	return (uno)? 0 : -1;
+	return rta;
 }
 
 t_file *cargarFile(char *fname, char *yamafn) {
@@ -519,6 +522,7 @@ void terminarEjecucion(int fd_m, int cod_rta, t_conf *conf, char *exe, char *dat
     liberador(2, exe, dat);
     liberarConfig(conf);
     log_destroy(logw);
+    munmap(databin, dsize);
     exit(cod_rta);
 }
 

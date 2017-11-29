@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/mman.h>
 
 #include <commons/string.h>
 #include <commons/log.h>
@@ -20,6 +21,8 @@
 
 extern t_log *logw;
 extern t_conf *conf;
+extern char *databin;
+extern size_t dsize;
 
 void subrutinaEjecutor(int sock_m) {
     pid_t wp = getpid();
@@ -147,7 +150,7 @@ void subrutinaEjecutor(int sock_m) {
         		terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
         	}
 
-        	if (almacenarFileEnFilesystem(conf->ip_fs, conf->puerto_fs, file) != 0) {
+        	if (almacenarFileEnFilesystem(conf->ip_fs, conf->puerto_fs, file) != 1) {
         		log_error(logw, "No se logro almacenar %s en FileSystem", file->fname);
         		liberador(6, msj, fname, yamafn, file->data, file->fname, file);
         		terminarEjecucion(sock_m, rta, conf, exe_fname, data_fname);
@@ -159,13 +162,11 @@ void subrutinaEjecutor(int sock_m) {
         	break;
     }
 
-
     terminarEjecucion(sock_m, OK, conf, exe_fname, data_fname);
 }
 
 void subrutinaServidor(int sock_w) {
     log_trace(logw, "CHILD [%d]: Corriendo Subrutina Servidor", getpid());
-    liberarConfig(conf);
 
     int ctl, ret;
     char *msj, *fname, *line, *fbuff;
@@ -218,7 +219,7 @@ void subrutinaServidor(int sock_w) {
         msg = createMessage(&head_serv, line);
         enviar_message(sock_w, msg, logw, &ctl);
 
-        liberador(3, msj, msg->buffer, msg, line);
+        liberador(4, msj, msg->buffer, msg, line);
     } while (ret != -1 && (msj = getMessageIntr(sock_w, &head_cli, &ctl)));
 
     if (ret == 0) {
@@ -234,8 +235,11 @@ void subrutinaServidor(int sock_w) {
     }
 
     log_trace(logw, "CHILD [%d]: Finalizando Subrutina Servidor", getpid());
+    log_destroy(logw);
     close(sock_w);
     fclose(f);
     liberador(2, fbuff, fname);
+    munmap(databin, dsize);
+    liberarConfig(conf);
     exit(ret);
 }

@@ -53,7 +53,7 @@ int conectarYCargar(int nquant, t_list *nodos, int **fds, char ***lns);
 
 /* Dado el IP y Puerto del FileSystem, le envia el archivo y espera respuesta
  * para el resultado del almacenamiento.
- * Retorna 0 en caso exitoso. Retorna != 0 en caso de fallo.
+ * Retorna 1 en caso exitoso. Retorna != 0 en caso de fallo.
  */
 int almacenarFileEnFilesystem(char *fs_ip, char *fs_port, t_file *file);
 

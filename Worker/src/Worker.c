@@ -32,13 +32,14 @@ t_conf *conf;
 char *databin;
 size_t dsize;
 bool die = false;
+struct sigaction sa;
 
 /* El unico proposito de este handler es llamar waitpid() pa matar zombies */
 void handleWorkerRet(int sig){
 	int r;
-	while((r = waitpid(-1, &sig, WNOHANG)) != -1 && r != 0) ; // no-op
-	if (sig == SIGUSR1)
-		die = true;
+	if (sig == SIGCHLD)
+		while((r = waitpid(-1, &sig, WNOHANG)) != -1 && r != 0) ; // no-op
+	else if (sig == SIGUSR1) die = true;
 }
 
 int main(int argc, char *argv[]){
@@ -58,10 +59,6 @@ int main(int argc, char *argv[]){
 	int fd_proc, lis_fd, status;
 	bool masterQuery = false;
 
-	fd_set masters_set, read_set;
-	FD_ZERO(&masters_set);
-	FD_ZERO(&read_set);
-
 	if ((databin = openDataBin(conf->ruta_databin, &dsize, 0)) == NULL){
 		log_error(logw, "Fallo abrir el archivo databin. No se incia el Nodo");
 		log_destroy(logw);
@@ -73,28 +70,26 @@ int main(int argc, char *argv[]){
 		log_error(logw, "No se logro bindear sobre puerto %s\n", conf->puerto_worker);
 		log_destroy(logw);
 		liberarConfig(conf);
+		munmap(databin, dsize);
 		return -1;
 	}
 
-	signal(SIGCHLD, handleWorkerRet);
-	FD_SET(lis_fd, &masters_set);
+	/* Seteo signal handler. Uso este especial por temas del accept() */
+	memset(&sa, 0, sizeof sa);
+	sigemptyset(&sa.sa_mask);
+	sa.sa_handler = handleWorkerRet;
+	sigaction(SIGCHLD, &sa, 0);
+	sigaction(SIGUSR1, &sa, 0);
 	while(1){
-		read_set = masters_set;
 
-		try_select:
 		if (die) break;
-		if (select(lis_fd + 1, &read_set, NULL, NULL, NULL) == -1){
-			if (errno == EINTR) goto try_select;
-			perror("Fallo de select(). error");
-			log_error(logw, "Fallo select()");
-			break;
-		}
-
-		log_info(logw, "Un Proceso quiere conectarse!");
-		if ((fd_proc = aceptar_conexion(lis_fd, logw, &status)) == -1){
+		if ((fd_proc = aceptar_conexion_intr(lis_fd, &status)) == -1){
+			if (status == EINTR) continue;
 			log_error(logw, "No se pudo establecer una conexion!");
 			continue;
 		}
+		log_info(logw, "Un Proceso quiere conectarse!");
+
 		if ((msj = getMessageIntr(fd_proc, &head, &status)) == NULL){
 			if (head.codigo == 0) goto verif;
 			log_error(logw, "No se pudo recibir mensaje de %c", head.letra);
