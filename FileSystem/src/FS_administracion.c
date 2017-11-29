@@ -607,7 +607,7 @@ bool directoryEmpty(int index) {
 	char *files = nombres_archivos(pathReal);
 	if (strcmp(files, "NADA") != 0) {
 		free(pathReal);
-		//free(files);
+		free(files);
 		log_error(logi, "El directorio contiene archivos");
 		return false;
 	}
@@ -617,6 +617,7 @@ bool directoryEmpty(int index) {
 		log_error(logi, "El directorio contiene otro directorios");
 		return false;
 	}
+	free(pathReal);
 	return true;
 }
 void actualizar_arbol_directorios(void) {
@@ -837,9 +838,10 @@ static char *nombres_subdirectorios(char *donde) {
 	directorio = opendir(path_armado);
 
 	if (directorio == NULL) {
-		perror("Error abriendo directorio de archivos");
+		log_info(logi,"Error abriendo directorio de archivos");
 		free(path_armado);
 		free(archivos);
+		closedir(directorio);
 		return NULL;
 	}
 
@@ -859,7 +861,9 @@ static char *nombres_subdirectorios(char *donde) {
 		}
 	}
 	if (cantidad_subdirectorios == 0) {
+		free(path_armado);
 		free(archivos);
+		closedir(directorio);
 		return "NADA";
 	}
 	char *subnombres = string_substring_from(archivos, 1);
@@ -881,9 +885,10 @@ static char *nombres_archivos(char *donde) {
 	directorio = opendir(path_armado);
 
 	if (directorio == NULL) {
-		perror("Error abriendo directorio de archivos");
+		log_info(logi,"Error abriendo directorio de archivos");
 		free(path_armado);
 		free(archivos);
+		closedir(directorio);
 		return NULL;
 	}
 
@@ -904,6 +909,8 @@ static char *nombres_archivos(char *donde) {
 	}
 	if (cantidad_archivos == 0) {
 		free(archivos);
+		closedir(directorio);
+		free(path_armado);
 		return "NADA";
 	}
 	char *subnombres = string_substring_from(archivos, 1);

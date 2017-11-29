@@ -125,7 +125,7 @@ void liberar_memoria(config *c,t_log* l){
 	free(c->nombre_nodo);
 	free(c->puerto_dateNode);
 	free(c->puerto_filesystem);
-	free(c->puerto_worker);
+	//free(c->puerto_worker);
 	free(c->ruta_databin);
 
 	free(c);
