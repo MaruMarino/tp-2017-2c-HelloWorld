@@ -132,7 +132,7 @@ int searchNodoInList(NODO *TestNodo) {
         if (strcmp(nodoFetch->nombre, TestNodo->nombre) == 0) {
             nodoFetch->soket = TestNodo->soket;
             nodoFetch->puerto = TestNodo->puerto;
-            if(nodoFetch->ip != NULL) free(nodoFetch->ip);
+            if (nodoFetch->ip != NULL) free(nodoFetch->ip);
             nodoFetch->ip = strdup(TestNodo->ip);
             nodoFetch->estado = disponible;
             return 1;
@@ -423,12 +423,12 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
     if (archivo->estado == no_disponible) return -1;
 
     FILE *tmp = fopen(nombre_temporal, "w");
-//        buff = pedirFile(archivo->bloques); // todo: testar esto
+    buff = pedirFile(archivo->bloques, (size_t) archivo->tamanio); // todo: testar esto
 //         ya no deberia hacer falta entrar al ciclo for()
     // pthread_mutex_lock(&mutex_socket);
 
     //  buff = pedirFile(archivo->bloques);
-
+/*
     for (i = 0; i < bloques; i++) {
 
         bq = list_get(archivo->bloques, i);
@@ -440,8 +440,9 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
         alternar = (alternar == 0) ? 1 : 0;
     }
     //pthread_mutex_unlock(&mutex_socket);
+    */
 
-//    fwrite(buff, archivo->tamanio, 1, tmp);
+    fwrite(buff, (size_t) archivo->tamanio, 1, tmp);
     fclose(tmp);
     return 0;
 }
@@ -514,8 +515,7 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
 
         } else {
             bloquePedidoFetch = list_get(nodC[i].colaPedidos, posicionPeticion);
-            memcpy(file_data + (bloquePedidoFetch->orden * bloquePedidoFetch->sizeBuffer), data,
-                   bloquePedidoFetch->sizeBuffer);
+            memcpy(file_data + bloquePedidoFetch->pointerBuffer, data, bloquePedidoFetch->sizeBuffer);
 
             // pedido satisfecho, avanzamos y pedimos otro si es que hay mas
             //++nodC[i].colaPedidos;
@@ -571,13 +571,15 @@ int inicializarNodoCola(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], t_
         (*nodC)[i].hay_pedidos = false;
         (*nodC)[i].colaPedidos = list_create();
     }
+    int positionPointer = 0;
 
     for (i = 0; i < lengthBloque; ++i) {
         bloqueFetch = list_get(bloques, i);
-        if (!encolarSobreNodos(lengthNodo, nodC, bloqueFetch, i)) {
+        if (!encolarSobreNodos(lengthNodo, nodC, bloqueFetch, i, positionPointer)) {
             log_error(logi, "No se encontraron nodos disponibles para el bloque %d", i);
             return -1;
         }
+        positionPointer += bloqueFetch->bytesEnBloque;
     }
     return 0;
 }
@@ -600,7 +602,8 @@ int countColaNodo(char *nameNodo, int lengthNodo, struct _nodoCola (*nodC)[lengt
     return -1;
 }
 
-int encolarSobreNodos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], bloqueArchivo *bloque, int pos) {
+int encolarSobreNodos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], bloqueArchivo *bloque, int pos,
+                      int positionPointer) {
 
     NODO *nodoFetchCopy0 = get_NODO(bloque->nodo0);
     NODO *nodoFetchCopy1 = get_NODO(bloque->nodo1);
@@ -636,6 +639,7 @@ int encolarSobreNodos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], bloq
     nuevoPedido->numberBlock = nodoCopy ? bloque->bloquenodo1 : bloque->bloquenodo0;
     nuevoPedido->orden = pos;
     nuevoPedido->sizeBuffer = (size_t) bloque->bytesEnBloque;
+    nuevoPedido->pointerBuffer = positionPointer;
 
     numFD = nodoCopy ? nodoFetchCopy1->soket : nodoFetchCopy0->soket;
 

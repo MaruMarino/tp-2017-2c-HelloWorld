@@ -24,6 +24,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <funcionesCompartidas/generales.h>
 #include "estructurasfs.h"
 #include "FS_administracion.h"
 #define MAXEXCLUDE 30

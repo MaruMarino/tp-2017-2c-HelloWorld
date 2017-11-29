@@ -53,6 +53,7 @@ typedef struct {
 typedef struct {
     int numberBlock;
     int orden;
+    int pointerBuffer;
     size_t sizeBuffer;
 } bloqPedido;
 
@@ -68,7 +69,8 @@ int inicializarNodoCola(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], t_
 
 void liberarNodoCola(int nq, struct _nodoCola (*nodC)[nq]);
 
-int encolarSobreNodos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], bloqueArchivo *bloque, int pos);
+int encolarSobreNodos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], bloqueArchivo *bloque, int pos,
+                      int positionPointer);
 
 int delegarPedidos(int nq, struct _nodoCola (*nodC)[nq], int node);
 
