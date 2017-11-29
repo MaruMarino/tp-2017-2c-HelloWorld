@@ -185,7 +185,7 @@ int fs_format(char *j) {
 
             if (nodos->elements_count < 2) {
 
-                printf("No se puede Formatear, se nesecitan al menos 2 Nodos\n");
+                printf("%sNo se puede Formatear, se nesecitan al menos 2 Nodos%s\n",rojo,sin);
                 log_info(logi, "No se puede Formatear, se nesecitan al menos 2 Nodos");
 
             } else if (!configuracion->estado_estable) {
@@ -200,13 +200,13 @@ int fs_format(char *j) {
 
             } else {
 
-                printf("El File System ya fue fomateado \n");
+                printf("%sEl File System ya fue fomateado %s\n",cyan,sin);
                 log_info(logi, "El File System ya fue fomateado");
             }
         } else {
 
-            puts("El File System ya fue fomateado");
-            log_info(logi, "El File System ya fue fomateado ");
+        	printf("%sEl File System ya fue fomateado %s\n",cyan,sin);
+        	log_info(logi, "El File System ya fue fomateado ");
         }
 
     } else {
@@ -231,7 +231,7 @@ int fs_mv(char *k) {
 
             t_archivo *archivo = get_metadata_archivo(split[1]);
             if (archivo == NULL) {
-                printf("No existe archivo original\n");
+                printf("%sNo existe archivo original%s\n",rojo,sin);
                 liberar_char_array(split);
                 log_info(logi, "Usuario ingresó path original de archivo inexistente");
                 return 0;
@@ -252,7 +252,7 @@ int fs_mv(char *k) {
             char *completo_viejo = completar_path_metadata(pathViejo);
 
             if (rename(completo_viejo, completo) == -1) {
-                printf("No se pudo mover\n");
+                printf("%sNo se pudo mover%s\n",rojo,sin);
                 liberar_char_array(split);
                 liberar_char_array(nuevo);
                 free(pathNuevo);
@@ -277,15 +277,15 @@ int fs_mv(char *k) {
 
             int padre = existe_ruta_directorios(split[1]);
             if (padre == -9) {
-                printf("No existe path original\n");
+                printf("%sNo existe path original%s\n",rojo,sin);
                 log_info(logi, "Usuario quisó mover path inexistente: %s", split[1]);
                 liberar_char_array(split);
                 return 0;
             }
-            // int existe = existe_dir_en_padre(split[2], padre);
+
             int existe = existe_ruta_directorios(split[2]);
             if (existe == -9) {
-                printf("No existe directorio destino \n");
+                printf("%sNo existe directorio destino %s\n", rojo, sin);
                 log_info(logi, "Usuario quisó mover un directorio a otro que no existe");
                 liberar_char_array(split);
                 return 0;
@@ -302,11 +302,12 @@ int fs_mv(char *k) {
             directorios[padre].padre = existe;
             actualizar_arbol_directorios();
             char **nombre = sacar_archivo(split[2]);
-            printf("Exitos: %s -> %s/%s \n", split[1], split[2], nombre[1]);
+            printf("%sExitos: %s -> %s/%s %s\n",verde, split[1], split[2], nombre[1],sin);
 
             log_info(logi, "Exitos: %s -> %s/%s \n", split[1], split[2], nombre[1]);
             liberar_char_array(split);
             liberar_char_array(nombre);
+            liberar_char_array(aux);
 
             return 0;
         } else {
@@ -343,18 +344,17 @@ int fs_rm(char *argv) {
     int cantArgv = 0;
     char **arguments = string_split(argv, " ");
     if (arguments[1] == NULL) {
-        printf("Falta argumentos para el comando rm \n");
+        printf("%sFaltan argumentos para el comando rm %s\n", cyan, sin);
         log_error(logi, "Falta argumentos para el comando rm");
         liberar_char_array(arguments);
         return 0;
     }
-    while (arguments[cantArgv] != NULL) {
-        cantArgv++;
-    }
+    while (arguments[cantArgv] != NULL) cantArgv++;
 
     if (strcmp(arguments[1], "-d") == 0) {
         if (cantArgv > 3 || cantArgv < 3) {
-            log_error(logi, "verifique los argumentos para rm -d {path_directorio}");
+            printf("Cantidad incorrecta de parámetros, ingrese %s'? rm'%s para más infomarción",cyan,sin);
+        	log_error(logi, "verifique los argumentos para rm -d {path_directorio}");
             liberar_char_array(arguments);
             return 0;
         }
@@ -362,6 +362,7 @@ int fs_rm(char *argv) {
     } else if (strcmp(arguments[1], "-b") == 0) {
         if (cantArgv > 5 || cantArgv < 5) {
             liberar_char_array(arguments);
+            printf("Cantidad incorrecta de parámetros, ingrese %s'? rm'%s para más infomarción",cyan,sin);
             log_error(logi, "verifique los argumentos para rm -b {path_archivo} {nro_bloque} {nro_copia}");
             return 0;
         }
@@ -370,6 +371,8 @@ int fs_rm(char *argv) {
         if (cantArgv > 2) {
             liberar_char_array(arguments);
             log_error(logi, "verifique los argumentos para rm {path_archivo}");
+            printf("Cantidad incorrecta de parámetros, ingrese %s'? rm'%s para más infomarción",cyan,sin);
+
             return 0;
         }
         deleteArchive(arguments[1]);
@@ -411,20 +414,20 @@ int fs_cat(char *n) {
         if (padre == -9) {
             liberar_char_array(split);
             liberar_char_array(dirName);
-            printf("No existe ruta\n");
+            printf("%sNo existe ruta %s\n",rojo,sin);
             return 0;
         }
         t_archivo *archivo = get_metadata_archivo_sinvalidar(dirName[1], padre);
         if (archivo == NULL) {
             liberar_char_array(split);
             liberar_char_array(dirName);
-            printf("No existe archivo\n");
+            printf("%sNo existe archivo%s\n",rojo,sin);
             return 0;
         }
         if (archivo->estado == no_disponible) {
             liberar_char_array(split);
             liberar_char_array(dirName);
-            printf("Archivo no dispobible \n");
+            printf("%sArchivo no dispobible %s\n",cyan,sin);
             return 0;
         }
 
@@ -432,7 +435,8 @@ int fs_cat(char *n) {
         int bloques = archivo->cantbloques, alternar = 0;
         char *buff;
 
-        buff = pedirFile(archivo->bloques, (size_t) archivo->tamanio); // todo: testar esto
+        // todo: testar esto
+        buff = pedirFile(archivo->bloques, (size_t) archivo->tamanio);
 //         ya no deberia hacer falta entrar al ciclo for()
 
         //pthread_mutex_lock(&mutex_socket);
@@ -450,7 +454,7 @@ int fs_cat(char *n) {
         //pthread_mutex_unlock(&mutex_socket);
 //        puts(buff);
 //        free(buff);
-        printf("%s", buff);
+        printf("%s%s%s", verde, buff,sin);
         free(buff);
         liberar_char_array(split);
         liberar_char_array(dirName);
@@ -478,15 +482,16 @@ int fs_mkdir(char *p) {
             padre = existe_ruta_directorios(splt[1]);
             if (padre != -9) {
                 liberar_char_array(splt);
-                printf("Ya existe directorio\n");
+                printf("%sYa existe directorio%s\n",rojo,sin);
                 return 0;
             }
             int d = agregar_directorio(splt[1], 0);
             if (d == -1) {
                 liberar_char_array(splt);
-                printf("No hay lugar para un nuevo directorio\n");
+                printf("%sNo hay lugar para un nuevo directorio%s\n",rojo,sin);
                 return 0;
             }
+
             liberar_char_array(splt);
             printf("%s¡Se creó el Directorio!%s\n", verde, sin);
             actualizar_arbol_directorios();
@@ -561,7 +566,7 @@ int fs_cpfrom(char *q) {
         int sizearchi = get_file_size(split_paths[1]);
         bool hay = hay_lugar_para_archivo(sizearchi);
         if (!hay) {
-            printf("No hay lugar para almacenar el archivo\n");
+            printf("%sNo hay lugar para almacenar el archivo%s\n", rojo, sin);
             liberar_char_array(split_paths);
             return 0;
         }
@@ -570,14 +575,14 @@ int fs_cpfrom(char *q) {
         if (padre == -9) {
             liberar_char_array(split_paths);
             liberar_char_array(nombre);
-            printf("No existe ruta final, cree los directorios que faltan e intente nuevamente\n");
+            printf("%sNo existe ruta final, cree los directorios que faltan e intente nuevamente%s\n",rojo,sin);
             return 0;
         }
         bool existe = existe_archivo(nombre[1], padre);
         if (existe) {
             liberar_char_array(split_paths);
             liberar_char_array(nombre);
-            printf("Ya existe un archivo con ese nombre\n");
+            printf("%sYa existe un archivo con ese nombre%s\n", rojo, sin);
             return 0;
         }
         t_list *ba = escribir_desde_archivo(split_paths[1], split_paths[3][0], sizearchi);
@@ -602,6 +607,7 @@ int fs_cpfrom(char *q) {
         crear_metadata_archivo(arch);
         liberar_char_array(split_paths);
         liberar_char_array(nombre);
+        printf("%s ¡Archivo Almacenado!%s\n", verde, sin);
 
     } else {
         printf("La cantidad de parámetros es incorrecta, ingrese '%s? cpfrom%s' para más información\n", cyan, sin);
@@ -624,20 +630,20 @@ int fs_cpto(char *r) {
         if (padre == -9) {
             liberar_char_array(split);
             liberar_char_array(dirName);
-            printf("No existe ruta\n");
+            printf("%sNo existe ruta en yamafs%s\n", rojo, sin);
             return 0;
         }
         t_archivo *archivo = get_metadata_archivo_sinvalidar(dirName[1], padre);
         if (archivo == NULL) {
             liberar_char_array(split);
             liberar_char_array(dirName);
-            printf("No existe archivo\n");
+            printf("%sNo existe archivo en yamafs %s\n",rojo,sin);
             return 0;
         }
         if (archivo->estado == no_disponible) {
             liberar_char_array(split);
             liberar_char_array(dirName);
-            printf("Archivo no dispobible \n");
+            printf("%sArchivo no dispobible en yamafs %s\n", rojo, sin);
             return 0;
         }
         char *path = string_from_format("%s/%s", split[2], dirName[1]);
@@ -645,23 +651,22 @@ int fs_cpto(char *r) {
         if (temp == -1) {
             liberar_char_array(split);
             liberar_char_array(dirName);
-            printf("El archivo no se encuentra disponible\n");
+            free(path);
+            printf("%sNo se pudo guardar el archivo en el FS-local %s\n", rojo, sin);
             return 0;
         }
 
-        printf("Archivo copiado al FS local \n");
+        printf("%s¡Archivo copiado al FS local!%s\n",verde,sin);
         free(path);
-
         liberar_char_array(split);
         liberar_char_array(dirName);
 
     } else {
 
-        printf("La cantidad de parámetros es incorrecta, ingrese '%s? cat%s' para más información\n", cyan, sin);
+        printf("La cantidad de parámetros es incorrecta, ingrese '%s? cpto%s' para más información\n", cyan, sin);
         liberar_char_array(split);
     }
 
-    return 0;
     return 0;
 }
 
@@ -683,14 +688,14 @@ int fs_md5(char *t) {
         if (padre == -9) {
             liberar_char_array(split);
             liberar_char_array(dirName);
-            printf("No existe ruta\n");
+            printf("%sNo existe ruta%s\n", rojo, sin);
             return 0;
         }
         bool existe = existe_archivo(dirName[1], padre);
         if (!existe) {
             liberar_char_array(split);
             liberar_char_array(dirName);
-            printf("No existe archivo\n");
+            printf("%sNo existe archivo%s\n", rojo, sin);
             return 0;
         }
         t_archivo *arhcivo = get_metadata_archivo(split[1]);
@@ -698,7 +703,7 @@ int fs_md5(char *t) {
         if (temp == -1) {
             liberar_char_array(split);
             liberar_char_array(dirName);
-            printf("El archivo no se encuentra disponible\n");
+            printf("%sEl archivo no se encuentra disponible%s\n",rojo,sin);
             return 0;
         }
         char *linea = NULL;
@@ -708,7 +713,7 @@ int fs_md5(char *t) {
         FILE *f = fopen("/tmp/auxiliar_md5_2", "r");
         getline(&linea, &len, f);
         md = string_split(linea, " ");
-        printf("%s\n", md[0]);
+        printf("%s%s%s\n", verde, md[0], sin);
 
         liberar_char_array(split);
         liberar_char_array(dirName);
@@ -716,9 +721,11 @@ int fs_md5(char *t) {
         free(linea);
         fclose(f);
 
-        system("rm /tmp/auxiliar_md5*");
+        unlink("/tmp/auxiliar_md5");
+        unlink("/tmp/auxiliar_md5_2");
 
     } else {
+
         printf("La cantidad de parámetros es incorrecta, ingrese '%s? md5%s' para más información\n", cyan, sin);
         liberar_char_array(split);
     }
@@ -727,15 +734,6 @@ int fs_md5(char *t) {
 }
 
 int fs_info(char *u) {
-    //todo: borrar esto antes de entrega, lo dejo porque migue lo usa para controlar
-    if (configuracion->estado_estable) {
-        checkFileSystem();
-        checkStateNodos();
-        checkArchivos();
-        checkdirectoris();
-    }
-
-
     char **split = string_split(u, " ");
     int i = 0;
     while (split[i] != NULL) i++;
@@ -744,19 +742,19 @@ int fs_info(char *u) {
 
         t_archivo *fi = get_metadata_archivo(split[1]);
         if (fi == NULL) {
-            printf("No existe archivo\n");
+            printf("%sNo existe archivo%s\n",rojo,sin);
             log_info(logi, "Usuario pidio info de un archivo que no se pudo encontrar: %s", split[1]);
             liberar_char_array(split);
             return 0;
         }
 
         printf("Nombre:%s\n", fi->nombre);
-        printf("Tamanio:%d\n(bytes)-%d(bloques)\n", fi->tamanio, fi->cantbloques);
+        printf("Tamanio: %d(bytes)- %d(bloques)\n", fi->tamanio, fi->cantbloques);
         printf("Estado:%s\n", getEstado(fi->estado));
-        printf("Tipo:%s\n", fi->tipo);
+        printf("Tipo:%s \n", fi->tipo);
         printf("Info Bloques:\n");
         int i = 0;
-        printf("Copia # :#BloqueDeArchivo - (#BloqueDeCopia,NombreNodo) \n");
+        printf("Copia # :#BloqueDeArchivo - (#BloqueEnNodo,NombreNodo) \n");
         void _imprimir_info_bloque(bloqueArchivo *self) {
 
             if (self->bloquenodo0 != -1) printf("COPIA0: %d - (%d,%s)\n", i, self->bloquenodo0, self->nodo0);
@@ -769,8 +767,14 @@ int fs_info(char *u) {
         liberar_char_array(split);
 
 
-    } else {
-        printf("La cantidad de parámetros es incorrecta, ingrese '%s? info%s' para más información\n", cyan, sin);
+    } else if(strcmp(u,"info")==0){
+
+    	checkFileSystem();
+    	checkStateNodos();
+    	checkdirectoris();
+
+    }else{
+    	printf("La cantidad de parámetros es incorrecta, ingrese '%s? info%s' para más información\n", cyan, sin);
         log_info(logi, "Usuario ejecutó mal comando info");
         liberar_char_array(split);
     }
@@ -855,6 +859,7 @@ void deleteArchive(char *path) {
         free(item->nombre);
         free(item->tipo);
         list_destroy_and_destroy_elements(item->bloques, (void *) _freeMemoryBlock);
+        free(item);
     }
     list_remove_and_destroy_by_condition(archivos, (void *) _searchByName, (void *) _freeMemoryArchive);
 

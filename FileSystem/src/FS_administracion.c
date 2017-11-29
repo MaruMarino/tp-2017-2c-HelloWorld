@@ -149,7 +149,11 @@ int recuperar_nodos(void) {
 		nodo_recuperado->espacio_libre = (config_get_int_value(config_nodos,
 				key_aux)) * Mib;
 		free(key_aux);
+
 		nodo_recuperado->ip =NULL;
+
+		nodo_recuperado->soket = -1;
+
 		list_add(nodos, nodo_recuperado);
 		i++;
 	}

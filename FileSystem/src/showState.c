@@ -36,19 +36,19 @@ void checkStateNodos() {
     int i;
     for (i = 0; i < nodos->elements_count; ++i) {
         nodo_fetch = list_get(nodos, i);
-        printf("name --> [%s]\n", nodo_fetch->nombre);
-        printf("stado --> %s\n", getEstado(nodo_fetch->estado));
-        printf("socket --> [%d]\n", nodo_fetch->soket);
-        printf("bloque free %d\n", cantBlockfree(nodo_fetch->bitmapNodo));
-        printf("Espacio Total %d\n", nodo_fetch->espacio_total);
-        printf("Espacio Libre %d\n", nodo_fetch->espacio_libre);
+        printf("name: --> [%s]\n", nodo_fetch->nombre);
+        printf("estado: --> %s\n", getEstado(nodo_fetch->estado));
+        printf("socket: --> [%d]\n", nodo_fetch->soket);
+        printf("#bloques free: %d\n", cantBlockfree(nodo_fetch->bitmapNodo));
+        printf("Espacio Total: %d-%d(Bloques)\n", nodo_fetch->espacio_total,(nodo_fetch->espacio_total)/1048576);
+        printf("Espacio Libre: %d-%d(Bloques)\n", nodo_fetch->espacio_libre,(nodo_fetch->espacio_libre)/1048576);
     }
     puts("------------------------------------");
 }
 
 void checkFileSystem() {
     puts("**** Estado file System ****");
-    printf("%s \n", configuracion->estado_estable == 0 ? "No estable (T-T)" : " Estable ¯\\(^-^)/¯ ");
+    printf("%s\n", configuracion->estado_estable == 0 ? "No estable (T-T)" : " Estable ¯\\(^-^)/¯ ");
     puts("***********************");
 }
 
@@ -80,12 +80,13 @@ void checkArchivos() {
 
 void checkdirectoris() {
     puts("___________ Estado Directorios ____________");
-    int i;
-    for (i = 0; i < 6; i++) {
-        printf("Fila --> %d\n", i);
+    int i=0;
+    while(directorios[i].padre != -9){
+        printf("<-- Fila --> %d\n", i);
         printf("nombre directorio --> %s\n", directorios[i].nombre);
-        printf("nombre indice --> %d\n", directorios[i].index);
-        printf("nombre padre --> %d\n", directorios[i].padre);
-    }
+        printf("indice --> %d\n", directorios[i].index);
+        printf("padre --> %d\n", directorios[i].padre);
+        i++;
+	}
     puts("__________________________________________");
 }
