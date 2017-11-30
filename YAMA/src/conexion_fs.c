@@ -80,8 +80,9 @@ void solicitar_informacion_archivo(char *info, int _socket)
 		list_iterate(archivo_bloques,(void *)_convertir_bloques);
 		printf("Cantidad nodos archivo: %d \n", i);
 		ejecutar_clock(bloques_auxiliar,i,_socket);
+		list_destroy(archivo_bloques);
 	}
-	else if(head.codigo == 4)
+	else if(head2.codigo == 4)
 	{
 		matar_master(_socket);
 	}
@@ -105,7 +106,6 @@ void solicitar_informacion_archivo(char *info, int _socket)
 	free(mensaje);
 	free(mensaje2);*/
 	free(mensaje2);
-	list_destroy(archivo_bloques);
 	free(mensaje->buffer);
 	free(mensaje);
 	//list_destroy_and_destroy_elements(archivo_bloques, _destruir_bloque);

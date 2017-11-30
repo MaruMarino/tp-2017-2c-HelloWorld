@@ -1,0 +1,730 @@
+==9665== Memcheck, a memory error detector
+==9665== Copyright (C) 2002-2013, and GNU GPL'd, by Julian Seward et al.
+==9665== Using Valgrind-3.10.0.SVN and LibVEX; rerun with -h for copyright info
+==9665== Command: ./YAMA.out yama_conf
+==9665== Parent PID: 3070
+==9665== 
+==9665== 
+==9665== HEAP SUMMARY:
+==9665==     in use at exit: 65,956 bytes in 3,186 blocks
+==9665==   total heap usage: 60,791 allocs, 57,605 frees, 1,698,944 bytes allocated
+==9665== 
+==9665== 2 bytes in 2 blocks are indirectly lost in loss record 1 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40F62E7: strdup (strdup.c:42)
+==9665==    by 0x804AF07: armar_reduccion_global (clocks.c:707)
+==9665==    by 0x804AD52: reduccion_global (clocks.c:669)
+==9665==    by 0x804B959: manejar_respuesta (conexion_master.c:148)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 2 bytes in 2 blocks are indirectly lost in loss record 2 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40F62E7: strdup (strdup.c:42)
+==9665==    by 0x804B008: armar_reduccion_global (clocks.c:744)
+==9665==    by 0x804AD52: reduccion_global (clocks.c:669)
+==9665==    by 0x804B959: manejar_respuesta (conexion_master.c:148)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 5 bytes in 1 blocks are still reachable in loss record 3 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40F62E7: strdup (strdup.c:42)
+==9665==    by 0x4075F25: string_duplicate (in /usr/lib/libcommons.so)
+==9665==    by 0x4075B9D: log_create (in /usr/lib/libcommons.so)
+==9665==    by 0x404CE78: crear_archivo_log (in /usr/lib/libcompartidas.so)
+==9665==    by 0x8049011: main (YAMA.c:38)
+==9665== 
+==9665== 5 bytes in 1 blocks are still reachable in loss record 4 of 78
+==9665==    at 0x402C324: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x4075F6E: string_append (in /usr/lib/libcommons.so)
+==9665==    by 0x80491C5: leer_configuracion (YAMA.c:88)
+==9665==    by 0x804902B: main (YAMA.c:42)
+==9665== 
+==9665== 5 bytes in 1 blocks are still reachable in loss record 5 of 78
+==9665==    at 0x402C324: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x4075F6E: string_append (in /usr/lib/libcommons.so)
+==9665==    by 0x8049272: leer_configuracion (YAMA.c:93)
+==9665==    by 0x804902B: main (YAMA.c:42)
+==9665== 
+==9665== 8 bytes in 1 blocks are still reachable in loss record 6 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40746F8: list_create (in /usr/lib/libcommons.so)
+==9665==    by 0x80490D7: inicializar_variables (YAMA.c:65)
+==9665==    by 0x8049026: main (YAMA.c:41)
+==9665== 
+==9665== 8 bytes in 1 blocks are still reachable in loss record 7 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40746F8: list_create (in /usr/lib/libcommons.so)
+==9665==    by 0x80490E1: inicializar_variables (YAMA.c:66)
+==9665==    by 0x8049026: main (YAMA.c:41)
+==9665== 
+==9665== 8 bytes in 1 blocks are still reachable in loss record 8 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40746F8: list_create (in /usr/lib/libcommons.so)
+==9665==    by 0x80490EB: inicializar_variables (YAMA.c:67)
+==9665==    by 0x8049026: main (YAMA.c:41)
+==9665== 
+==9665== 12 bytes in 2 blocks are definitely lost in loss record 9 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404F94F: deserializar_estado_master (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804B9AB: manejar_respuesta (conexion_master.c:159)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 15 bytes in 1 blocks are still reachable in loss record 10 of 78
+==9665==    at 0x402C324: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x4075F6E: string_append (in /usr/lib/libcommons.so)
+==9665==    by 0x804924A: leer_configuracion (YAMA.c:92)
+==9665==    by 0x804902B: main (YAMA.c:42)
+==9665== 
+==9665== 16 bytes in 2 blocks are still reachable in loss record 11 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x804BF30: generar_estado (manejo_tabla_estados.c:84)
+==9665==    by 0x804B0E0: armar_reduccion_global (clocks.c:761)
+==9665==    by 0x804AD52: reduccion_global (clocks.c:669)
+==9665==    by 0x804B959: manejar_respuesta (conexion_master.c:148)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 16 bytes in 2 blocks are still reachable in loss record 12 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x804BF30: generar_estado (manejo_tabla_estados.c:84)
+==9665==    by 0x804BAED: manejar_respuesta (conexion_master.c:180)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 20 bytes in 1 blocks are still reachable in loss record 13 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x4075B0B: log_create (in /usr/lib/libcommons.so)
+==9665==    by 0x404CE78: crear_archivo_log (in /usr/lib/libcompartidas.so)
+==9665==    by 0x8049011: main (YAMA.c:38)
+==9665== 
+==9665== 23 bytes in 1 blocks are still reachable in loss record 14 of 78
+==9665==    at 0x402C324: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x4075F6E: string_append (in /usr/lib/libcommons.so)
+==9665==    by 0x80491ED: leer_configuracion (YAMA.c:89)
+==9665==    by 0x804902B: main (YAMA.c:42)
+==9665== 
+==9665== 24 bytes in 3 blocks are still reachable in loss record 15 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804B6E0: manejo_conexiones (conexion_master.c:81)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 24 bytes in 3 blocks are still reachable in loss record 16 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x804B713: manejo_conexiones (conexion_master.c:84)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 24 bytes in 4 blocks are still reachable in loss record 17 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404EB2C: deserializar_nodo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404E73B: deserializar_lista_nodos (in /usr/lib/libcompartidas.so)
+==9665==    by 0x80495A7: armar_workers (clocks.c:31)
+==9665==    by 0x80493BB: conectar_fs (YAMA.c:127)
+==9665==    by 0x8049044: main (YAMA.c:47)
+==9665== 
+==9665== 24 bytes in 4 blocks are still reachable in loss record 18 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404F94F: deserializar_estado_master (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804B8C0: manejar_respuesta (conexion_master.c:134)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 24 bytes in 4 blocks are definitely lost in loss record 19 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404F94F: deserializar_estado_master (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804B939: manejar_respuesta (conexion_master.c:145)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 32 bytes in 1 blocks are still reachable in loss record 20 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804907A: inicializar_variables (YAMA.c:59)
+==9665==    by 0x8049026: main (YAMA.c:41)
+==9665== 
+==9665== 32 bytes in 2 blocks are still reachable in loss record 21 of 78
+==9665==    at 0x402C324: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x4075F6E: string_append (in /usr/lib/libcommons.so)
+==9665==    by 0x804ADB2: generar_nombre_red_global (clocks.c:682)
+==9665==    by 0x804B028: armar_reduccion_global (clocks.c:745)
+==9665==    by 0x804AD52: reduccion_global (clocks.c:669)
+==9665==    by 0x804B959: manejar_respuesta (conexion_master.c:148)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 32 bytes in 4 blocks are still reachable in loss record 22 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40746F8: list_create (in /usr/lib/libcommons.so)
+==9665==    by 0x80494EF: _armar_workers.4692 (clocks.c:36)
+==9665==    by 0x4074A00: list_iterate (in /usr/lib/libcommons.so)
+==9665==    by 0x80495BD: armar_workers (clocks.c:49)
+==9665==    by 0x80493BB: conectar_fs (YAMA.c:127)
+==9665==    by 0x8049044: main (YAMA.c:47)
+==9665== 
+==9665== 32 bytes in 4 blocks are still reachable in loss record 23 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x8049594: _armar_workers.4692 (clocks.c:47)
+==9665==    by 0x4074A00: list_iterate (in /usr/lib/libcommons.so)
+==9665==    by 0x80495BD: armar_workers (clocks.c:49)
+==9665==    by 0x80493BB: conectar_fs (YAMA.c:127)
+==9665==    by 0x8049044: main (YAMA.c:47)
+==9665== 
+==9665== 32 bytes in 4 blocks are still reachable in loss record 24 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x804BF30: generar_estado (manejo_tabla_estados.c:84)
+==9665==    by 0x804A839: armar_reduccion_local (clocks.c:546)
+==9665==    by 0x804A98B: enviar_reduccion_local (clocks.c:577)
+==9665==    by 0x804B8E0: manejar_respuesta (conexion_master.c:136)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 34 (32 direct, 2 indirect) bytes in 2 blocks are definitely lost in loss record 25 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804AEC7: armar_reduccion_global (clocks.c:702)
+==9665==    by 0x804AD52: reduccion_global (clocks.c:669)
+==9665==    by 0x804B959: manejar_respuesta (conexion_master.c:148)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 34 (32 direct, 2 indirect) bytes in 2 blocks are definitely lost in loss record 26 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804AFE5: armar_reduccion_global (clocks.c:741)
+==9665==    by 0x804AD52: reduccion_global (clocks.c:669)
+==9665==    by 0x804B959: manejar_respuesta (conexion_master.c:148)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 42 bytes in 2 blocks are definitely lost in loss record 27 of 78
+==9665==    at 0x402C324: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x4075F6E: string_append (in /usr/lib/libcommons.so)
+==9665==    by 0x804BD5F: generar_nombre_temporal (manejo_tabla_estados.c:32)
+==9665==    by 0x804BE9F: generar_estado (manejo_tabla_estados.c:69)
+==9665==    by 0x804BAED: manejar_respuesta (conexion_master.c:180)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 58 bytes in 4 blocks are still reachable in loss record 28 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404EB8B: deserializar_nodo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404E73B: deserializar_lista_nodos (in /usr/lib/libcompartidas.so)
+==9665==    by 0x80495A7: armar_workers (clocks.c:31)
+==9665==    by 0x80493BB: conectar_fs (YAMA.c:127)
+==9665==    by 0x8049044: main (YAMA.c:47)
+==9665== 
+==9665== 64 bytes in 4 blocks are still reachable in loss record 29 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404EB00: deserializar_nodo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404E73B: deserializar_lista_nodos (in /usr/lib/libcompartidas.so)
+==9665==    by 0x80495A7: armar_workers (clocks.c:31)
+==9665==    by 0x80493BB: conectar_fs (YAMA.c:127)
+==9665==    by 0x8049044: main (YAMA.c:47)
+==9665== 
+==9665== 64 bytes in 4 blocks are still reachable in loss record 30 of 78
+==9665==    at 0x402C324: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x4075F6E: string_append (in /usr/lib/libcommons.so)
+==9665==    by 0x804A68D: generar_nombre_red_local (clocks.c:506)
+==9665==    by 0x804A77F: armar_reduccion_local (clocks.c:530)
+==9665==    by 0x804A98B: enviar_reduccion_local (clocks.c:577)
+==9665==    by 0x804B8E0: manejar_respuesta (conexion_master.c:136)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 74 bytes in 2 blocks are definitely lost in loss record 31 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404E9D6: serializar_nodo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404F684: serializar_almacenado (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804BB18: manejar_respuesta (conexion_master.c:186)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 96 bytes in 2 blocks are still reachable in loss record 32 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804BE83: generar_estado (manejo_tabla_estados.c:68)
+==9665==    by 0x804B0E0: armar_reduccion_global (clocks.c:761)
+==9665==    by 0x804AD52: reduccion_global (clocks.c:669)
+==9665==    by 0x804B959: manejar_respuesta (conexion_master.c:148)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 96 bytes in 2 blocks are still reachable in loss record 33 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804BE83: generar_estado (manejo_tabla_estados.c:68)
+==9665==    by 0x804BAED: manejar_respuesta (conexion_master.c:180)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 96 bytes in 4 blocks are still reachable in loss record 34 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x80494E7: _armar_workers.4692 (clocks.c:35)
+==9665==    by 0x4074A00: list_iterate (in /usr/lib/libcommons.so)
+==9665==    by 0x80495BD: armar_workers (clocks.c:49)
+==9665==    by 0x80493BB: conectar_fs (YAMA.c:127)
+==9665==    by 0x8049044: main (YAMA.c:47)
+==9665== 
+==9665== 144 bytes in 4 blocks are definitely lost in loss record 35 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404E9D6: serializar_nodo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404F066: serializar_redLocal (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804A7AC: armar_reduccion_local (clocks.c:535)
+==9665==    by 0x804A98B: enviar_reduccion_local (clocks.c:577)
+==9665==    by 0x804B8E0: manejar_respuesta (conexion_master.c:136)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 146 bytes in 4 blocks are definitely lost in loss record 36 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404E9D6: serializar_nodo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404F3BA: serializar_redGlobal (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404FDA0: serializar_lista_redGlobal (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804B052: armar_reduccion_global (clocks.c:751)
+==9665==    by 0x804AD52: reduccion_global (clocks.c:669)
+==9665==    by 0x804B959: manejar_respuesta (conexion_master.c:148)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 184 bytes in 23 blocks are still reachable in loss record 37 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x8049EF2: get_worker (clocks.c:331)
+==9665==    by 0x8049FCD: get_worker (clocks.c:356)
+==9665==    by 0x804A2BF: obtener_nodo_transformacion (clocks.c:408)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 192 bytes in 4 blocks are still reachable in loss record 38 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804BE83: generar_estado (manejo_tabla_estados.c:68)
+==9665==    by 0x804A839: armar_reduccion_local (clocks.c:546)
+==9665==    by 0x804A98B: enviar_reduccion_local (clocks.c:577)
+==9665==    by 0x804B8E0: manejar_respuesta (conexion_master.c:136)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 278 bytes in 4 blocks are definitely lost in loss record 39 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404F3D5: serializar_redGlobal (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404FDA0: serializar_lista_redGlobal (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804B052: armar_reduccion_global (clocks.c:751)
+==9665==    by 0x804AD52: reduccion_global (clocks.c:669)
+==9665==    by 0x804B959: manejar_respuesta (conexion_master.c:148)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 352 bytes in 1 blocks are still reachable in loss record 40 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40DF63B: __fopen_internal (iofopen.c:73)
+==9665==    by 0x40DF71A: fopen@@GLIBC_2.1 (iofopen.c:103)
+==9665==    by 0x4076D45: txt_open_for_append (in /usr/lib/libcommons.so)
+==9665==    by 0x4075B41: log_create (in /usr/lib/libcommons.so)
+==9665==    by 0x404CE78: crear_archivo_log (in /usr/lib/libcompartidas.so)
+==9665==    by 0x8049011: main (YAMA.c:38)
+==9665== 
+==9665== 368 bytes in 46 blocks are indirectly lost in loss record 41 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x8049BD9: get_worker (clocks.c:227)
+==9665==    by 0x8049FCD: get_worker (clocks.c:356)
+==9665==    by 0x804A2BF: obtener_nodo_transformacion (clocks.c:408)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 408 bytes in 51 blocks are still reachable in loss record 42 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x804BF30: generar_estado (manejo_tabla_estados.c:84)
+==9665==    by 0x804AA43: armar_transformacion_replanificada (clocks.c:592)
+==9665==    by 0x804ABF1: replanificar (clocks.c:630)
+==9665==    by 0x804B8F4: manejar_respuesta (conexion_master.c:138)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 552 (184 direct, 368 indirect) bytes in 23 blocks are definitely lost in loss record 43 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40746F8: list_create (in /usr/lib/libcommons.so)
+==9665==    by 0x8049B90: get_worker (clocks.c:220)
+==9665==    by 0x8049FCD: get_worker (clocks.c:356)
+==9665==    by 0x804A2BF: obtener_nodo_transformacion (clocks.c:408)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 612 bytes in 102 blocks are still reachable in loss record 44 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40F62E7: strdup (strdup.c:42)
+==9665==    by 0x804B2DE: _convertir_bloques.3834 (conexion_fs.c:55)
+==9665==    by 0x4074A00: list_iterate (in /usr/lib/libcommons.so)
+==9665==    by 0x804B47F: solicitar_informacion_archivo (conexion_fs.c:80)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 612 bytes in 102 blocks are still reachable in loss record 45 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40F62E7: strdup (strdup.c:42)
+==9665==    by 0x804B314: _convertir_bloques.3834 (conexion_fs.c:60)
+==9665==    by 0x4074A00: list_iterate (in /usr/lib/libcommons.so)
+==9665==    by 0x804B47F: solicitar_informacion_archivo (conexion_fs.c:80)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 632 bytes in 79 blocks are still reachable in loss record 46 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x8049EF2: get_worker (clocks.c:331)
+==9665==    by 0x804A2BF: obtener_nodo_transformacion (clocks.c:408)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 714 bytes in 102 blocks are indirectly lost in loss record 47 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404E2C9: deserializar_bloque_archivo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404E570: deserializar_lista_bloque_archivo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804B45F: solicitar_informacion_archivo (conexion_fs.c:46)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 714 bytes in 102 blocks are indirectly lost in loss record 48 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404E322: deserializar_bloque_archivo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404E570: deserializar_lista_bloque_archivo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804B45F: solicitar_informacion_archivo (conexion_fs.c:46)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 816 bytes in 102 blocks are still reachable in loss record 49 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x804A24F: worker_copia (clocks.c:400)
+==9665==    by 0x804A2DF: obtener_nodo_transformacion (clocks.c:409)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 816 bytes in 102 blocks are still reachable in loss record 50 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x804BF30: generar_estado (manejo_tabla_estados.c:84)
+==9665==    by 0x804A3B1: obtener_nodo_transformacion (clocks.c:418)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 816 bytes in 51 blocks are indirectly lost in loss record 51 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804A9CC: armar_transformacion_replanificada (clocks.c:586)
+==9665==    by 0x804ABF1: replanificar (clocks.c:630)
+==9665==    by 0x804B8F4: manejar_respuesta (conexion_master.c:138)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 816 bytes in 102 blocks are indirectly lost in loss record 52 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x804B341: _convertir_bloques.3834 (conexion_fs.c:74)
+==9665==    by 0x4074A00: list_iterate (in /usr/lib/libcommons.so)
+==9665==    by 0x804B47F: solicitar_informacion_archivo (conexion_fs.c:80)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 816 bytes in 102 blocks are indirectly lost in loss record 53 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x804B352: _convertir_bloques.3834 (conexion_fs.c:75)
+==9665==    by 0x4074A00: list_iterate (in /usr/lib/libcommons.so)
+==9665==    by 0x804B47F: solicitar_informacion_archivo (conexion_fs.c:80)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 894 bytes in 149 blocks are definitely lost in loss record 54 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404F94F: deserializar_estado_master (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804B8C0: manejar_respuesta (conexion_master.c:134)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 1,005 bytes in 51 blocks are still reachable in loss record 55 of 78
+==9665==    at 0x402C324: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x4075F6E: string_append (in /usr/lib/libcommons.so)
+==9665==    by 0x804BD5F: generar_nombre_temporal (manejo_tabla_estados.c:32)
+==9665==    by 0x804AA76: armar_transformacion_replanificada (clocks.c:594)
+==9665==    by 0x804ABF1: replanificar (clocks.c:630)
+==9665==    by 0x804B8F4: manejar_respuesta (conexion_master.c:138)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 1,224 (408 direct, 816 indirect) bytes in 51 blocks are definitely lost in loss record 56 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x804AAAD: armar_transformacion_replanificada (clocks.c:599)
+==9665==    by 0x804ABF1: replanificar (clocks.c:630)
+==9665==    by 0x804B8F4: manejar_respuesta (conexion_master.c:138)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 1,632 bytes in 102 blocks are still reachable in loss record 57 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804B2B3: _convertir_bloques.3834 (conexion_fs.c:51)
+==9665==    by 0x4074A00: list_iterate (in /usr/lib/libcommons.so)
+==9665==    by 0x804B47F: solicitar_informacion_archivo (conexion_fs.c:80)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 1,632 bytes in 102 blocks are still reachable in loss record 58 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804B2C2: _convertir_bloques.3834 (conexion_fs.c:52)
+==9665==    by 0x4074A00: list_iterate (in /usr/lib/libcommons.so)
+==9665==    by 0x804B47F: solicitar_informacion_archivo (conexion_fs.c:80)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 1,632 bytes in 204 blocks are indirectly lost in loss record 59 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x8049BD9: get_worker (clocks.c:227)
+==9665==    by 0x804A2BF: obtener_nodo_transformacion (clocks.c:408)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 1,632 bytes in 204 blocks are indirectly lost in loss record 60 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x407509F: list_create_element (in /usr/lib/libcommons.so)
+==9665==    by 0x4074728: list_add (in /usr/lib/libcommons.so)
+==9665==    by 0x804A1FC: worker_copia (clocks.c:379)
+==9665==    by 0x804A2DF: obtener_nodo_transformacion (clocks.c:409)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 1,632 bytes in 102 blocks are definitely lost in loss record 61 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804A346: obtener_nodo_transformacion (clocks.c:414)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 1,656 (24 direct, 1,632 indirect) bytes in 3 blocks are definitely lost in loss record 62 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40746F8: list_create (in /usr/lib/libcommons.so)
+==9665==    by 0x804B413: solicitar_informacion_archivo (conexion_fs.c:39)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 1,836 bytes in 51 blocks are definitely lost in loss record 63 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404E9D6: serializar_nodo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404EC6B: serializar_transformacion (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404FB3F: serializar_lista_transformacion (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804AACD: armar_transformacion_replanificada (clocks.c:606)
+==9665==    by 0x804ABF1: replanificar (clocks.c:630)
+==9665==    by 0x804B8F4: manejar_respuesta (conexion_master.c:138)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 2,010 bytes in 102 blocks are still reachable in loss record 64 of 78
+==9665==    at 0x402C324: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x4075F6E: string_append (in /usr/lib/libcommons.so)
+==9665==    by 0x804BD5F: generar_nombre_temporal (manejo_tabla_estados.c:32)
+==9665==    by 0x804BE9F: generar_estado (manejo_tabla_estados.c:69)
+==9665==    by 0x804A3B1: obtener_nodo_transformacion (clocks.c:418)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 2,448 bytes in 51 blocks are still reachable in loss record 65 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804BE83: generar_estado (manejo_tabla_estados.c:68)
+==9665==    by 0x804AA43: armar_transformacion_replanificada (clocks.c:592)
+==9665==    by 0x804ABF1: replanificar (clocks.c:630)
+==9665==    by 0x804B8F4: manejar_respuesta (conexion_master.c:138)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 2,448 (816 direct, 1,632 indirect) bytes in 102 blocks are definitely lost in loss record 66 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40746F8: list_create (in /usr/lib/libcommons.so)
+==9665==    by 0x8049B90: get_worker (clocks.c:220)
+==9665==    by 0x804A2BF: obtener_nodo_transformacion (clocks.c:408)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 2,448 (816 direct, 1,632 indirect) bytes in 102 blocks are definitely lost in loss record 67 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x40746F8: list_create (in /usr/lib/libcommons.so)
+==9665==    by 0x804A1BE: worker_copia (clocks.c:372)
+==9665==    by 0x804A2DF: obtener_nodo_transformacion (clocks.c:409)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 2,876 bytes in 4 blocks are definitely lost in loss record 68 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404EF56: serializar_archivo_temporal (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404F03B: serializar_redLocal (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804A7AC: armar_reduccion_local (clocks.c:535)
+==9665==    by 0x804A98B: enviar_reduccion_local (clocks.c:577)
+==9665==    by 0x804B8E0: manejar_respuesta (conexion_master.c:136)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 3,152 bytes in 4 blocks are indirectly lost in loss record 69 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x405087C: createMessage (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804A7D2: armar_reduccion_local (clocks.c:544)
+==9665==    by 0x804A98B: enviar_reduccion_local (clocks.c:577)
+==9665==    by 0x804B8E0: manejar_respuesta (conexion_master.c:136)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 3,184 (32 direct, 3,152 indirect) bytes in 4 blocks are definitely lost in loss record 70 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x405085C: createMessage (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804A7D2: armar_reduccion_local (clocks.c:544)
+==9665==    by 0x804A98B: enviar_reduccion_local (clocks.c:577)
+==9665==    by 0x804B8E0: manejar_respuesta (conexion_master.c:136)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 3,468 (2,040 direct, 1,428 indirect) bytes in 102 blocks are definitely lost in loss record 71 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404E2A0: deserializar_bloque_archivo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404E570: deserializar_lista_bloque_archivo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804B45F: solicitar_informacion_archivo (conexion_fs.c:46)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 3,657 bytes in 51 blocks are definitely lost in loss record 72 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404EC81: serializar_transformacion (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404FB3F: serializar_lista_transformacion (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804AACD: armar_transformacion_replanificada (clocks.c:606)
+==9665==    by 0x804ABF1: replanificar (clocks.c:630)
+==9665==    by 0x804B8F4: manejar_respuesta (conexion_master.c:138)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 3,672 bytes in 102 blocks are definitely lost in loss record 73 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404E9D6: serializar_nodo (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404EC6B: serializar_transformacion (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404FB3F: serializar_lista_transformacion (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804A52D: ejecutar_clock (clocks.c:454)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 4,269 bytes in 51 blocks are definitely lost in loss record 74 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404FAE6: serializar_lista_transformacion (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804AACD: armar_transformacion_replanificada (clocks.c:606)
+==9665==    by 0x804ABF1: replanificar (clocks.c:630)
+==9665==    by 0x804B8F4: manejar_respuesta (conexion_master.c:138)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 4,524 bytes in 51 blocks are indirectly lost in loss record 75 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x405087C: createMessage (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804AAE2: armar_transformacion_replanificada (clocks.c:608)
+==9665==    by 0x804ABF1: replanificar (clocks.c:630)
+==9665==    by 0x804B8F4: manejar_respuesta (conexion_master.c:138)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 4,896 bytes in 102 blocks are still reachable in loss record 76 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x804BE83: generar_estado (manejo_tabla_estados.c:68)
+==9665==    by 0x804A3B1: obtener_nodo_transformacion (clocks.c:418)
+==9665==    by 0x804A4FF: ejecutar_clock (clocks.c:443)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 4,932 (408 direct, 4,524 indirect) bytes in 51 blocks are definitely lost in loss record 77 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x405085C: createMessage (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804AAE2: armar_transformacion_replanificada (clocks.c:608)
+==9665==    by 0x804ABF1: replanificar (clocks.c:630)
+==9665==    by 0x804B8F4: manejar_respuesta (conexion_master.c:138)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== 7,314 bytes in 102 blocks are definitely lost in loss record 78 of 78
+==9665==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==9665==    by 0x404EC81: serializar_transformacion (in /usr/lib/libcompartidas.so)
+==9665==    by 0x404FB3F: serializar_lista_transformacion (in /usr/lib/libcompartidas.so)
+==9665==    by 0x804A52D: ejecutar_clock (clocks.c:454)
+==9665==    by 0x804B4AB: solicitar_informacion_archivo (conexion_fs.c:82)
+==9665==    by 0x804B89B: manejar_respuesta (conexion_master.c:129)
+==9665==    by 0x804B76F: manejo_conexiones (conexion_master.c:96)
+==9665==    by 0x8049060: main (YAMA.c:51)
+==9665== 
+==9665== LEAK SUMMARY:
+==9665==    definitely lost: 31,662 bytes in 1,076 blocks
+==9665==    indirectly lost: 15,188 bytes in 972 blocks
+==9665==      possibly lost: 0 bytes in 0 blocks
+==9665==    still reachable: 19,106 bytes in 1,138 blocks
+==9665==         suppressed: 0 bytes in 0 blocks
+==9665== 
+==9665== For counts of detected and suppressed errors, rerun with: -v
+==9665== ERROR SUMMARY: 25 errors from 25 contexts (suppressed: 0 from 0)
