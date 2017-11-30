@@ -589,7 +589,9 @@ void armar_transformacion_replanificada(t_estado *estado, int socket_)
 
 	tr->bloque = estado->bloque_copia;
 	tr->nodo = wk->nodo;
-	t_estado * est = generar_estado(estado->master, tr->bloque, wk->nodo->nodo, NULL, 0, estado->bytes,22);
+	t_estado * est = generar_estado(estado->master, tr->bloque, wk->nodo->nodo, NULL, 0, estado->bytes, 22);
+	free(est->archivo_temporal);
+	est->archivo_temporal = generar_nombre_temporal(estado->master, estado->nodo_copia, estado->bloque_copia);
 	est->copia_disponible = false;
 	tr->temporal = est->archivo_temporal;
 	tr->bytes = est->bytes;

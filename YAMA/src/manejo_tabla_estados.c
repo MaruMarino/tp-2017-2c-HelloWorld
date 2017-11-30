@@ -46,7 +46,7 @@ int calcular_cantidad(int master, char *nodo)
 	for(i=0; i < sz; i++)
 	{
 		t_estado * est = list_get(tabla_estado, i);
-		if(!strcmp(est->nodo,nodo) && est->master == master && est->etapa == TRANSFORMACION)
+		if(!strcmp(est->nodo,nodo) && est->master == master && est->etapa == TRANSFORMACION && est->estado == EN_PROCESO)
 		{
 			cant ++;
 		}
@@ -54,7 +54,7 @@ int calcular_cantidad(int master, char *nodo)
 	for(i=0; i < sz; i++)
 	{
 		t_estado * est = list_get(tabla_estado, i);
-		if(!strcmp(est->nodo,nodo) && est->master == master && est->etapa == TRANSFORMACION)
+		if(!strcmp(est->nodo,nodo) && est->master == master && est->etapa == TRANSFORMACION && est->estado == EN_PROCESO)
 		{
 			est->cant_bloques_nodo = cant;
 		}
