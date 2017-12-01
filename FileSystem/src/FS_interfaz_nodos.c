@@ -450,6 +450,7 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
     }*/
     //pthread_mutex_unlock(&mutex_socket);
 
+    activar_select();
     if (buff != NULL) {
         fwrite(buff, (size_t) archivo->tamanio, 1, tmp);
         retornar = 0;
@@ -496,6 +497,7 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
     }
 
     log_info(logi, "Recolectando Bloque Enviados");
+    bloqPedido *aEliminar;
     for (i = 0; restantes; i = (i + 1) % lengthNodo) {
         if (!nodC[i].hay_pedidos) continue;
         log_info(logi, "buscando en socket %d position %d", nodC[i].fd, i);
@@ -515,9 +517,10 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
         } else {
             bloquePedidoFetch = list_get(nodC[i].colaPedidos, posicionPeticion);
             memcpy(file_data + bloquePedidoFetch->pointerBuffer, data, bloquePedidoFetch->sizeBuffer);
-            list_remove(nodC[i].colaPedidos, posicionPeticion);
-            if (nodC[i].colaPedidos->elements_count ==
-                0) { // todo: creo que esto funciona bien, pero revisar si se puede
+            free(data);
+            aEliminar =list_remove(nodC[i].colaPedidos, posicionPeticion);
+            if( aEliminar != NULL) free(aEliminar);
+            if (nodC[i].colaPedidos->elements_count == 0) { // todo: creo que esto funciona bien, pero revisar si se puede
                 nodC[i].hay_pedidos = false;
                 incorporarSocket(nodC[i].fd);
                 restantes = restanPedidos(lengthNodo, &nodC);
@@ -526,12 +529,15 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
             //bloquePedidoFetch = list_get(nodC[i].colaPedidos, posicionPeticion);
             //enviarPeticion(nodC[i].fd,bloquePedidoFetch->numberBlock);
         }
-        free(data);
     }
 
     //incorporamos todos los fileDescription por las dudas
     for (i = 0; i < lengthNodo; i++) {
         incorporarSocket(nodC[i].fd);
+        void _free(bloqPedido *self){
+        	if(self != NULL) free(self);
+        }
+        if(nodC[i].colaPedidos != NULL ) list_destroy_and_destroy_elements(nodC[i].colaPedidos,(void *)_free);
     }
 
     // no se agotaron todos los Nodos => fue ejecucion erronea
@@ -553,7 +559,7 @@ void enviarPeticion(int socket, int bloque) {
     memcpy(bufferMjs, &bloque, sizeof(int));
     msj = createMessage(&head, bufferMjs);
     enviar_message(socket, msj, logi, &ctrl);
-    liberador(2, msj, bufferMjs);
+    liberador(3,msj->buffer, msj, bufferMjs);
 }
 
 int inicializarNodoCola(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], t_list *bloques) {

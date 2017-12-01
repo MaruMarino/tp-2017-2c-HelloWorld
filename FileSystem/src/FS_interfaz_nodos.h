@@ -32,8 +32,7 @@ void disconnectedNodo(int socket);
 
 /*todo Funciones para realizar Leer Archivo*/
 
-void *
-leer_bloque(bloqueArchivo *bq, int copia); //si copia == 1 me fijo primero en la copia, else primero en el original
+void *leer_bloque(bloqueArchivo *bq, int copia); //si copia == 1 me fijo primero en la copia, else primero en el original
 
 int crear_archivo_temporal(t_archivo *archivo, char *nomre_temporal);
 

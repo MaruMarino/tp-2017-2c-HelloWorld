@@ -10,6 +10,8 @@
 #include <commons/collections/list.h>
 #include <commons/log.h>
 #include <commons/string.h>
+#include <sys/inotify.h>
+#include <sys/stat.h>
 #include <funcionesCompartidas/estructuras.h>
 #include <funcionesCompartidas/funcionesNet.h>
 #include <funcionesCompartidas/serializacion.h>
@@ -33,7 +35,7 @@ extern yamafs_config *configuracion;
 extern t_list *nodos;
 extern t_log *logi;
 extern t_list *archivos;
-extern pthread_mutex_t mutex_socket;
+int activarselect;
 fd_set master;
 fd_set read_fds;
 
@@ -289,6 +291,8 @@ void InicializarArrayEcluido(){
 }
 
 void manejo_conexiones() {
+	//todo
+	activarselect=0;
     InicializarArrayEcluido();
 
     log_info(logi, "Iniciando administrador de conexiones");
@@ -309,18 +313,8 @@ void manejo_conexiones() {
 
     //Cargo el socket server
     FD_SET(configuracion->serverfs, &master);
-    //FD_SET(socketRefres,&master);
-    //Bucle principal
-   /* if(socketRefres > fdmax){
-    	fdmax = socketRefres;
-    }
-    socketRefres = establecerConexion("127.0.0.1","5002",logi,&control);
-    if(control < 0){
-    	//free(puerto);
-    	printf("OLAAAAAAAAAAAAAA\n\n");
-    	pthread_exit((void *) -1);
-    }
-    FD_SET(socketRefres,&master);*/
+    FD_SET(5, &master);
+    fdmax = configuracion->serverfs;
 
     while (1) {
         read_fds = master;
@@ -353,7 +347,12 @@ void manejo_conexiones() {
                         } else {
                             close(nuevo_socket);
                         }
-                    } else {
+
+                        if(activarselect == 0){
+                        	iniciar_activador_select();
+                        }
+
+                    }else {
                         int estado = direccionar(i);
                         if (estado == -1) {
                             FD_CLR(i, &master);
@@ -553,6 +552,9 @@ int realizar_handshake(int nuevo_socket) {
 
             break;
         }
+        case 'R':
+        	retornar=1;
+        	break;
         default: {
             retornar = 0;
             break;
@@ -709,16 +711,34 @@ message *create_Message(header *head, void *data) {
     return ElMensaje;
 }
 
-void activarSelect() {
+void activar_select() {
+
 	int control;
 	header headerRefresh;
 	headerRefresh.codigo = 0;
 	headerRefresh.letra = 'R';
 	headerRefresh.sizeData = 0;
     message * mjsRefresh = createMessage(&headerRefresh,"");
-    enviar_messageIntr(socketRefres,mjsRefresh,logi,&control);
+    enviar_messageIntr(5,mjsRefresh,logi,&control);
     free(mjsRefresh->buffer);
     free(mjsRefresh);
+
+}
+
+void iniciar_activador_select(){
+
+	int ctrl;
+	//socketRefres = establecerConexion(configuracion->ip, "5002", logi,&ctrl );
+	header headerRefresh;
+	headerRefresh.codigo = 0;
+	headerRefresh.letra = 'R';
+	headerRefresh.sizeData = 0;
+    message * mjsRefresh = createMessage(&headerRefresh,"");
+    enviar_messageIntr(5,mjsRefresh,logi,&ctrl);
+    free(mjsRefresh->buffer);
+    free(mjsRefresh);
+    activarselect=1;
+
 }
 
 void liberarSocket(int socket) {
