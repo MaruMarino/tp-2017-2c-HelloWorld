@@ -55,17 +55,21 @@ size_t dtamanio_bloque_archivo(bloqueArchivo *ba) {
     return retorno;
 }
 
-size_t dtamanio_lista_t_nodo(t_list *nodis) {
+size_t dtamanio_lista_t_nodo(t_list *nodis,int *cant) {
 
-    int i;
-    size_t tfinal = 0;
-    t_nodo *nodi;
+	int i;
+	*cant=0;
+	size_t tfinal = 0;
+	t_nodo *nodi;
 
-    for (i = 0; i < nodis->elements_count; i++) {
+	for (i = 0; i < nodis->elements_count; i++) {
 
-        nodi = list_get(nodis, i);
-        tfinal += strlen(nodi->nodo) + 2 + strlen(nodi->ip) + sizeof(t_nodo);
-    }
+		nodi = list_get(nodis, i);
+		if(nodi->ip != NULL){
+			tfinal += strlen(nodi->nodo) + 2 + strlen(nodi->ip) + s$
+					(*cant)++;
+		}
+	}
 
 
     return tfinal;
@@ -212,16 +216,18 @@ char *dserializar_lista_nodos(t_list *nodis, size_t *leng) {
 
     for (i = 0; i < nodis->elements_count; i++) {
 
-        nodi = list_get(nodis, i);
-        subbuffer = serializar_nodo(nodi, &aux);
+    	nodi = list_get(nodis, i);
+    	if(nodi->ip!=NULL){
+    		subbuffer = serializar_nodo(nodi, &aux);
 
-        memcpy(buffer + desplazamiento, &aux, sizeof(int));
-        desplazamiento += sizeof(int);
+    		memcpy(buffer + desplazamiento, &aux, sizeof(int));
+    		desplazamiento += sizeof(int);
 
-        memcpy(buffer + desplazamiento, subbuffer, aux);
-        desplazamiento += aux;
+    		memcpy(buffer + desplazamiento, subbuffer, aux);
+    		desplazamiento += aux;
 
-        free(subbuffer);
+    		free(subbuffer);
+    	}
     }
 
     *leng = desplazamiento;

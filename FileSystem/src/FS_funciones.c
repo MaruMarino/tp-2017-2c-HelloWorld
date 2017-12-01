@@ -353,7 +353,7 @@ int fs_rm(char *argv) {
 
     if (strcmp(arguments[1], "-d") == 0) {
         if (cantArgv > 3 || cantArgv < 3) {
-            printf("Cantidad incorrecta de parámetros, ingrese %s'? rm'%s para más infomarción",cyan,sin);
+            printf("Cantidad incorrecta de parámetros, ingrese %s'? rm'%s para más infomarción\n",cyan,sin);
         	log_error(logi, "verifique los argumentos para rm -d {path_directorio}");
             liberar_char_array(arguments);
             return 0;
@@ -362,7 +362,7 @@ int fs_rm(char *argv) {
     } else if (strcmp(arguments[1], "-b") == 0) {
         if (cantArgv > 5 || cantArgv < 5) {
             liberar_char_array(arguments);
-            printf("Cantidad incorrecta de parámetros, ingrese %s'? rm'%s para más infomarción",cyan,sin);
+            printf("Cantidad incorrecta de parámetros, ingrese %s'? rm'%s para más infomarción\n",cyan,sin);
             log_error(logi, "verifique los argumentos para rm -b {path_archivo} {nro_bloque} {nro_copia}");
             return 0;
         }
@@ -371,7 +371,7 @@ int fs_rm(char *argv) {
         if (cantArgv > 2) {
             liberar_char_array(arguments);
             log_error(logi, "verifique los argumentos para rm {path_archivo}");
-            printf("Cantidad incorrecta de parámetros, ingrese %s'? rm'%s para más infomarción",cyan,sin);
+            printf("Cantidad incorrecta de parámetros, ingrese %s'? rm'%s para más infomarción\n",cyan,sin);
 
             return 0;
         }
@@ -671,7 +671,185 @@ int fs_cpto(char *r) {
 }
 
 int fs_cpblock(char *s) {
-    printf("Ejecute cpblock \n");
+
+    int numberBlock;
+    char *isNumber = NULL;
+	char **splt = string_split(s," ");
+	int i = 0;
+	while(splt[i]!=NULL) i++;
+
+	if(i==4){
+
+		t_archivo *arch = get_metadata_archivo(splt[1]);
+		if(arch == NULL){
+			printf("%sEl archivo o la ruta del mismo no existen%s\n",rojo,sin);
+			log_error(logi,"El archivo o la ruta del mismo no existen\n");
+			liberar_char_array(splt);
+			return 0;
+		}
+	    numberBlock = strtol(splt[2], &isNumber, 10);
+	    if (strlen(isNumber)) {
+	    	liberar_char_array(splt);
+	    	printf("%sEl numero de bloque debe ser un entero%s\n",rojo,sin);
+	    	log_error(logi, "el numero de bloque debe ser un entero");
+	        return 0;
+	    }
+		bloqueArchivo *bloque = list_get(arch->bloques,numberBlock);
+		if(bloque == NULL){
+	    	liberar_char_array(splt);
+	    	printf("%sEl bloque no existe%s\n",rojo,sin);
+	    	log_error(logi, "El bloque no existe");
+	    	return 0;
+		}
+		if(bloque->bloquenodo0 != -1 && bloque->bloquenodo1 != -1){
+	    	liberar_char_array(splt);
+	    	printf("%sEl bloque elegido ya tiene dos copias%s\n",rojo,sin);
+	    	log_error(logi, "El bloque elegido ya tiene dos copia");
+	    	return 0;
+		}
+
+		int _buscar_nodo(NODO *self){
+
+			return ( strcmp(self->nombre,splt[3]) == 0);
+		}
+		NODO *nodito = list_find(nodos,(void *)_buscar_nodo);
+
+		if(nodito == NULL){
+	    	liberar_char_array(splt);
+	    	printf("%sNo existe nodo con ese nombre%s\n",rojo,sin);
+	    	log_error(logi, "No existe nodo con ese nombre");
+	    	return 0;
+		}
+		if(nodito->estado == no_disponible){
+			liberar_char_array(splt);
+			printf("%sEl nodo elegido no esta disponible %s\n",rojo,sin);
+			log_error(logi, "El nodo elegido no esta disponible");
+			return 0;
+		}
+		if(nodito->espacio_libre < Mib){
+			liberar_char_array(splt);
+	    	printf("%sEl nodo elegido no tiene espacio libre suficiente %s\n",rojo,sin);
+	    	log_error(logi, "El nodo elegido no tiene espacio libre suficiente");
+	    	return 0;
+		}
+
+
+		void *data = leer_bloque(bloque,0);
+		if(data == NULL){
+			liberar_char_array(splt);
+	    	printf("%sNo se pudo acceder al bloque, nodos no disponibles %s\n",rojo,sin);
+	    	log_error(logi, "No se pudo acceder al bloque, nodos no disponibles");
+	    	return 0;
+		}
+
+		int control;
+		size_t bufferWithBlockSize = (bloque->bytesEnBloque + sizeof(int));
+		void *bufferWithBlock = malloc(bufferWithBlockSize);
+		int nodoSendBlock = -1;
+		for (i = 0; i < nodito->bitmapNodo->size; ++i) {
+			if (!bitarray_test_bit(nodito->bitmapNodo, i)) {
+				nodoSendBlock=i;
+			}
+		}
+		if(nodoSendBlock == -1){
+			liberar_char_array(splt);
+			free(data);
+			free(bufferWithBlock);
+			printf("%sNodo elegido no tiene bloques libres %s\n",rojo,sin);
+			log_error(logi, "Nodo elegido no tiene bloques libres");
+			return 0;
+		}
+		if(bloque->bloquenodo0 == -1 && strcmp(bloque->nodo1,nodito->nombre) == 0){
+
+			liberar_char_array(splt);
+			free(data);
+			free(bufferWithBlock);
+			printf("%sUn bloque no puede estar copiado en el mismo nodo %s\n",rojo,sin);
+			log_error(logi, "Un bloque no puede estar copiado en el mismo nodo ");
+			return 0;
+
+		}else if(bloque->bloquenodo1 == -1 && strcmp(bloque->nodo0,nodito->nombre) == 0){
+				liberar_char_array(splt);
+				free(data);
+				free(bufferWithBlock);
+				printf("%sUn bloque no puede estar copiado en el mismo nodo %s\n",rojo,sin);
+				log_error(logi, "Un bloque no puede estar copiado en el mismo nodo ");
+				return 0;
+
+		}
+		header reqRes;
+		reqRes.codigo = 2;
+		reqRes.letra = 'F';
+		reqRes.sizeData = bufferWithBlockSize;
+
+		memcpy(bufferWithBlock, &nodoSendBlock, sizeof(int));
+		memcpy((bufferWithBlock + sizeof(int)), data, bloque->bytesEnBloque);
+		message *request = createMessage(&reqRes, bufferWithBlock);
+
+		if (enviar_messageIntr(nodito->soket, request, logi, &control) < 0) {
+			liberar_char_array(splt);
+			free(data);
+			free(bufferWithBlock);
+			free(request->buffer);
+			free(request);
+	    	printf("%sNodo elegido no disponible %s\n",rojo,sin);
+	    	log_error(logi, "Nodo elegido no disponible");
+	    	return 0;
+		}
+
+        bitarray_set_bit(nodito->bitmapNodo, nodoSendBlock);
+        nodito->espacio_libre -= Mib;
+
+
+        if(bloque->bloquenodo0 == -1){
+        	if(strcmp(bloque->nodo1,nodito->nombre)== 0){
+    			liberar_char_array(splt);
+    			free(data);
+    			free(bufferWithBlock);
+    			free(request->buffer);
+    			free(request);
+    	    	printf("%sUn bloque no puede estar copiado en el mismo nodo %s\n",rojo,sin);
+    	    	log_error(logi, "Un bloque no puede estar copiado en el mismo nodo ");
+    	    	return 0;
+        	}
+
+        	bloque->bloquenodo0 = nodoSendBlock;
+        	if(bloque->nodo0) free(bloque->nodo0);
+        	bloque->nodo0= strdup(nodito->nombre);
+
+        }else{
+        	if(strcmp(bloque->nodo0,nodito->nombre)== 0){
+    			liberar_char_array(splt);
+    			free(data);
+    			free(bufferWithBlock);
+    			free(request->buffer);
+    			free(request);
+    	    	printf("%sUn bloque no puede estar copiado en el mismo nodo %s\n",rojo,sin);
+    	    	log_error(logi, "Un bloque no puede estar copiado en el mismo nodo ");
+    	    	return 0;
+        	}
+
+        	bloque->bloquenodo1 = nodoSendBlock;
+        	if(bloque->nodo1) free(bloque->nodo1);
+        	bloque->nodo1= strdup(nodito->nombre);
+        }
+
+        actualizar_tabla_nodos();
+        crear_metadata_archivo(arch);
+
+		liberar_char_array(splt);
+		free(data);
+		free(bufferWithBlock);
+		free(request->buffer);
+		free(request);
+		printf("%s¡Bloque Copiado!\n%s",verde,sin);
+
+
+	}else{
+        printf("La cantidad de parámetros es incorrecta, ingrese '%s? cpblock%s' para más información\n", cyan, sin);
+        liberar_char_array(splt);
+	}
+
     return 0;
 }
 
@@ -772,6 +950,7 @@ int fs_info(char *u) {
     	checkFileSystem();
     	checkStateNodos();
     	checkdirectoris();
+    	liberar_char_array(split);
 
     }else{
     	printf("La cantidad de parámetros es incorrecta, ingrese '%s? info%s' para más información\n", cyan, sin);
@@ -802,12 +981,13 @@ void deleteArchive(char *path) {
     log_info(logi, "Verificando path");
     if ((indexDirectory = existe_ruta_directorios(directory)) == -9) {
         liberar_char_array(pathSplit);
-        printf("%sNo existe%s\n", rojo, sin);
+        printf("%sNo existe directorio%s\n", rojo, sin);
         log_error(logi, "No existe directorio");
         return;
     }
     if (!existe_archivo(archive, indexDirectory)) {
         liberar_char_array(pathSplit);
+        printf("%sNo existe archivo%s\n",rojo,sin);
         log_error(logi, "No existe Achivo");
         return;
     }
@@ -819,6 +999,7 @@ void deleteArchive(char *path) {
     t_archivo *foundArchive = list_find(archivos, (void *) _searchByName);
     if (foundArchive == NULL) {
         liberar_char_array(pathSplit);
+        printf("%sNo se encontro el archivo%s\n",rojo,sin);
         log_error(logi, "No se encontro el archivo");
         return;
     }
@@ -830,7 +1011,7 @@ void deleteArchive(char *path) {
         fetchBlock = list_get(foundArchive->bloques, i);
         if (strlen(fetchBlock->nodo0)) {
             if (!liberarBloqueNodo(fetchBlock->nodo0, (unsigned int) fetchBlock->bloquenodo0)) {
-                log_error(logi, "No se pudo liberar el bloque[%d] del nodo %s", fetchBlock->bloquenodo0,
+            	log_error(logi, "No se pudo liberar el bloque[%d] del nodo %s", fetchBlock->bloquenodo0,
                           fetchBlock->nodo0);
             }
             cantFreedBlock++;
@@ -865,6 +1046,7 @@ void deleteArchive(char *path) {
 
     actualizar_tabla_nodos();
     liberar_char_array(pathSplit);
+    printf("%s¡Archivo eliminado!%s",verde,sin);
 
 }
 
@@ -888,7 +1070,7 @@ void deleteDirectory(char *path) {
     freeDirectory->padre = -9;
     eliminar_directorio(indexDirectory);
     actualizar_arbol_directorios();
-    printf("%sDirectorio Eliminado%s\n", verde, sin);
+    printf("%s¡Directorio Eliminado!%s\n", verde, sin);
 }
 
 void deleteBlocksCpArchive(char *path, char *numBlock, char *numCopy) {
@@ -900,13 +1082,15 @@ void deleteBlocksCpArchive(char *path, char *numBlock, char *numCopy) {
 
     numberBlock = strtol(numBlock, &isNumber, 10);
     if (strlen(isNumber)) {
-        liberar_char_array(pathSplit);
-        log_error(logi, "el numero de bloque debe ser un entero");
+    	liberar_char_array(pathSplit);
+    	printf("%sEl numero de bloque debe ser un entero%s\n",rojo,sin);
+    	log_error(logi, "el numero de bloque debe ser un entero");
         return;
     }
     numberCopy = strtol(numCopy, &isNumber, 10);
     if (strlen(isNumber)) {
         liberar_char_array(pathSplit);
+        printf("%sEl numero de copia debe ser un entero%s\n",rojo,sin);
         log_error(logi, "el numero de copia debe ser un entero");
         return;
     }
@@ -914,12 +1098,14 @@ void deleteBlocksCpArchive(char *path, char *numBlock, char *numCopy) {
     log_info(logi, "Verificando path");
     if ((indexDirectory = existe_ruta_directorios(directory)) == -9) {
         liberar_char_array(pathSplit);
+        printf("%sNo existe directorio%s\n",rojo,sin);
         log_error(logi, "No existe directorio");
         return;
     }
 
     if (!existe_archivo(archive, indexDirectory)) {
         liberar_char_array(pathSplit);
+        printf("%sNo existe Archivo%s\n",rojo,sin);
         log_error(logi, "No existe Achivo");
         return;
     }
@@ -933,6 +1119,7 @@ void deleteBlocksCpArchive(char *path, char *numBlock, char *numCopy) {
 
     if (foundArchive == NULL) {
         liberar_char_array(pathSplit);
+        printf("%sNo existe archivo%s\n",rojo,sin);
         log_error(logi, "No se encontro el archivo");
         return;
     }
@@ -946,6 +1133,8 @@ void deleteBlocksCpArchive(char *path, char *numBlock, char *numCopy) {
         }
     }
     if (fetchBlock == NULL) {
+    	liberar_char_array(pathSplit);
+        printf("%sNo existe el bloque solicitado %s\n",rojo,sin);
         log_error(logi, "No se encontro el bloque solicitado");
         return;
     }
@@ -966,12 +1155,15 @@ void deleteBlocksCpArchive(char *path, char *numBlock, char *numCopy) {
             break;
         }
         default: {
+            printf("%sEl numero de copia debe ser 0 o 1%s\n",rojo,sin);
             log_error(logi, "El numero de copia debe ser 0 o 1");
+            liberar_char_array(pathSplit);
             return;
         }
     }
     if (!foundCopy) {
         liberar_char_array(pathSplit);
+        printf("%sNo se encontro la copia solicitada%s\n",rojo,sin);
         log_error(logi, "No se encontro la copia solicitada");
         return;
     }
@@ -979,6 +1171,7 @@ void deleteBlocksCpArchive(char *path, char *numBlock, char *numCopy) {
     log_info(logi, "Verificando si es ultima copia");
     if (!strlen(fetchBlock->nodo0) || !strlen(fetchBlock->nodo1)) {
         liberar_char_array(pathSplit);
+        printf("%sNo se puede borrar, es la última copia%s\n",rojo,sin);
         log_error(logi, "No se puede borrar es la ultima copia");
         return;
     }
@@ -991,6 +1184,7 @@ void deleteBlocksCpArchive(char *path, char *numBlock, char *numCopy) {
                       fetchBlock->nodo1);
             return;
         }
+        free(fetchBlock->nodo1);
         fetchBlock->nodo1 = strdup("");
         fetchBlock->bloquenodo1 = -1;
     } else {
@@ -1000,12 +1194,15 @@ void deleteBlocksCpArchive(char *path, char *numBlock, char *numCopy) {
                       fetchBlock->nodo0);
             return;
         }
+        free(fetchBlock->nodo0);
         fetchBlock->nodo0 = strdup("");
         fetchBlock->bloquenodo0 = -1;
     }
 
+    liberar_char_array(pathSplit);
     log_info(logi, "Persistiendo Cambios");
     actualizar_tabla_nodos();
     crear_metadata_archivo(foundArchive);
+    printf("%s¡Copia Eliminada! %s\n",verde,sin);
 
 }
