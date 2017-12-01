@@ -55,12 +55,14 @@ typedef struct {
     int orden;
     int pointerBuffer;
     size_t sizeBuffer;
+    bloqueArchivo *bq;
+    int numCopy;
 } bloqPedido;
 
 struct _nodoCola {
+    int connected;
     bool hay_pedidos;
     int fd;
-    int node; // 0 || 1 -> representa en que nodo hay que pedir el bloque
     t_list *colaPedidos; // mallocar el maximo posible por NODO +1 (NULL)
 };
 
@@ -72,7 +74,7 @@ void liberarNodoCola(int nq, struct _nodoCola (*nodC)[nq]);
 int encolarSobreNodos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], bloqueArchivo *bloque, int pos,
                       int positionPointer);
 
-int delegarPedidos(int nq, struct _nodoCola (*nodC)[nq], int node);
+int delegarPedidos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], int node);
 
 void enviarPeticion(int socket, int bloque);
 

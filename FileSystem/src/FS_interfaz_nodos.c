@@ -450,6 +450,9 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
 
     fwrite(buff, (size_t) archivo->tamanio, 1, tmp);
     fclose(tmp);
+    if(buff == NULL){
+        return -1;
+    }
     return 0;
 }
 
@@ -457,7 +460,7 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
 // todo: los FD pertinentes estarian en la variable nodC[i].fd, tal vez no todos se necesitarian siempre...
 char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene bloqueArchivo*
 
-    int i, j, z, ctrl, lengthNodo, lengthBloques;
+    int i, j, ctrl, lengthNodo, lengthBloques;
     char *data, *file_data;
     bool restantes = true;
     header head;
@@ -476,58 +479,42 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
         log_error(logi, "No se pudieron allocar %d megabytes para el archivo pedido", lengthBloques);
         return NULL;
     }
-    bloqPedido *Pedido;
-    for (j = 0; j < lengthNodo; ++j) {
-        puts("---Verificando estado---");
-        printf("Socket --> %d\n", nodC[j].fd);
-        printf("Hay Pedidos --> %d\n", nodC[j].hay_pedidos);
-        for (z = 0; z < nodC[j].colaPedidos->elements_count; ++z) {
-            Pedido = list_get(nodC[j].colaPedidos, z);
-            printf("numero del bloque --> %d\n", Pedido->numberBlock);
-            printf("posicion del bloque en el archivo --> %d\n", Pedido->orden);
-            printf("tamaño de bloque en bytes --> %zu\n", Pedido->sizeBuffer);
-        }
-    }
 
-    log_info(logi, "Enviando Primeras Peticiones");
+    log_info(logi, "Enviando Peticiones");
     int posicionPeticion = 0;
     bloqPedido *bloquePedidoFetch;
     for (i = 0; i < lengthNodo; i++) {
         if (nodC[i].hay_pedidos) {
-            bloquePedidoFetch = list_get(nodC[i].colaPedidos, posicionPeticion);
-            enviarPeticion(nodC[i].fd, bloquePedidoFetch->numberBlock);
+            for(j=0;j <nodC[i].colaPedidos->elements_count; j++ ){
+                bloquePedidoFetch = list_get(nodC[i].colaPedidos,j);
+                enviarPeticion(nodC[i].fd, bloquePedidoFetch->numberBlock);
+            }
         }
     }
 
     log_info(logi, "Recolectando Bloque Enviados");
     for (i = 0; restantes; i = (i + 1) % lengthNodo) {
         if (!nodC[i].hay_pedidos) continue;
-
+        log_info(logi,"buscando en socket %d position %d",nodC[i].fd,i);
         data = getMessageIntrNB(nodC[i].fd, &head, &ctrl);
         if (ctrl == -2) continue;
         if (ctrl == 0) {
             log_info(logi, "Se desconecto Nodo en %d", nodC[i].fd); // todo: hacerle close(nodC[i].fd) ahora? o despues?
             nodC[i].hay_pedidos = false;
-
+            nodC[i].connected = 0;
+            disconnectedNodo(nodC[i].fd);
             log_info(logi, "Se intentara buscar bloque en el Nodo alternativo...");
-            /*if (delegarPedidos(lengthNodo, &nodC, i) == -1) {
+            if (delegarPedidos(lengthNodo, &nodC, i) == -1) {
                 log_error(logi, "No es posible delegar el pedido a otro Nodo");
                 break;
-            }*/
-
+            }
         } else if (ctrl == -1) {
             log_error(logi, "Error de recepcion de mensaje de Nodo en %d", nodC[i].fd);
             break;
-
         } else {
             bloquePedidoFetch = list_get(nodC[i].colaPedidos, posicionPeticion);
             memcpy(file_data + bloquePedidoFetch->pointerBuffer, data, bloquePedidoFetch->sizeBuffer);
-
-            // pedido satisfecho, avanzamos y pedimos otro si es que hay mas
-            //++nodC[i].colaPedidos;
-            //si fue realizado se lo elimina de la lista de pedidos
             list_remove(nodC[i].colaPedidos, posicionPeticion);
-
             if (nodC[i].colaPedidos->elements_count ==
                 0) { // todo: creo que esto funciona bien, pero revisar si se puede
                 nodC[i].hay_pedidos = false;
@@ -535,25 +522,22 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
                 restantes = restanPedidos(lengthNodo, &nodC);
                 continue;
             }
-            //buscamos el siguiente bloque
-            bloquePedidoFetch = list_get(nodC[i].colaPedidos, posicionPeticion);
-            enviarPeticion(nodC[i].fd, bloquePedidoFetch->numberBlock);
         }
         free(data);
     }
 
     // no se agotaron todos los Nodos => fue ejecucion erronea
-    /*if (restantes) {
+    if (restantes) {
         free(file_data);
         return NULL;
-    }*/
+    }
 
     return file_data;
 }
 
 void enviarPeticion(int socket, int bloque) {
 
-    int ctrl, i;
+    int ctrl;
     message *msj = NULL;
     header head = {.codigo = 1, .letra = 'F', .sizeData = sizeof(int)};
     void *bufferMjs = malloc(sizeof(int));
@@ -574,6 +558,7 @@ int inicializarNodoCola(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], t_
     for (i = 0; i < lengthNodo; ++i) {
         nodoFetch = list_get(nodos, i);
         (*nodC)[i].fd = nodoFetch->soket;
+        (*nodC)[i].connected = 1;
         (*nodC)[i].hay_pedidos = false;
         (*nodC)[i].colaPedidos = list_create();
     }
@@ -646,34 +631,49 @@ int encolarSobreNodos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], bloq
     nuevoPedido->orden = pos;
     nuevoPedido->sizeBuffer = (size_t) bloque->bytesEnBloque;
     nuevoPedido->pointerBuffer = positionPointer;
+    nuevoPedido->bq = bloque;
+    nuevoPedido->numCopy = nodoCopy;
 
     numFD = nodoCopy ? nodoFetchCopy1->soket : nodoFetchCopy0->soket;
 
     for (i = 0; i < lengthNodo; ++i) {
         if ((*nodC)[i].fd == numFD) {
             list_add((*nodC)[i].colaPedidos, nuevoPedido);
-            (*nodC)[i].node = nodoCopy;
             (*nodC)[i].hay_pedidos = true;
             liberarSocket((*nodC)[i].fd);
         }
     }
     return 1;
 }
-/*
-int delegarPedidos(int nq, struct _nodoCola (*nodC)[nq], int node) {
 
-    struct _bloq *pedidos = (*nodC)[node].colaPedidos;
-    while (pedidos != NULL) {
-
-        if (encolarSobreNodos(nq, nodC, pedidos->bq, pedidos->ord) == -1) {
-            log_error(logi, "No hay nodo disponible para pedir bloque nro %d", pedidos->ord);
+int delegarPedidos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], int node) {
+    int j;
+    int delego = false;
+    char *nameNodo;
+    NODO * nodoAdelegar;
+    bloqPedido *fetchPedido;
+    while ((*nodC)[node].colaPedidos->elements_count != 0){
+        fetchPedido = list_get((*nodC)[node].colaPedidos,0);
+        fetchPedido->numCopy = fetchPedido->numCopy ? 0 : 1;
+        nameNodo = fetchPedido->numCopy ? fetchPedido->bq->nodo1 : fetchPedido->bq->nodo0;
+        nodoAdelegar = get_NODO(nameNodo);
+        for (j = 0; j < lengthNodo ; ++j) {
+            if((*nodC)[j].connected && nodoAdelegar->soket == (*nodC)[j].fd){
+                list_add((*nodC)[j].colaPedidos,fetchPedido);
+                delego = true;
+                list_remove((*nodC)[node].colaPedidos,0);
+                enviarPeticion(nodoAdelegar->soket,fetchPedido->numberBlock);
+                break;
+            }
+        }
+        if(!delego){
             return -1;
         }
-        pedidos++;
     }
+
     return 0;
 }
-*/
+
 
 bool restanPedidos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo]) {
 
