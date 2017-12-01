@@ -351,7 +351,7 @@ void *leer_bloque(bloqueArchivo *bq, int copia) {
     void *buff = malloc(sizeof(int));
     void *buffinal = malloc((size_t) bq->bytesEnBloque + 1);
     memset(buffinal, '\0', (size_t) bq->bytesEnBloque + 1);
-    NODO *nod;
+    NODO *nod = NULL;
 
     head.codigo = 1;
     head.letra = 'F';
@@ -386,6 +386,12 @@ void *leer_bloque(bloqueArchivo *bq, int copia) {
             bloque = bq->bloquenodo1;
             nod = get_NODO(bq->nodo1);
         }
+    }
+
+    if(nod == NULL){
+    	free(buff);
+    	free(buffinal);
+    	return NULL;
     }
 
     memcpy(buff, &bloque, sizeof(int));
