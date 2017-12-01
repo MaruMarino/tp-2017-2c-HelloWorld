@@ -301,12 +301,10 @@ int fs_mv(char *k) {
             }
             directorios[padre].padre = existe;
             actualizar_arbol_directorios();
-            char **nombre = sacar_archivo(split[2]);
-            printf("%sExitos: %s -> %s/%s %s\n",verde, split[1], split[2], nombre[1],sin);
+            printf("%s¡Se movio el Directorio!%s\n",verde,sin);
 
-            log_info(logi, "Exitos: %s -> %s/%s \n", split[1], split[2], nombre[1]);
+            log_info(logi, "Se movio el Directorio");
             liberar_char_array(split);
-            liberar_char_array(nombre);
             liberar_char_array(aux);
 
             return 0;
@@ -623,7 +621,7 @@ int fs_cpto(char *r) {
     int i = 0;
     while (split[i] != NULL) i++;
 
-    if (i == 2) {
+    if (i == 3) {
 
         char **dirName = sacar_archivo(split[1]);
         int padre = existe_ruta_directorios(dirName[0]);
@@ -644,6 +642,19 @@ int fs_cpto(char *r) {
             liberar_char_array(split);
             liberar_char_array(dirName);
             printf("%sArchivo no dispobible en yamafs %s\n", rojo, sin);
+            return 0;
+        }
+        struct stat info;
+        if(stat(split[2],&info)==-1){
+            liberar_char_array(split);
+            liberar_char_array(dirName);
+            printf("%sNo existe directorio de almacenado final en el FS local%s\n",rojo,sin);
+            return 0;
+        }
+        if(!S_ISDIR(info.st_mode)){
+            liberar_char_array(split);
+            liberar_char_array(dirName);
+            printf("%sPath de almacenado final en el FS local no es un directorio%s\n",rojo,sin);
             return 0;
         }
         char *path = string_from_format("%s/%s", split[2], dirName[1]);
@@ -1046,7 +1057,7 @@ void deleteArchive(char *path) {
 
     actualizar_tabla_nodos();
     liberar_char_array(pathSplit);
-    printf("%s¡Archivo eliminado!%s",verde,sin);
+    printf("%s¡Archivo eliminado!%s\n",verde,sin);
 
 }
 
@@ -1066,7 +1077,7 @@ void deleteDirectory(char *path) {
     }
     log_info(logi, "Liberando directorio");
     t_directory *freeDirectory = &directorios[indexDirectory];
-    strcpy(freeDirectory->nombre, "");
+    memset(freeDirectory->nombre,'\0',255);
     freeDirectory->padre = -9;
     eliminar_directorio(indexDirectory);
     actualizar_arbol_directorios();
