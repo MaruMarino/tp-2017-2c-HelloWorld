@@ -313,8 +313,6 @@ void manejo_conexiones() {
 
     //Cargo el socket server
     FD_SET(configuracion->serverfs, &master);
-    FD_SET(5, &master);
-    fdmax = configuracion->serverfs;
 
     while (1) {
         read_fds = master;
@@ -347,11 +345,6 @@ void manejo_conexiones() {
                         } else {
                             close(nuevo_socket);
                         }
-
-                        if(activarselect == 0){
-                        	iniciar_activador_select();
-                        }
-
                     }else {
                         int estado = direccionar(i);
                         if (estado == -1) {
@@ -743,8 +736,8 @@ void iniciar_activador_select(){
 
 void liberarSocket(int socket) {
     int i;
-    FD_CLR(socket, &master);
-    FD_CLR(socket, &read_fds);
+   // FD_CLR(socket, &master);
+   // FD_CLR(socket, &read_fds);
     for (i = 0; i < MAXEXCLUDE; i++) {
         if (socketExclude[i] == -1) {
             socketExclude[i] = socket;
@@ -755,8 +748,8 @@ void liberarSocket(int socket) {
 
 void incorporarSocket(int socket) {
     int i;
-    FD_SET(socket, &master);
-    FD_SET(socket, &read_fds);
+  //  FD_SET(socket, &master);
+  //  FD_SET(socket, &read_fds);
     for (i = 0; i < MAXEXCLUDE; i++) {
         if (socketExclude[i] == socket) {
             socketExclude[i] = -1;
