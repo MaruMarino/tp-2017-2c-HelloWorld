@@ -126,6 +126,8 @@ void atender_tranformacion(t_list *list_transf)
 		list_add(hilos, &hiloPrograma);
 	}
 	pthread_attr_destroy(&attr);
+
+	//mostrar_estadisticas();
 }
 
 void ejecutar_transformador(t_transformacion *transf)
@@ -142,6 +144,11 @@ void ejecutar_transformador(t_transformacion *transf)
 	//Imprimo informacion de la peticion
 	printf("Ip: %s Puerto: %s\n", transf->nodo->ip, port);//print prueba
 	printf("Archivo temporal: %s\n", transf->temporal);
+
+	//Imprimo mas info
+	escribir_log_con_numero(log_Mas, "Bloque: ", transf->bloque);
+	escribir_log_con_numero(log_Mas, "Bytes: ", transf->bytes);
+	escribir_log_compuesto(log_Mas, "Temporal: ", transf->temporal);
 
 	socket_local = establecerConexion(transf->nodo->ip, port, log_Mas, &controlador);
 	free(port);
@@ -689,13 +696,14 @@ void atender_reduccion_global(t_list *lista_global)
 	free(t_estado);
 	free(mensj_transf_est->buffer);
 	free(mensj_transf_est);
-
+/*
 	free(encargado->nodo->ip);
 	free(encargado->nodo->nodo);
 	free(encargado->nodo);
 	free(encargado->red_global);
 	free(encargado->temp_red_local);
 	free(encargado);
+*/
 }
 
 void error_reduccion_global(t_redGlobal *reduccion_global)
