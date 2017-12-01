@@ -740,7 +740,6 @@ void incorporarSocket(int socket) {
     for (i = 0; i < MAXEXCLUDE; i++) {
         if (socketExclude[i] == socket) {
             socketExclude[i] = -1;
-            break;
         }
     }
 }

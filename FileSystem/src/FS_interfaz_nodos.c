@@ -22,7 +22,9 @@
 #include <funcionesCompartidas/estructuras.h>
 #include <funcionesCompartidas/generales.h>
 #include <commons/collections/list.h>
+#include <sys/socket.h>
 #include "FS_conexiones.h"
+#include <errno.h>
 
 #include "FS_administracion.h"
 
@@ -388,10 +390,10 @@ void *leer_bloque(bloqueArchivo *bq, int copia) {
         }
     }
 
-    if(nod == NULL){
-    	free(buff);
-    	free(buffinal);
-    	return NULL;
+    if (nod == NULL) {
+        free(buff);
+        free(buffinal);
+        return NULL;
     }
 
     memcpy(buff, &bloque, sizeof(int));
@@ -423,18 +425,19 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
 
     int bloques = archivo->cantbloques;
     int alternar = 0, i;
+    int retornar = -1;
     char *buff;
     bloqueArchivo *bq;
 
     if (archivo->estado == no_disponible) return -1;
 
     FILE *tmp = fopen(nombre_temporal, "w");
-  //  buff = pedirFile(archivo->bloques, (size_t) archivo->tamanio); // todo: testar esto
+    buff = pedirFile(archivo->bloques, (size_t) archivo->tamanio); // todo: testar esto
 //         ya no deberia hacer falta entrar al ciclo for()
     // pthread_mutex_lock(&mutex_socket);
 
     //  buff = pedirFile(archivo->bloques);
-
+    /*
     for (i = 0; i < bloques; i++) {
 
         bq = list_get(archivo->bloques, i);
@@ -444,16 +447,16 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
         fflush(tmp);
         free(buff);
         alternar = (alternar == 0) ? 1 : 0;
-    }
+    }*/
     //pthread_mutex_unlock(&mutex_socket);
 
-
-   // fwrite(buff, (size_t) archivo->tamanio, 1, tmp);
-    fclose(tmp);
-    if(buff == NULL){
-        return -1;
+    if (buff != NULL) {
+        fwrite(buff, (size_t) archivo->tamanio, 1, tmp);
+        retornar = 0;
+        free(buff);
     }
-    return 0;
+    fclose(tmp);
+    return retornar;
 }
 
 // todo: se va a pelear con el select() -> sacar los FS pertinentes
@@ -485,8 +488,8 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
     bloqPedido *bloquePedidoFetch;
     for (i = 0; i < lengthNodo; i++) {
         if (nodC[i].hay_pedidos) {
-            for(j=0;j <nodC[i].colaPedidos->elements_count; j++ ){
-                bloquePedidoFetch = list_get(nodC[i].colaPedidos,j);
+            for (j = 0; j < nodC[i].colaPedidos->elements_count; j++) {
+                bloquePedidoFetch = list_get(nodC[i].colaPedidos, j);
                 enviarPeticion(nodC[i].fd, bloquePedidoFetch->numberBlock);
             }
         }
@@ -495,22 +498,20 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
     log_info(logi, "Recolectando Bloque Enviados");
     for (i = 0; restantes; i = (i + 1) % lengthNodo) {
         if (!nodC[i].hay_pedidos) continue;
-        log_info(logi,"buscando en socket %d position %d",nodC[i].fd,i);
+        log_info(logi, "buscando en socket %d position %d", nodC[i].fd, i);
         data = getMessageIntrNB(nodC[i].fd, &head, &ctrl);
         if (ctrl == -2) continue;
-        if (ctrl == 0) {
+        if (ctrl == 0 || ctrl == -1) {
             log_info(logi, "Se desconecto Nodo en %d", nodC[i].fd); // todo: hacerle close(nodC[i].fd) ahora? o despues?
             nodC[i].hay_pedidos = false;
             nodC[i].connected = 0;
             disconnectedNodo(nodC[i].fd);
+            incorporarSocket(nodC[i].fd);
             log_info(logi, "Se intentara buscar bloque en el Nodo alternativo...");
             if (delegarPedidos(lengthNodo, &nodC, i) == -1) {
                 log_error(logi, "No es posible delegar el pedido a otro Nodo");
                 break;
             }
-        } else if (ctrl == -1) {
-            log_error(logi, "Error de recepcion de mensaje de Nodo en %d", nodC[i].fd);
-            break;
         } else {
             bloquePedidoFetch = list_get(nodC[i].colaPedidos, posicionPeticion);
             memcpy(file_data + bloquePedidoFetch->pointerBuffer, data, bloquePedidoFetch->sizeBuffer);
@@ -522,8 +523,15 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
                 restantes = restanPedidos(lengthNodo, &nodC);
                 continue;
             }
+            //bloquePedidoFetch = list_get(nodC[i].colaPedidos, posicionPeticion);
+            //enviarPeticion(nodC[i].fd,bloquePedidoFetch->numberBlock);
         }
         free(data);
+    }
+
+    //incorporamos todos los fileDescription por las dudas
+    for (i = 0; i < lengthNodo; i++) {
+        incorporarSocket(nodC[i].fd);
     }
 
     // no se agotaron todos los Nodos => fue ejecucion erronea
@@ -561,6 +569,7 @@ int inicializarNodoCola(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], t_
         (*nodC)[i].connected = 1;
         (*nodC)[i].hay_pedidos = false;
         (*nodC)[i].colaPedidos = list_create();
+        liberarSocket((*nodC)[i].fd);
     }
     int positionPointer = 0;
 
@@ -573,12 +582,6 @@ int inicializarNodoCola(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], t_
         positionPointer += bloqueFetch->bytesEnBloque;
     }
     return 0;
-}
-
-void liberarNodoCola(int nq, struct _nodoCola (*nodC)[nq]) {
-    int i;
-    for (i = 0; i < nq; ++i)
-        free((*nodC)[i].colaPedidos);
 }
 
 int countColaNodo(char *nameNodo, int lengthNodo, struct _nodoCola (*nodC)[lengthNodo]) {
@@ -640,7 +643,6 @@ int encolarSobreNodos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], bloq
         if ((*nodC)[i].fd == numFD) {
             list_add((*nodC)[i].colaPedidos, nuevoPedido);
             (*nodC)[i].hay_pedidos = true;
-            liberarSocket((*nodC)[i].fd);
         }
     }
     return 1;
@@ -650,23 +652,23 @@ int delegarPedidos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], int nod
     int j;
     int delego = false;
     char *nameNodo;
-    NODO * nodoAdelegar;
+    NODO *nodoAdelegar;
     bloqPedido *fetchPedido;
-    while ((*nodC)[node].colaPedidos->elements_count != 0){
-        fetchPedido = list_get((*nodC)[node].colaPedidos,0);
+    while ((*nodC)[node].colaPedidos->elements_count != 0) {
+        fetchPedido = list_get((*nodC)[node].colaPedidos, 0);
         fetchPedido->numCopy = fetchPedido->numCopy ? 0 : 1;
         nameNodo = fetchPedido->numCopy ? fetchPedido->bq->nodo1 : fetchPedido->bq->nodo0;
         nodoAdelegar = get_NODO(nameNodo);
-        for (j = 0; j < lengthNodo ; ++j) {
-            if((*nodC)[j].connected && nodoAdelegar->soket == (*nodC)[j].fd){
-                list_add((*nodC)[j].colaPedidos,fetchPedido);
+        for (j = 0; j < lengthNodo; ++j) {
+            if ((*nodC)[j].connected && nodoAdelegar->soket == (*nodC)[j].fd) {
+                list_add((*nodC)[j].colaPedidos, fetchPedido);
                 delego = true;
-                list_remove((*nodC)[node].colaPedidos,0);
-                enviarPeticion(nodoAdelegar->soket,fetchPedido->numberBlock);
+                list_remove((*nodC)[node].colaPedidos, 0);
+                enviarPeticion(nodoAdelegar->soket, fetchPedido->numberBlock);
                 break;
             }
         }
-        if(!delego){
+        if (!delego) {
             return -1;
         }
     }
