@@ -66,7 +66,7 @@ size_t dtamanio_lista_t_nodo(t_list *nodis,int *cant) {
 
 		nodi = list_get(nodis, i);
 		if(nodi->ip != NULL){
-			tfinal += strlen(nodi->nodo) + 2 + strlen(nodi->ip) + s$
+			tfinal += strlen(nodi->nodo) + 2 + strlen(nodi->ip) + sizeof(t_nodo);
 					(*cant)++;
 		}
 	}
@@ -202,10 +202,11 @@ t_list *ddeserializar_lista_bloque_archivo(char *serializacion) {
 
 char *dserializar_lista_nodos(t_list *nodis, size_t *leng) {
 
-    size_t tfinal = dtamanio_lista_t_nodo(nodis);
+	int i;
+    size_t tfinal = dtamanio_lista_t_nodo(nodis,&i);
     size_t aux = 0;
     size_t desplazamiento = 0;
-    int i = nodis->elements_count;
+
     char *buffer = malloc(tfinal + (size_t) sizeof(int) * (i + 1));
 
     t_nodo *nodi;
@@ -294,11 +295,6 @@ void manejo_conexiones() {
 
     char *puerto = string_itoa(configuracion->puerto);
     int control = 0;
-    socketRefres = establecerConexion("127.0.0.1","5002",logi,&control);
-    if(control < 0){
-    	free(puerto);
-    	pthread_exit((void *) -1);
-    }
     if ((fdmax = configuracion->serverfs = makeListenSock(puerto, logi, &control)) < 0) {
        // perror("Error en algo de sockets %s\n");
         free(puerto);
@@ -306,16 +302,26 @@ void manejo_conexiones() {
     }
     free(puerto);
     //Seteo en 0 el master y temporal
+
+
     FD_ZERO(&master);
     FD_ZERO(&read_fds);
 
     //Cargo el socket server
     FD_SET(configuracion->serverfs, &master);
-    FD_SET(socketRefres,&master);
+    //FD_SET(socketRefres,&master);
     //Bucle principal
-    if(socketRefres > fdmax){
+   /* if(socketRefres > fdmax){
     	fdmax = socketRefres;
     }
+    socketRefres = establecerConexion("127.0.0.1","5002",logi,&control);
+    if(control < 0){
+    	//free(puerto);
+    	printf("OLAAAAAAAAAAAAAA\n\n");
+    	pthread_exit((void *) -1);
+    }
+    FD_SET(socketRefres,&master);*/
+
     while (1) {
         read_fds = master;
 
@@ -711,6 +717,8 @@ void activarSelect() {
 	headerRefresh.sizeData = 0;
     message * mjsRefresh = createMessage(&headerRefresh,"");
     enviar_messageIntr(socketRefres,mjsRefresh,logi,&control);
+    free(mjsRefresh->buffer);
+    free(mjsRefresh);
 }
 
 void liberarSocket(int socket) {

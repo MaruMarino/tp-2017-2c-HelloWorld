@@ -429,12 +429,12 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
     if (archivo->estado == no_disponible) return -1;
 
     FILE *tmp = fopen(nombre_temporal, "w");
-    buff = pedirFile(archivo->bloques, (size_t) archivo->tamanio); // todo: testar esto
+  //  buff = pedirFile(archivo->bloques, (size_t) archivo->tamanio); // todo: testar esto
 //         ya no deberia hacer falta entrar al ciclo for()
     // pthread_mutex_lock(&mutex_socket);
 
     //  buff = pedirFile(archivo->bloques);
-/*
+
     for (i = 0; i < bloques; i++) {
 
         bq = list_get(archivo->bloques, i);
@@ -446,9 +446,9 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
         alternar = (alternar == 0) ? 1 : 0;
     }
     //pthread_mutex_unlock(&mutex_socket);
-    */
 
-    fwrite(buff, (size_t) archivo->tamanio, 1, tmp);
+
+   // fwrite(buff, (size_t) archivo->tamanio, 1, tmp);
     fclose(tmp);
     if(buff == NULL){
         return -1;
