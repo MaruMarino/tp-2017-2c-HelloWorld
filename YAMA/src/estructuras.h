@@ -58,6 +58,7 @@ typedef struct
 	char *nodo_copia;
 	int bloque_copia;
 	int bytes;
+	bool replanificado;
 }t_estado;
 
 typedef struct
