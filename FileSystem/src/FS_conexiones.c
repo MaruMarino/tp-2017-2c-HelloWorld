@@ -40,6 +40,7 @@ fd_set read_fds;
 int socketExclude[MAXEXCLUDE];
 int fdmax;
 int yamasock;
+int socketRefres;
 
 message *create_Message(header *head, void *data);
 
@@ -287,6 +288,11 @@ void manejo_conexiones() {
 
     char *puerto = string_itoa(configuracion->puerto);
     int control = 0;
+    socketRefres = establecerConexion("127.0.0.1","5002",logi,&control);
+    if(control < 0){
+    	free(puerto);
+    	pthread_exit((void *) -1);
+    }
     if ((fdmax = configuracion->serverfs = makeListenSock(puerto, logi, &control)) < 0) {
        // perror("Error en algo de sockets %s\n");
         free(puerto);
@@ -299,8 +305,11 @@ void manejo_conexiones() {
 
     //Cargo el socket server
     FD_SET(configuracion->serverfs, &master);
-
+    FD_SET(socketRefres,&master);
     //Bucle principal
+    if(socketRefres > fdmax){
+    	fdmax = socketRefres;
+    }
     while (1) {
         read_fds = master;
 
@@ -689,11 +698,13 @@ message *create_Message(header *head, void *data) {
 }
 
 void activarSelect() {
-    int control;
-    char *puerto = string_itoa(configuracion->puerto);
-    int activar = establecerConexion("127.0.0.1", puerto, logi, &control);
-    close(activar);
-    free(puerto);
+	int control;
+	header headerRefresh;
+	headerRefresh.codigo = 0;
+	headerRefresh.letra = 'R';
+	headerRefresh.sizeData = 0;
+    message * mjsRefresh = createMessage(&headerRefresh,"");
+    enviar_messageIntr(socketRefres,mjsRefresh,logi,&control);
 }
 
 void liberarSocket(int socket) {
