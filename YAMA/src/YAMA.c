@@ -32,7 +32,6 @@ int conectar_fs();
 void crear_socket_servidor();
 void reconfiguracion();
 
-
 int main(int argc, char **argv)
 {
 	yama_log = crear_archivo_log("YAMA",true,"/home/utnso/conf/yama_log");
