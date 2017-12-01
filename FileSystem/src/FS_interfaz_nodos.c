@@ -449,8 +449,7 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
         alternar = (alternar == 0) ? 1 : 0;
     }*/
     //pthread_mutex_unlock(&mutex_socket);
-
-    activar_select();
+    
     if (buff != NULL) {
         fwrite(buff, (size_t) archivo->tamanio, 1, tmp);
         retornar = 0;
