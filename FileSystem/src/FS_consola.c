@@ -97,7 +97,7 @@ int ejecutar_linea (char *line){
 	}
 
 	if(configuracion->inicio_limpio && configuracion->estado_estable ==0 && strcmp(command->name,"format")!=0 &&
-			strcmp(command->name,"ayuda")!=0 && strcmp(command->name,"?")!=0){
+			strcmp(command->name,"ayuda")!=0 && strcmp(command->name,"?")!=0 && strcmp(command->name,"info")!=0){
 
 		printf("YAMA-FS no fue formateado  %s┐(￣-￣)┌%s \n",magenta,sin);
 		return (-1);

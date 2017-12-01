@@ -436,26 +436,26 @@ int fs_cat(char *n) {
         char *buff;
 
         // todo: testar esto
-        buff = pedirFile(archivo->bloques, (size_t) archivo->tamanio);
+      //  buff = pedirFile(archivo->bloques, (size_t) archivo->tamanio);
 //         ya no deberia hacer falta entrar al ciclo for()
 
         //pthread_mutex_lock(&mutex_socket);
-       /* for (i = 0; i < bloques; i++) {
+        for (i = 0; i < bloques; i++) {
 
             bq = list_get(archivo->bloques, i);
 
             buff = leer_bloque(bq, alternar);
 
-            printf("%s", buff);
+            printf("%s%s%s", verde,buff,sin);
 
             free(buff);
             alternar = (alternar == 0) ? 1 : 0;
-        }*/
+        }
         //pthread_mutex_unlock(&mutex_socket);
 //        puts(buff);
 //        free(buff);
-        printf("%s%s%s", verde, buff,sin);
-        free(buff);
+       // printf("%s%s%s", verde, buff,sin);
+      //  free(buff);
         liberar_char_array(split);
         liberar_char_array(dirName);
 

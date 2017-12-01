@@ -81,7 +81,7 @@ void checkArchivos() {
 void checkdirectoris() {
     puts("___________ Estado Directorios ____________");
     int i=0;
-    while(directorios[i].padre != -9){
+    while(directorios[i].padre != -9 && i < 100){
         printf("<-- Fila --> %d\n", i);
         printf("nombre directorio --> %s\n", directorios[i].nombre);
         printf("indice --> %d\n", directorios[i].index);
