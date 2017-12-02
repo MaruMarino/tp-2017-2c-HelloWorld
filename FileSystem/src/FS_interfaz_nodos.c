@@ -659,16 +659,18 @@ int delegarPedidos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], int nod
     char *nameNodo;
     NODO *nodoAdelegar;
     bloqPedido *fetchPedido;
+    bloqPedido *aEliminar;
     while ((*nodC)[node].colaPedidos->elements_count != 0) {
         fetchPedido = list_get((*nodC)[node].colaPedidos, 0);
         fetchPedido->numCopy = fetchPedido->numCopy ? 0 : 1;
         nameNodo = fetchPedido->numCopy ? fetchPedido->bq->nodo1 : fetchPedido->bq->nodo0;
         nodoAdelegar = get_NODO(nameNodo);
         for (j = 0; j < lengthNodo; ++j) {
-            if ((*nodC)[j].connected && nodoAdelegar->soket == (*nodC)[j].fd) {
+            if ((*nodC)[j].connected && nodoAdelegar->soket == (*nodC)[j].fd && nodoAdelegar->estado == disponible) {
                 list_add((*nodC)[j].colaPedidos, fetchPedido);
                 delego = true;
-                list_remove((*nodC)[node].colaPedidos, 0);
+                aEliminar = list_remove((*nodC)[node].colaPedidos, 0);
+                if( aEliminar != NULL) free(aEliminar);
                 enviarPeticion(nodoAdelegar->soket, fetchPedido->numberBlock);
                 break;
             }
