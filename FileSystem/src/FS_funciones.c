@@ -453,9 +453,9 @@ int fs_cat(char *n) {
 //        puts(buff);
 //        free(buff);
         if(buff == NULL){
-        	printf("%s%s%s",rojo,"no esta disponible el archivo",sin);
+        	printf("%s%s%s\n",rojo,"no esta disponible el archivo",sin);
         }else{
-        	printf("%s%s%s", verde, buff,sin);
+        	printf("%s%s%s\n", verde, buff,sin);
         	free(buff);
         }
         liberar_char_array(split);
