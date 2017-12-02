@@ -400,7 +400,7 @@ int realizar_handshake(int nuevo_socket) {
     message *mensajeEnviar = NULL;
     void *bufferRequest = getMessage(nuevo_socket, identificacion, &control);
     void *bufferResponse = NULL;
-
+    if(bufferRequest == NULL) return 0;
     switch (identificacion->letra) {
         case 'Y': {
             // Si estable, aceptar YAMA
@@ -705,8 +705,10 @@ message *create_Message(header *head, void *data) {
 }
 
 void activar_select() {
-
 	int control;
+	int numSocket = establecerConexion("127.0.0.1","5002",logi,&control);
+	close(numSocket);
+	/*int control;
 	header headerRefresh;
 	headerRefresh.codigo = 0;
 	headerRefresh.letra = 'R';
@@ -714,8 +716,7 @@ void activar_select() {
     message * mjsRefresh = createMessage(&headerRefresh,"");
     enviar_messageIntr(5,mjsRefresh,logi,&control);
     free(mjsRefresh->buffer);
-    free(mjsRefresh);
-
+    free(mjsRefresh);*/
 }
 
 void iniciar_activador_select(){
@@ -736,8 +737,8 @@ void iniciar_activador_select(){
 
 void liberarSocket(int socket) {
     int i;
-   // FD_CLR(socket, &master);
-   // FD_CLR(socket, &read_fds);
+    FD_CLR(socket, &master);
+    FD_CLR(socket, &read_fds);
     for (i = 0; i < MAXEXCLUDE; i++) {
         if (socketExclude[i] == -1) {
             socketExclude[i] = socket;
@@ -748,8 +749,8 @@ void liberarSocket(int socket) {
 
 void incorporarSocket(int socket) {
     int i;
-  //  FD_SET(socket, &master);
-  //  FD_SET(socket, &read_fds);
+    FD_SET(socket, &master);
+    FD_SET(socket, &read_fds);
     for (i = 0; i < MAXEXCLUDE; i++) {
         if (socketExclude[i] == socket) {
             socketExclude[i] = -1;

@@ -463,7 +463,7 @@ int crear_archivo_temporal(t_archivo *archivo, char *nombre_temporal) {
 // todo: los FD pertinentes estarian en la variable nodC[i].fd, tal vez no todos se necesitarian siempre...
 char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene bloqueArchivo*
 
-    int i, j, ctrl, lengthNodo, lengthBloques;
+    int i, j, ctrl, lengthNodo = 0, lengthBloques;
     char *data, *file_data;
     bool restantes = true;
     header head;
@@ -488,8 +488,10 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
     bloqPedido *bloquePedidoFetch;
     for (i = 0; i < lengthNodo; i++) {
         if (nodC[i].hay_pedidos) {
+        	log_info(logi,"socket --> %d",nodC[i].fd);
             for (j = 0; j < nodC[i].colaPedidos->elements_count; j++) {
                 bloquePedidoFetch = list_get(nodC[i].colaPedidos, j);
+                log_info(logi,"bloque a pedir --> %d orden --> %d size -> %d",bloquePedidoFetch->numberBlock,bloquePedidoFetch->orden,bloquePedidoFetch->pointerBuffer);
                 enviarPeticion(nodC[i].fd, bloquePedidoFetch->numberBlock);
             }
         }
@@ -499,15 +501,15 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
     bloqPedido *aEliminar;
     for (i = 0; restantes; i = (i + 1) % lengthNodo) {
         if (!nodC[i].hay_pedidos) continue;
-        log_info(logi, "buscando en socket %d position %d", nodC[i].fd, i);
+        //log_info(logi, "buscando en socket %d position %d", nodC[i].fd, i);
         data = getMessageIntrNB(nodC[i].fd, &head, &ctrl);
         if (ctrl == -2) continue;
         if (ctrl == 0 || ctrl == -1) {
-            log_info(logi, "Se desconecto Nodo en %d", nodC[i].fd); // todo: hacerle close(nodC[i].fd) ahora? o despues?
+            log_info(logi, "--Se desconecto Nodo en [%d]", nodC[i].fd); // todo: hacerle close(nodC[i].fd) ahora? o despues?
             nodC[i].hay_pedidos = false;
             nodC[i].connected = 0;
             disconnectedNodo(nodC[i].fd);
-            incorporarSocket(nodC[i].fd);
+            //incorporarSocket(nodC[i].fd);
             log_info(logi, "Se intentara buscar bloque en el Nodo alternativo...");
             if (delegarPedidos(lengthNodo, &nodC, i) == -1) {
                 log_error(logi, "No es posible delegar el pedido a otro Nodo");
@@ -521,7 +523,7 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
             if( aEliminar != NULL) free(aEliminar);
             if (nodC[i].colaPedidos->elements_count == 0) { // todo: creo que esto funciona bien, pero revisar si se puede
                 nodC[i].hay_pedidos = false;
-                incorporarSocket(nodC[i].fd);
+                //incorporarSocket(nodC[i].fd);
                 restantes = restanPedidos(lengthNodo, &nodC);
                 continue;
             }
@@ -538,7 +540,7 @@ char *pedirFile(t_list *bloques, size_t size_archive) { // este t_list contiene 
         }
         if(nodC[i].colaPedidos != NULL ) list_destroy_and_destroy_elements(nodC[i].colaPedidos,(void *)_free);
     }
-
+    activar_select();
     // no se agotaron todos los Nodos => fue ejecucion erronea
     if (restantes) {
         free(file_data);
@@ -670,7 +672,7 @@ int delegarPedidos(int lengthNodo, struct _nodoCola (*nodC)[lengthNodo], int nod
                 list_add((*nodC)[j].colaPedidos, fetchPedido);
                 delego = true;
                 aEliminar = list_remove((*nodC)[node].colaPedidos, 0);
-                if( aEliminar != NULL) free(aEliminar);
+                //if( aEliminar != NULL) free(aEliminar);
                 enviarPeticion(nodoAdelegar->soket, fetchPedido->numberBlock);
                 break;
             }
