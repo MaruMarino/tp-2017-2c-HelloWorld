@@ -33,7 +33,7 @@ void manejo_conexiones()
 {
 	int controlador = 0;
 
-	escribir_log(yama_log, "Iniciando administrador de conexiones Master");
+	escribir_log(yama_log, "Escuchando peticiones de Master");
 	//Seteo en 0 el master y temporal
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
@@ -78,6 +78,7 @@ void manejo_conexiones()
 						if (controlador < 0)
 							continue;
 
+						escribir_log(yama_log, "Nuevo Master conectado");
 						t_master *master_ = malloc(sizeof(t_master));
 						master_->master = master_id++;
 						master_->socket_ = nuevo_socket;
@@ -126,14 +127,16 @@ void manejar_respuesta(int socket_)
 		{
 			case 0:; //procesar archivo -> peticion transformacion
 				escribir_log(yama_log, "Se recibió archivo para procesar");
-				solicitar_informacion_archivo(mensaje, socket_); //aca file me debería devolver algo
-				//enviar_peticion_transformacion(socket_);
+				solicitar_informacion_archivo(mensaje, socket_);
 				break;
 			case 5:; //reduccion local
 				escribir_log(yama_log,"Se recibió el estado de una transformacion");
 				t_estado_master *estado_tr = deserializar_estado_master(mensaje);
 				if(estado_tr->estado == FINALIZADO_OK)
+				{
+					escribir_log(yama_log, "La transformación terminó correctamente");
 					enviar_reduccion_local(estado_tr, socket_);
+				}
 				else
 					replanificar2(estado_tr, socket_);
 

@@ -268,10 +268,14 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 		t_worker *w_next_clock = list_get(workers, next_index);
 
 		if(worker->disponibilidad > 0)
+		{
 			w_next_clock->clock = true;
+			escribir_log_compuesto(yama_log, "Se posicionó el clock en: ", w_next_clock->nodo->nodo);
+		}
 		else
 		{
 			w_next_clock->disponibilidad += config->base;
+
 			int next_index2 = (next_index + 1) % w_size;
 			int encontrado = 0;
 			while(!encontrado)
@@ -280,6 +284,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 
 				if (worker2->disponibilidad > 0)
 				{
+					escribir_log_compuesto(yama_log, "Se posicionó el clock en: ", worker2->nodo->nodo);
 					encontrado = 1;
 					worker2->clock = true;
 				}
@@ -321,7 +326,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 
 			if ( any && worker2->disponibilidad > 0)
 			{
-				escribir_log(yama_log, "Primera condicion para bloque no clock");
+				escribir_log(yama_log, "Se encontró Worker para trabajar, se mantiene el clock en su posicion anterior");
 				bool _bloque_archivo(t_bloque *bl2)
 				{
 					return (!strcmp(bl2->nodo, worker2->nodo->nodo));
@@ -336,7 +341,7 @@ t_worker *get_worker(t_list *archivo, int n_bloque)
 			}
 			else
 			{
-				escribir_log(yama_log, "Segunda condicion para bloque no clock");
+				escribir_log(yama_log, "No se encontró worker disponible para trabajar");
 				next_index = (next_index + 1) % w_size;
 				cant ++;
 				if(cant == w_size)
@@ -455,6 +460,7 @@ void ejecutar_clock(t_list *archivo_bloques, int cant_bloques, int _socket)
 
 	message *mensaje = createMessage(&head, transformaciones_ser);
 	enviar_messageIntr(_socket, mensaje, yama_log, &control);
+	escribir_log(yama_log, "Transformaciones enviadas");
 	free(transformaciones_ser);
 	list_destroy(transformaciones);
 	free(mensaje->buffer);
@@ -584,7 +590,7 @@ void enviar_reduccion_local(t_estado_master *estado_tr, int socket_)
 		armar_reduccion_local(sz, master_, est, estado_tr);
 	}
 	else
-		escribir_log(yama_log, "Esperando a que se terminen todas las transformaciones para el nodo");
+		escribir_log_compuesto(yama_log, "Esperando a que se terminen todas las transformaciones para: ", est->nodo);
 }
 
 void armar_transformacion_replanificada(t_estado *estado, int socket_)
@@ -769,6 +775,8 @@ void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_m
 
 	message *mensaje = createMessage(&head, (void *)red_global_ser);
 	enviar_messageIntr(master_->socket_, mensaje, yama_log, &control);
+	escribir_log(yama_log, "Reduccion global enviada a Master");
+	escribir_log_con_numero(yama_log, "Nodo encargado: ", wk->nodo->nodo);
 	t_estado *estt = generar_estado(master_->master,-10,wk->nodo->nodo,NULL,cant_temporales,-10, -10);
 	free(estt->archivo_temporal);
 	if(en_worker_trabajado)
@@ -816,11 +824,20 @@ void recalcular_cargas(int socket_)
 			}
 		}
 	}
+
+	void _mostrar_info(t_worker *wk)
+	{
+		escribir_log_compuesto(yama_log, "Informacion actual para: ", wk->nodo->nodo);
+		escribir_log_con_numero(yama_log, "	Carga actual: ", wk->carga_actual);
+		escribir_log_con_numero(yama_log, "	Carga historica: ", wk->carga_historica);
+		escribir_log_con_numero(yama_log, "	Disponibilidad: ", wk->disponibilidad);
+	}
+	list_iterate(workers, (void*) _mostrar_info);
 }
 
 void replanificar2(t_estado_master *estado_tr, int socket_)
 {
-	escribir_log(yama_log, "Chequeando replanificación");
+	escribir_log(yama_log, "Chequeando para  comenzar replanificación");
 	t_list *transformaciones = list_create();
 	t_master *master_ = find_master(socket_);
 	t_estado *est = get_estado(master_->master, estado_tr->nodo, estado_tr->bloque, TRANSFORMACION);
@@ -831,6 +848,7 @@ void replanificar2(t_estado_master *estado_tr, int socket_)
 	if(est->replanificado)
 	{
 		escribir_log(yama_log, "Esta transformación ha sido replanificada en otro nodo");
+		escribir_log_compuesto(yama_log, "Sufrió un error el :", est->nodo);
 		escribir_log_compuesto(yama_log, "Está siendo tratada en: ", est->nodo_copia);
 		return;
 	}
@@ -843,6 +861,7 @@ void replanificar2(t_estado_master *estado_tr, int socket_)
 	}
 	if(est->copia_disponible)
 	{
+		escribir_log_error_compuesto(yama_log, "Falló transformación en: ", est->nodo);
 		int i;
 		for(i=0;i<sz;i++)
 		{
@@ -862,6 +881,8 @@ void replanificar2(t_estado_master *estado_tr, int socket_)
 	message *mensaje = createMessage(&head, transformaciones_ser);
 	enviar_messageIntr(socket_, mensaje, yama_log, &control);
 
+	escribir_log_con_numero(yama_log, "Replanificación enviada a: ", est->master);
+
 	est->copia_disponible = false;
 	est->replanificado = true;
 
@@ -872,7 +893,6 @@ void replanificar2(t_estado_master *estado_tr, int socket_)
 
 void armar_transformacion_replanificada2(t_estado *estado, int socket_, t_list *transformaciones)
 {
-	escribir_log_error_compuesto(yama_log, "Falló transformación en: ", estado->nodo);
 	escribir_log_compuesto(yama_log, "Generando transformacion replanificada en: ", estado->nodo_copia);
 	t_transformacion *tr = malloc(sizeof(t_transformacion));
 	t_worker *wk = find_worker(estado->nodo_copia);

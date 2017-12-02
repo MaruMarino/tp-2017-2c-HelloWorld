@@ -16,6 +16,7 @@
 #include "manejo_tabla_estados.h"
 
 extern t_list *tabla_estado;
+extern t_log *yama_log;
 //extern int job_id;
 
 char *generar_nombre_temporal(int job, char *nodo, int bloque)
@@ -67,6 +68,8 @@ t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bl
 {
 	t_estado *estado = malloc(sizeof (t_estado));
 	char *arch_temp = generar_nombre_temporal(master, nodo, bloqqq);
+
+	escribir_log_con_numero(yama_log, "Generando nuevo estado para Job: ", master);
 
 	estado->master = master;
 	estado->job = master;

@@ -19,7 +19,7 @@
 t_log *yama_log;
 t_configuracion *config;
 t_list *tabla_estado; //formado por t_estado
-t_list *masters; //formado por t_master, o usar diccionario?
+t_list *masters;
 t_list *workers; //formado por t_worker
 int master_id = 1;
 int job_id = 1;
@@ -105,7 +105,7 @@ int conectar_fs()
 	}
 	else
 	{
-		escribir_log(yama_log, "Conectado a FS");
+		escribir_log(yama_log, "Enviando handshake a FS");
 		header head, head2;
 		head2.codigo = 0;
 		head2.letra = 'Y';
@@ -147,13 +147,12 @@ void reconfiguracion(int signal_)
 {
 	if (signal_ == SIGUSR1)
 	{
-		puts("empiezo!");
+		puts("Reconfigurando");
 		t_config *configuracion = config_create(path);
 
 		string_append(&config->algortimo_bal, config_get_string_value(configuracion, "ALGORITMO_BALANCEO"));
 		config->retardo_plan = config_get_int_value(configuracion, "RETARDO_PLANIFICACION");
 
 		config_destroy(configuracion);
-		puts("termino!");
 	}
 }
