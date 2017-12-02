@@ -135,7 +135,7 @@ void manejar_respuesta(int socket_)
 				if(estado_tr->estado == FINALIZADO_OK)
 					enviar_reduccion_local(estado_tr, socket_);
 				else
-					replanificar(estado_tr, socket_);
+					replanificar2(estado_tr, socket_);
 
 				free(estado_tr);
 				break;

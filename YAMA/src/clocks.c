@@ -525,6 +525,8 @@ void armar_reduccion_local(int sz, t_master *master_, t_estado *est, t_estado_ma
 	for(i=0; i < sz; i++)
 	{
 		t_estado * est2 = list_get(tabla_estado, i);
+		escribir_log(yama_log, est2->archivo_temporal);
+		escribir_log_con_numero(yama_log, "Bloque: ", est2->bloque_archivo);
 		if((!strcmp(est2->nodo,estado_tr->nodo)) && est2->master == master_->master
 				&& est2->etapa == TRANSFORMACION && est2->estado == FINALIZADO_OK/*&& est2->etapa == ESPERA_REDUCCION_LOCAL*/)
 		{
@@ -878,12 +880,14 @@ void armar_transformacion_replanificada2(t_estado *estado, int socket_, t_list *
 	wk->carga_historica++;
 	tr->bloque = estado->bloque_copia;
 	tr->nodo = wk->nodo;
-	t_estado * est = generar_estado(estado->master, tr->bloque, wk->nodo->nodo, NULL, 0, estado->bytes, 22);
+	t_estado * est = generar_estado(estado->master, tr->bloque, wk->nodo->nodo, NULL, 0, estado->bytes, estado->bloque_archivo);
 	free(est->archivo_temporal);
-	est->archivo_temporal = generar_nombre_temporal(estado->master, estado->nodo_copia, estado->bloque_copia);
+	est->archivo_temporal = generar_nombre_temporal(estado->master, estado->nodo_copia, estado->bloque_archivo);
 	est->copia_disponible = false;
-	est->estado = ERROR;
-	est->replanificado = true;
+	estado->estado = ERROR;
+	//est->replanificado = false;
+	estado->replanificado = true;
+	estado->copia_disponible = false;
 	tr->temporal = est->archivo_temporal;
 	tr->bytes = est->bytes;
 	list_add(transformaciones, tr);

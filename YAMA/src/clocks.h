@@ -19,5 +19,6 @@ void armar_reduccion_local(int sz, t_master *master_, t_estado *est, t_estado_ma
 void armar_reduccion_global(int sz, t_master *master_, t_estado *est, t_estado_master *estado_tr);
 void recalcular_cargas(int master);
 void armar_transformacion_replanificada2(t_estado *estado, int socket_, t_list *transformaciones);
+void replanificar2(t_estado_master *estado_tr, int socket_);
 
 #endif /* CLOCKS_H_ */

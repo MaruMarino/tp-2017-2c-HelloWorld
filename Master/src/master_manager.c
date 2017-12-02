@@ -20,12 +20,6 @@ extern t_configuracion *config;
 extern t_log *log_Mas;
 extern t_list *hilos;
 extern pthread_mutex_t sem_yama;
-/*CALIDAD - INICIO*/
-int numero_pedido_trans;
-int numero_pedido_reducc;
-int numero_pedido_reducc_glo;
-int numero_pedido_alm;
-/*CALIDAD - FIN*/
 
 void matar_hilos();
 void error_almacenamiento(t_almacenado *almacenado);
@@ -38,18 +32,8 @@ void atender_tranformacion(t_list *list_transf);
 void atender_reduccion_local(t_redLocal *reduccion_local);
 void atender_reduccion_global(t_list *lista_global);
 
-//borrar
-void calidad_transformacion(t_list *algo);
-
 void escuchar_peticiones()
 {
-	/*CALIDAD - INICIO*/
-	numero_pedido_trans = 0;
-	numero_pedido_reducc = 0;
-	numero_pedido_reducc_glo = 0;
-	numero_pedido_alm = 0;
-	/*CALIDAD - FIN*/
-
 	int controlador = 0;
 	int flag_continuar = 1;
 	header head;
@@ -63,17 +47,11 @@ void escuchar_peticiones()
 			case 1: ;
 				escribir_log(log_Mas, "Se recibio una/s peticion/es de transformacion");
 				t_list *list_transf = deserializar_lista_transformacion(buffer);
-
-				calidad_transformacion(list_transf);
-
 				atender_tranformacion(list_transf);
 				break;
 			case 2: ;
 				escribir_log(log_Mas, "Se recibio una peticion de reduccion local");
 				t_redLocal *reduccion_local = deserializar_redLocal(buffer);
-
-				//atender_reduccion_local(reduccion_local);
-
 				pthread_t hiloPrograma;// = malloc(sizeof(pthread_t));
 				pthread_create(&hiloPrograma,NULL,(void*)atender_reduccion_local,reduccion_local);
 				list_add(hilos, &hiloPrograma);
@@ -119,15 +97,11 @@ void atender_tranformacion(t_list *list_transf)
 		pthread_t hiloPrograma;
 
 		t_transformacion *transf = list_get(list_transf,i);
-
-		//ejecutar_transformador(transf);
 		pthread_create(&hiloPrograma,&attr,(void*)ejecutar_transformador,transf);
 
 		list_add(hilos, &hiloPrograma);
 	}
 	pthread_attr_destroy(&attr);
-
-	//mostrar_estadisticas();
 }
 
 void ejecutar_transformador(t_transformacion *transf)
@@ -145,10 +119,12 @@ void ejecutar_transformador(t_transformacion *transf)
 	printf("Ip: %s Puerto: %s\n", transf->nodo->ip, port);//print prueba
 	printf("Archivo temporal: %s\n", transf->temporal);
 
+	/*
 	//Imprimo mas info
 	escribir_log_con_numero(log_Mas, "Bloque: ", transf->bloque);
 	escribir_log_con_numero(log_Mas, "Bytes: ", transf->bytes);
 	escribir_log_compuesto(log_Mas, "Temporal: ", transf->temporal);
+	*/
 
 	socket_local = establecerConexion(transf->nodo->ip, port, log_Mas, &controlador);
 	free(port);
@@ -931,38 +907,5 @@ void matar_hilos()
 		pthread_cancel(el_hilo);
 		//free(el_hilo);
 	}
-
 	list_destroy_and_destroy_elements(hilos, (void*) _destruir_elemento);
-}
-
-void calidad_transformacion(t_list *lista)
-{
-	int sin_bloque = 0, sin_bytes = 0, sin_temporal = 0;
-	int nodo_sin_nombre = 0, nodo_sin_ip = 0, nodo_sin_puerto = 0, nodo_sin_size = 0;
-	int sizes;
-
-	numero_pedido_trans ++;
-	sizes = list_size(lista);
-
-	void _chequear(t_transformacion *pedido)
-	{
-		if(pedido->bloque == 0)	sin_bloque++;
-		if(pedido->bytes == 0)	sin_bytes++;
-		if(pedido->temporal == NULL || strlen(pedido->temporal) == 0)	sin_temporal++;
-		if(pedido->nodo->ip == NULL || strlen(pedido->nodo->ip) == 0)	nodo_sin_ip++;
-		if(pedido->nodo->nodo == NULL)	nodo_sin_nombre++;
-		if(pedido->nodo->puerto == 0)	nodo_sin_puerto++;
-		if(pedido->nodo->sizeDatabin == 0)	nodo_sin_size++;
-	}
-	list_iterate(lista, (void*) _chequear);
-
-	printf("Numero de peticion: %d\n", numero_pedido_trans);
-	printf("Cantidad de elementos recibidos: %d\n", sizes);
-	printf("Bloque con 0: %d\n", sin_bloque);
-	printf("Bytes con 0: %d\n", sin_bytes);
-	printf("Temporal NULOS: %d\n", sin_temporal);
-	printf("Nodo con ip NULO: %d\n", nodo_sin_ip);
-	printf("Nodo con Nombre NULO: %d\n", nodo_sin_nombre);
-	printf("Nodo con Puerto 0: %d\n", nodo_sin_puerto);
-	printf("Nodo con size 0: %d\n", nodo_sin_size);
 }

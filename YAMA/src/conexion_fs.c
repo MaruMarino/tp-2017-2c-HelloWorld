@@ -84,6 +84,7 @@ void solicitar_informacion_archivo(char *info, int _socket)
 	}
 	else if(head2.codigo == 4)
 	{
+		escribir_log(yama_log, "El archivo no existe");
 		matar_master(_socket);
 	}
 

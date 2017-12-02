@@ -59,6 +59,7 @@ typedef struct
 	int bloque_copia;
 	int bytes;
 	bool replanificado;
+	int bloque_archivo;
 }t_estado;
 
 typedef struct
