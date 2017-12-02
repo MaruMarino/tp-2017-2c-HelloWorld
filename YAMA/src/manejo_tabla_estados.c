@@ -80,6 +80,8 @@ t_estado *generar_estado(int master, int bloque, char *nodo, char *nodo2, int bl
 	estado->nodo_copia = nodo2;
 	estado->bloque_copia = bloque2;
 	estado->bytes = bytes;
+	estado->replanificado = false;
+	estado->bloque_archivo = bloqqq;
 
 	list_add(tabla_estado, estado);
 	return estado;
