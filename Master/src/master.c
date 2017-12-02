@@ -130,9 +130,9 @@ void conectar_yama()
 		message *mensaje = createMessage(handshake, config->path_file_target);
 
 		enviar_messageIntr(config->socket_yama, mensaje, log_Mas, &controlador);
-		/*
-		getMessageIntr(config->socket_yama, handshake, &controlador);
-		*/
+
+		//getMessageIntr(config->socket_yama, handshake, &controlador);
+
 		free(handshake);
 		free(mensaje->buffer);
 		free(mensaje);
